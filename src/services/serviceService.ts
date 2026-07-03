@@ -1,0 +1,15 @@
+import { ServiceType } from "@/types/basicTypes";
+
+const retrieveServicesListFromSearchParams = async (
+  idList: string,
+): Promise<ServiceType[]> => {
+  return await fetch(`/api/services?serviceIds=${idList}`).then((response) =>
+    response.json(),
+  );
+};
+
+const retrieveServicesList = async (): Promise<ServiceType[]> => {
+  return await fetch("/api/services").then((response) => response.json());
+};
+
+export { retrieveServicesList, retrieveServicesListFromSearchParams };
