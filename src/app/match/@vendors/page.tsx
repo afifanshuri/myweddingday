@@ -1,5 +1,4 @@
 "use client";
-import VendorContainer from "@/components/VendorContainer";
 import { retrieveServicesListFromSearchParams } from "@/services/serviceService";
 import { retrieveVendorsByService } from "@/services/vendorService";
 import { ServiceType, VendorType } from "@/types/basicTypes";
@@ -68,9 +67,7 @@ export default function VendorSection() {
           </div>
           <div id="vendorsContainer" className="grid grid-cols-4 gap-2">
             {currentVendors.map((vendor, index) => {
-              return (
-                <VendorContainer params={vendor} key={index}></VendorContainer>
-              );
+              return <div key={index}>{vendor.vendorName}</div>;
             })}
           </div>
         </div>

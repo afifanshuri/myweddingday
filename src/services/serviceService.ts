@@ -1,3 +1,4 @@
+import { useServiceStore } from "@/app/store/serviceStore";
 import { ServiceType } from "@/types/basicTypes";
 
 const retrieveServicesListFromSearchParams = async (

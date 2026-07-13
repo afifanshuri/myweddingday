@@ -32,4 +32,14 @@ type ServiceType = {
   serviceName: string;
 };
 
-export type { WeddingType, VendorType, ServiceType, PackageType };
+type ClassnameType = {
+  className?: string;
+};
+
+export type {
+  WeddingType,
+  VendorType,
+  ServiceType,
+  PackageType,
+  ClassnameType,
+};
