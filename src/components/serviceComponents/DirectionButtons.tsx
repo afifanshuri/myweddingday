@@ -1,7 +1,7 @@
 "use client";
 import { useServiceStore } from "@/app/store/serviceStore";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
+import MainButton from "../commonComponents/MainButton";
 
 export default function DirectionButtons() {
   const currentPath = usePathname();
@@ -27,12 +27,8 @@ export default function DirectionButtons() {
   };
   return (
     <div className="flex flex-row gap-4 justify-end">
-      <Link href={`${changePage("back")}`} className="border rounded-2xl p-2">
-        Back
-      </Link>
-      <Link href={`${changePage("next")}`} className="border rounded-2xl p-2">
-        Continue
-      </Link>
+      <MainButton href={`${changePage("back")}`}>Back</MainButton>
+      <MainButton href={`${changePage("next")}`}>Continue</MainButton>
     </div>
   );
 }

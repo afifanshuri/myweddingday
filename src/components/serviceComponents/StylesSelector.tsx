@@ -27,28 +27,20 @@ export default function StylesSelector({
       case SERVICE_ID.CLOTHING:
         return state.clothingPreference;
       default:
-        return {
-          serviceId: 0,
-          budget: 0,
-          description: "",
-          style: [],
-          styleOptions: [],
-        };
+        throw new Error(`Unknown service id: ${id}`);
     }
   }
   const preferenceStore = usePreferenceStore((state) =>
     getPreferenceStoreById(currentPath, state),
   );
-  const [selectedStyles, setSelectedStyles] = useState<string[]>(
-    preferenceStore.style,
-  );
+  const setStyleToStore = usePreferenceStore((state) => state.setStyles);
+  const selectedStyles = preferenceStore.style;
 
   const toggleSelectStyles = (style: string) => {
-    setSelectedStyles(
-      selectedStyles.includes(style)
-        ? selectedStyles.filter((s) => s !== style)
-        : [...selectedStyles, style],
-    );
+    const newStyles = selectedStyles.includes(style)
+      ? selectedStyles.filter((s) => s !== style)
+      : [...selectedStyles, style];
+    setStyleToStore(currentPath, newStyles);
   };
   return (
     <div className="flex flex-row gap-2 flex-wrap">
@@ -57,7 +49,7 @@ export default function StylesSelector({
           <div
             onClick={() => toggleSelectStyles(style)}
             key={index}
-            className={`transition hover:cursor-pointer flex flex-row items-center gap-2 p-2 border rounded-2xl opacity-40 hover:opacity-100 ${selectedStyles.includes(style) ? "opacity-100" : "opacity-40"}`}
+            className={`text-[10px] border transition hover:cursor-pointer flex flex-row items-center gap-1 p-2 rounded-2xl ${selectedStyles.includes(style) ? "bg-(--positive) text-white border-(--positive)" : "border-(--positive) text-(--positive-secondary) bg-white"}`}
           >
             <BsCheckCircle
               className={`transition ${selectedStyles.includes(style) ? "flex" : "hidden"}`}

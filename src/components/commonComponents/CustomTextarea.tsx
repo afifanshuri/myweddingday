@@ -5,7 +5,7 @@ export default function CustomTextarea({
 }: TextareaProps) {
   return (
     <textarea
-      className={`resize-none border rounded-lg border-gray-400 focus:border-gray-800 ${className}`}
+      className={`resize-none border rounded-lg border-(--positive) bg-white focus:border-(--positive-secondary) active:border-(--positive) focus:outline-none focus:border-2 ${className}`}
       {...props}
     ></textarea>
   );

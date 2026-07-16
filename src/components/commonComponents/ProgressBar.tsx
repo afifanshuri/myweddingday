@@ -23,9 +23,12 @@ const ProgressBar = ({
       <div id="progressBarText">
         Step {index} of {totalSelectedServices}
       </div>
-      <div id="progressBar" className="border rounded-lg w-full">
+      <div
+        id="progressBar"
+        className="border border-(--positive-tertiary) rounded-lg w-full"
+      >
         <div
-          className="bg-black h-1 transition"
+          className="bg-(--positive-tertiary) h-1 transition"
           style={{ width: `${progressPercentage}%` }}
         ></div>
       </div>

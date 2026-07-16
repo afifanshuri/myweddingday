@@ -1,6 +1,6 @@
 import CustomTextarea from "../../components/commonComponents/CustomTextarea";
 
-export const ClothingPage = () => {
+export const PelaminPage = () => {
   return (
     <div className="flex flex-col gap-10">
       <div>

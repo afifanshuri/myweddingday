@@ -1,5 +1,5 @@
 import { bigint, numeric, timestamp } from "drizzle-orm/cockroach-core";
-import { integer, pgTable, varchar } from "drizzle-orm/pg-core";
+import { integer, pgTable, varchar, vector } from "drizzle-orm/pg-core";
 
 export const timestamps = {
   updated_at: timestamp(),
@@ -39,6 +39,8 @@ const vendorsTable = pgTable("vendorsTable", {
     .references(() => locationTable.id),
   detail: varchar({ length: 500 }),
   contact: bigint({ mode: "number" }),
+  imagePath: varchar({ length: 255 }),
+  embedding: vector("embedding", { dimensions: 3072 }),
 });
 
 const packagesTable = pgTable("packagesTable", {
@@ -49,6 +51,7 @@ const packagesTable = pgTable("packagesTable", {
   imagePath: varchar({ length: 255 }),
   details: varchar({ length: 1000 }),
   vendorId: integer().references(() => vendorsTable.id),
+  embedding: vector("embedding", { dimensions: 3072 }),
 });
 
 export {

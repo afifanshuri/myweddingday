@@ -8,27 +8,11 @@ export default function MatchLayout({
   vendors: React.ReactNode;
 }>) {
   return (
-    <div
-      style={{
-        height: "100vh",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
+    <div className="flex flex-col h-screen">
       {children}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          height: "100%",
-        }}
-      >
-        <div style={{ display: "flex", flex: 4, border: "1px solid" }}>
-          {vendors}
-        </div>
-        <div style={{ display: "flex", flex: 1, border: "1px solid" }}>
-          {budget}
-        </div>
+      <div className="flex flex-col xl:flex-row h-full">
+        <div className="flex-4 justify-center items-center">{vendors}</div>
+        <div className="flex-1 justify-center items-center">{budget}</div>
       </div>
     </div>
   );

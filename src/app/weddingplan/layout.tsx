@@ -9,7 +9,7 @@ export default function VendorsLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="h-full pt-20 flex flex-col xl:w-1/3 mx-auto pl-10 pr-10 pb-10">
+    <div className="h-full pt-10 flex flex-col xl:w-1/3 mx-auto pl-10 pr-10 pb-10">
       {children}
     </div>
   );

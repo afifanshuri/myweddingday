@@ -1,3 +1,4 @@
+import { SERVICE_ID } from "@/constants/commonConstants";
 import { BasicPreferenceType } from "@/types/preferenceTypes";
 import { create } from "zustand";
 
@@ -107,7 +108,7 @@ export const usePreferenceStore = create<PreferenceStore>((set) => ({
   setBudget: (serviceId, budget) =>
     set((state) => {
       switch (serviceId) {
-        case 1:
+        case SERVICE_ID.VENUE:
           return {
             venuePreference: {
               ...state.venuePreference,
@@ -115,7 +116,7 @@ export const usePreferenceStore = create<PreferenceStore>((set) => ({
             },
           };
 
-        case 2:
+        case SERVICE_ID.PELAMIN:
           return {
             pelaminPreference: {
               ...state.pelaminPreference,
@@ -123,7 +124,7 @@ export const usePreferenceStore = create<PreferenceStore>((set) => ({
             },
           };
 
-        case 3:
+        case SERVICE_ID.CATERING:
           return {
             cateringPreference: {
               ...state.cateringPreference,
@@ -131,10 +132,25 @@ export const usePreferenceStore = create<PreferenceStore>((set) => ({
             },
           };
 
-        case 4:
+        case SERVICE_ID.PHOTOGRAPHER:
           return {
             photographerPreference: {
               ...state.photographerPreference,
+              budget,
+            },
+          };
+
+        case SERVICE_ID.CLOTHING:
+          return {
+            muaPreference: {
+              ...state.muaPreference,
+              budget,
+            },
+          };
+        case SERVICE_ID.MUA:
+          return {
+            muaPreference: {
+              ...state.muaPreference,
               budget,
             },
           };
@@ -147,35 +163,49 @@ export const usePreferenceStore = create<PreferenceStore>((set) => ({
   setStyles: (serviceId, styles) =>
     set((state) => {
       switch (serviceId) {
-        case 1:
+        case SERVICE_ID.VENUE:
           return {
             venuePreference: {
               ...state.venuePreference,
-              styles,
+              style: styles,
             },
           };
 
-        case 2:
+        case SERVICE_ID.PELAMIN:
           return {
             pelaminPreference: {
               ...state.pelaminPreference,
-              styles,
+              style: styles,
             },
           };
 
-        case 3:
+        case SERVICE_ID.CATERING:
           return {
             cateringPreference: {
               ...state.cateringPreference,
-              styles,
+              style: styles,
             },
           };
 
-        case 4:
+        case SERVICE_ID.PHOTOGRAPHER:
           return {
             photographerPreference: {
               ...state.photographerPreference,
-              styles,
+              style: styles,
+            },
+          };
+        case SERVICE_ID.CLOTHING:
+          return {
+            clothingPreference: {
+              ...state.clothingPreference,
+              style: styles,
+            },
+          };
+        case SERVICE_ID.MUA:
+          return {
+            muaPreference: {
+              ...state.muaPreference,
+              style: styles,
             },
           };
 
@@ -208,6 +238,18 @@ export const usePreferenceStore = create<PreferenceStore>((set) => ({
         description: "",
         style: [],
         styleOptions: cateringStyles,
+      },
+      muaPreference: {
+        budget: 0,
+        description: "",
+        style: [],
+        styleOptions: muaStyles,
+      },
+      clothingPreference: {
+        budget: 0,
+        description: "",
+        style: [],
+        styleOptions: clothingStyles,
       },
     }));
   },
