@@ -6,3 +6,8 @@ export const SERVICE_ID = {
   CLOTHING: 5,
   MUA: 6,
 };
+
+export const ASSET_PATH = {
+  VENDOR: "assets/vendorImages",
+  PACKAGE: "assets/packageImages",
+};

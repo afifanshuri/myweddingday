@@ -7,6 +7,11 @@ type WeddingType = {
   prompt: string;
 };
 
+type LocationType = {
+  id: number;
+  locationName: string;
+};
+
 type VendorType = {
   id: number;
   createdAt: Date;
@@ -14,16 +19,18 @@ type VendorType = {
   serviceId: number;
   locationId: number;
   detail: string | null;
-  contact: number | null;
+  contact: string | null;
+  rating: number | null;
 };
 
 type PackageType = {
   id: number;
   name: string;
   price: number;
-  image: string;
-  details: string;
-  vendorId: number;
+  file: File | null;
+  details: string | null;
+  vendorId: number | null;
+  tags: string[];
 };
 
 type ServiceType = {
@@ -41,5 +48,6 @@ export type {
   VendorType,
   ServiceType,
   PackageType,
+  LocationType,
   ClassnameType,
 };

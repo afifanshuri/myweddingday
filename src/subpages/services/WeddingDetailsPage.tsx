@@ -16,21 +16,23 @@ export default function WeddingDetailsPage() {
             className="w-full"
           ></CustomInput>
         </div>
-        <div className="w-full">
-          <p>Wedding Date</p>
-          <CustomInput
-            type="date"
-            placeholder="e.g. Amira & Syafiq"
-            className="w-full"
-          ></CustomInput>
-        </div>
-        <div className="w-full">
-          <p>Estimated Guests</p>
-          <CustomInput
-            type="number"
-            defaultValue={200}
-            className="w-full"
-          ></CustomInput>
+        <div className="flex flex-row gap-4">
+          <div className="w-full">
+            <p>Wedding Date</p>
+            <CustomInput
+              type="date"
+              placeholder="e.g. Amira & Syafiq"
+              className="w-full"
+            ></CustomInput>
+          </div>
+          <div className="w-full">
+            <p>Estimated Guests</p>
+            <CustomInput
+              type="number"
+              defaultValue={200}
+              className="w-full"
+            ></CustomInput>
+          </div>
         </div>
       </div>
     </div>

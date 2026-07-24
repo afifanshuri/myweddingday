@@ -1,5 +1,13 @@
-import { bigint, numeric, timestamp } from "drizzle-orm/cockroach-core";
-import { integer, pgTable, varchar, vector } from "drizzle-orm/pg-core";
+import {
+  integer,
+  pgTable,
+  varchar,
+  vector,
+  bigint,
+  numeric,
+  timestamp,
+} from "drizzle-orm/pg-core";
+import { number } from "motion/react";
 
 export const timestamps = {
   updated_at: timestamp(),
@@ -38,17 +46,17 @@ const vendorsTable = pgTable("vendorsTable", {
     .notNull()
     .references(() => locationTable.id),
   detail: varchar({ length: 500 }),
-  contact: bigint({ mode: "number" }),
-  imagePath: varchar({ length: 255 }),
-  embedding: vector("embedding", { dimensions: 3072 }),
+  contact: varchar({ length: 11 }),
+  filePath: varchar({ length: 255 }),
+  rating: numeric({ mode: "number" }),
 });
 
 const packagesTable = pgTable("packagesTable", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   createdAt: timestamp().defaultNow().notNull(),
   packageName: varchar({ length: 255 }).notNull(),
-  price: numeric().notNull(),
-  imagePath: varchar({ length: 255 }),
+  price: numeric({ mode: "number" }).notNull(),
+  filePath: varchar({ length: 255 }),
   details: varchar({ length: 1000 }),
   vendorId: integer().references(() => vendorsTable.id),
   embedding: vector("embedding", { dimensions: 3072 }),

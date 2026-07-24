@@ -1,6 +1,10 @@
-import { getAllVendorsByServiceIdArray } from "@/db/queries/vendors";
+import { insertPackage } from "@/db/queries/packages";
+import {
+  getAllVendorsByServiceIdArray,
+  insertVendor,
+} from "@/db/queries/vendors";
 import { VendorType } from "@/types/basicTypes";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   let result: VendorType[] = [];
@@ -15,4 +19,15 @@ export async function GET(request: NextRequest) {
     );
   }
   return Response.json(result);
+}
+
+export async function POST(request: NextRequest) {
+  console.info("In The Vendor API POST Method");
+  try {
+    const data = await request.json();
+    const response = await insertVendor(data);
+    return NextResponse.json(response);
+  } catch (e) {
+    console.error(e);
+  }
 }
