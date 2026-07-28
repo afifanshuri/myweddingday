@@ -1,7 +1,7 @@
 "use client";
 import { usePreferenceStore } from "@/app/store/preferenceStore";
 import { useServiceStore } from "@/app/store/serviceStore";
-import { ServiceType } from "@/types/basicTypes";
+import { ServiceType } from "@/types/dataTypes";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import MainButton from "../commonComponents/MainButton";

@@ -2,7 +2,7 @@
 import PackageDetailSection from "@/components/adminComponents/PackageDetailsSection";
 import CustomInput from "@/components/commonComponents/CustomInput";
 import CustomTextarea from "@/components/commonComponents/CustomTextarea";
-import { LocationType, ServiceType } from "@/types/basicTypes";
+import { LocationType, ServiceType } from "@/types/dataTypes";
 import { useEffect, useState } from "react";
 import { useAdminStore } from "../store/adminStore";
 import MainButton from "@/components/commonComponents/MainButton";
@@ -14,8 +14,8 @@ export default function AdminPage() {
   const [rating, setRating] = useState(0);
 
   const vendorFromStore = useAdminStore((state) => state.vendor);
-  const addPackageToStore = useAdminStore((state) => state.addPackage);
   const packageListFromStore = useAdminStore((state) => state.packageList);
+  const addPackageToStore = useAdminStore((state) => state.addPackage);
   const updateVendorDataToStore = useAdminStore((state) => state.updateVendor);
 
   useEffect(() => {
@@ -31,6 +31,18 @@ export default function AdminPage() {
     }
     populateData();
   }, []);
+
+  function toggleSelectLocation(id:number){
+    if(id){
+      if(vendorFromStore.locationId.includes(id)){
+        const newLocationList = vendorFromStore.locationId.filter((l) => l != id);
+        updateVendorDataToStore({locationId: [...newLocationList]})
+      } else {
+        updateVendorDataToStore({locationId: [...vendorFromStore.locationId,id]})
+      }
+      
+    }
+  }
 
   function addNewPackage() {
     addPackageToStore();
@@ -116,24 +128,16 @@ export default function AdminPage() {
           </select>
         </div>
         <div>
-          <p>Location</p>
-          <select
-            name="location"
-            id="locationDropdown"
-            className="border border-(--secondary) rounded-lg w-full"
-            defaultValue={1}
-            onChange={(e) => {
-              updateVendorDataToStore({ locationId: Number(e.target.value) });
-            }}
-          >
+          <p>Locations Covered</p>
+          <div className="flex flex-row gap-2 text-[10px]">
             {locationList.map((l, index) => {
               return (
-                <option key={index} value={l.id}>
+                <div key={l.id} className={`${vendorFromStore.locationId.includes(l.id) ? "bg-(--positive) border-(--positive)" : "bg-white border-(--tertiary)"} cursor-pointer hover:bg-(--positive) p-2 border rounded-lg`} onClick={() => {toggleSelectLocation(l.id)}}>
                   {l.locationName}
-                </option>
+                </div>
               );
             })}
-          </select>
+          </div>
         </div>
         <div>
           <p>Contact</p>

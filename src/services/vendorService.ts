@@ -1,4 +1,4 @@
-import { VendorType } from "@/types/basicTypes";
+import { VendorType } from "@/types/dataTypes";
 const retrieveVendorsByService = async (
   serviceId: string,
 ): Promise<VendorType[]> => {

@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { vendorsTable } from "../schema";
 import { eq, inArray } from "drizzle-orm";
-import { VendorType } from "@/types/basicTypes";
+import { VendorType } from "@/types/dataTypes";
 
 const getAllVendorsByServiceIdArray = async (serviceId: number[]) => {
   return await db

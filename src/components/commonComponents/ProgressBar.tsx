@@ -1,6 +1,6 @@
 "use client";
 import { useServiceStore } from "@/app/store/serviceStore";
-import { ClassnameType } from "@/types/basicTypes";
+import { ClassnameType } from "@/types/dataTypes";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 

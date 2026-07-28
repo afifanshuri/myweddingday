@@ -1,6 +1,6 @@
 import { insertAllToPackage } from "@/db/queries/packages";
 import { savePackageListToDTO } from "@/services/packageService";
-import { PackageType } from "@/types/basicTypes";
+import { PackageType } from "@/types/dataTypes";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {

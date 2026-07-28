@@ -1,10 +1,8 @@
-type WeddingType = {
-  id: number;
-  location: "KL" | "Selangor";
-  budget: number;
+type WeddingDetailType = {
+  locations: number[];
+  date: Date | null;
+  coupleName: string;
   pax: number;
-  services: string[];
-  prompt: string;
 };
 
 type LocationType = {
@@ -17,7 +15,7 @@ type VendorType = {
   createdAt: Date;
   vendorName: string;
   serviceId: number;
-  locationId: number;
+  locationId: number[];
   detail: string | null;
   contact: string | null;
   rating: number | null;
@@ -44,7 +42,7 @@ type ClassnameType = {
 };
 
 export type {
-  WeddingType,
+  WeddingDetailType,
   VendorType,
   ServiceType,
   PackageType,

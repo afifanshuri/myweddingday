@@ -11,7 +11,7 @@ export default function ResultPage() {
   const deleteAllPreferenceData = usePreferenceStore(
     (state) => state.deleteAllPreferenceData,
   );
-
+  
   const route = useRouter();
 
   const resetData = () => {
@@ -23,7 +23,7 @@ export default function ResultPage() {
   return (
     <div className="flex h-50 items-center bg-(--positive) xl:flex-row flex-col justify-center xl:justify-between gap-2">
       <p className="xl:ml-10 libre-font text-[16px] xl:text-[30px] text-white">
-        Vendors, matched with your needs!
+        Specially curated vendors, for ${}
       </p>
       <div className="flex gap-3 xl:self-end mr-6 mb-4 text-[10px] xl:text-[16px] text-(--positive-tertiary)">
         <div className="flex flex-row gap-2 bg-(--positive-secondary) p-2 rounded-2xl items-center opacity-70 hover:opacity-100 hover:cursor-pointer">

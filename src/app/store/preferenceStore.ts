@@ -1,4 +1,5 @@
 import { SERVICE_ID } from "@/constants/commonConstants";
+import { WeddingDetailType } from "@/types/dataTypes";
 import { BasicPreferenceType } from "@/types/preferenceTypes";
 import { create } from "zustand";
 
@@ -54,6 +55,7 @@ const clothingStyles = [
 ];
 
 export type PreferenceStore = {
+  weddingDetails : WeddingDetailType;
   totalBudget: number;
   pelaminPreference: BasicPreferenceType;
   venuePreference: BasicPreferenceType;
@@ -61,12 +63,18 @@ export type PreferenceStore = {
   cateringPreference: BasicPreferenceType;
   muaPreference: BasicPreferenceType;
   clothingPreference: BasicPreferenceType;
-  setBudget: (id: number, amount: number) => void;
-  setStyles: (id: number, styles: string[]) => void;
+  updatePreferenceDetails: (id:number, data: Partial<BasicPreferenceType>) => void;
+  updateWeddingDetails: (data: Partial<WeddingDetailType>) => void;
   deleteAllPreferenceData: () => void;
 };
 
 export const usePreferenceStore = create<PreferenceStore>((set) => ({
+  weddingDetails: {
+    coupleName: "",
+    date: null,
+    locations: [],
+    pax: 0,
+  },
   totalBudget: 0,
   pelaminPreference: {
     budget: 0,
@@ -105,14 +113,14 @@ export const usePreferenceStore = create<PreferenceStore>((set) => ({
     styleOptions: clothingStyles,
   },
 
-  setBudget: (serviceId, budget) =>
+  updatePreferenceDetails: (id, data) => {
     set((state) => {
-      switch (serviceId) {
+      switch (id) {
         case SERVICE_ID.VENUE:
           return {
             venuePreference: {
               ...state.venuePreference,
-              budget,
+              ...data,
             },
           };
 
@@ -120,7 +128,7 @@ export const usePreferenceStore = create<PreferenceStore>((set) => ({
           return {
             pelaminPreference: {
               ...state.pelaminPreference,
-              budget,
+              ...data,
             },
           };
 
@@ -128,7 +136,7 @@ export const usePreferenceStore = create<PreferenceStore>((set) => ({
           return {
             cateringPreference: {
               ...state.cateringPreference,
-              budget,
+              ...data,
             },
           };
 
@@ -136,83 +144,38 @@ export const usePreferenceStore = create<PreferenceStore>((set) => ({
           return {
             photographerPreference: {
               ...state.photographerPreference,
-              budget,
+              ...data,
             },
           };
 
-        case SERVICE_ID.CLOTHING:
-          return {
-            muaPreference: {
-              ...state.muaPreference,
-              budget,
-            },
-          };
-        case SERVICE_ID.MUA:
-          return {
-            muaPreference: {
-              ...state.muaPreference,
-              budget,
-            },
-          };
-
-        default:
-          return state;
-      }
-    }),
-
-  setStyles: (serviceId, styles) =>
-    set((state) => {
-      switch (serviceId) {
-        case SERVICE_ID.VENUE:
-          return {
-            venuePreference: {
-              ...state.venuePreference,
-              style: styles,
-            },
-          };
-
-        case SERVICE_ID.PELAMIN:
-          return {
-            pelaminPreference: {
-              ...state.pelaminPreference,
-              style: styles,
-            },
-          };
-
-        case SERVICE_ID.CATERING:
-          return {
-            cateringPreference: {
-              ...state.cateringPreference,
-              style: styles,
-            },
-          };
-
-        case SERVICE_ID.PHOTOGRAPHER:
-          return {
-            photographerPreference: {
-              ...state.photographerPreference,
-              style: styles,
-            },
-          };
         case SERVICE_ID.CLOTHING:
           return {
             clothingPreference: {
               ...state.clothingPreference,
-              style: styles,
+              ...data,
             },
           };
         case SERVICE_ID.MUA:
           return {
             muaPreference: {
               ...state.muaPreference,
-              style: styles,
+              ...data,
             },
           };
 
         default:
           return state;
       }
-    }),
+    })
+  },
+  updateWeddingDetails: (data) => {
+    set((state) => ({
+      weddingDetails: {
+        ...state.weddingDetails,
+        ...data
+      }
+    }))
+  },
   deleteAllPreferenceData: () => {
     set(() => ({
       pelaminPreference: {

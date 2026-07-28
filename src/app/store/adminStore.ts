@@ -1,4 +1,4 @@
-import { PackageType, VendorType } from "@/types/basicTypes";
+import { PackageType, VendorType } from "@/types/dataTypes";
 import { create } from "zustand";
 
 type AdminStore = {
@@ -16,7 +16,7 @@ export const useAdminStore = create<AdminStore>((set) => ({
     createdAt: new Date(),
     vendorName: "<Vendor Name>",
     serviceId: 0,
-    locationId: 0,
+    locationId: [],
     detail: null,
     contact: null,
     rating: null,

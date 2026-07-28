@@ -1,4 +1,4 @@
-import { PackageType } from "./basicTypes";
+import { PackageType } from "./dataTypes";
 
 type PakcageDTOType = {
   name: string;
@@ -7,7 +7,7 @@ type PakcageDTOType = {
   vendorId: number | null;
   filePath?: string;
   vendorName: string;
-  embedding?: number[];
+  embedding?: number[] | null;
   tags: string[];
 };
 

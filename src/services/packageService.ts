@@ -1,4 +1,4 @@
-import { PackageType, VendorType } from "@/types/basicTypes";
+import { PackageType, VendorType } from "@/types/dataTypes";
 import { generateFilename } from "./utils";
 import { saveImageToBucket } from "./supabaseService";
 import { createPackageEmbedding } from "./aiService";

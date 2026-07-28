@@ -35,7 +35,7 @@ export const BudgetSlider = ({
     getPreferenceStoreById(currentPath, state),
   );
 
-  const budgetSetter = usePreferenceStore((state) => state.setBudget);
+  const updateBudget = usePreferenceStore((state) => state.updatePreferenceDetails);
 
   return (
     <div
@@ -49,8 +49,9 @@ export const BudgetSlider = ({
             defaultValue={budget}
             type="number"
             className="w-1/3"
-            onChange={(e) => budgetSetter(currentPath, Number(e.target.value))}
+            onChange={(e) => updateBudget(currentPath, {budget: Number(e.target.value)})}
           ></CustomInput>
+          <p className={`${currentPath == SERVICE_ID.CATERING ? "flex" : "hidden"}`}>per pax</p>
         </div>
       </div>
     </div>

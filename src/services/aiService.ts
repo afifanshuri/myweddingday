@@ -1,25 +1,29 @@
-import { PackageType, VendorType } from "@/types/basicTypes";
+import { PackageType, VendorType } from "@/types/dataTypes";
 import { GoogleGenAI } from "@google/genai";
 
-async function createPackageEmbedding(pkg: PackageType, vendor: VendorType) {
-  const ai = new GoogleGenAI({});
-  const contents = `
-  Vendor: ${vendor.vendorName}
-  Description:
-${pkg.details}
-Package Name:
-${pkg.name}
-Price:
-RM ${pkg.price}
-Tags:
-${pkg.tags.join(", ")}
-  `;
-  const response = await ai.models.embedContent({
-    model: "gemini-embedding-2",
-    contents: contents,
-  });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-  return response.embeddings?.[0]?.values;
+async function createPackageEmbedding(pkg: PackageType, vendor: VendorType) {
+  try {
+    const contents = `
+Vendor: ${vendor.vendorName}
+Description: ${pkg.details}
+Package Name: ${pkg.name}
+Price: RM ${pkg.price}
+Tags: ${pkg.tags.join(", ")}
+    `.trim();
+
+    const response = await ai.models.embedContent({
+      model: "gemini-embedding-2", 
+      contents: contents,
+    });
+
+    return response.embeddings?.[0]?.values ?? null ;
+    
+  } catch (error) {
+    console.error("Failed to generate embedding for package:", pkg.name, error);
+    return null; 
+  }
 }
 
 export { createPackageEmbedding };

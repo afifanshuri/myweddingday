@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { packagesTable } from "../schema";
 import { PakcageDTOType } from "@/types/dtoTypes";
-import { PackageType } from "@/types/basicTypes";
+import { PackageType } from "@/types/dataTypes";
 
 const insertPackage = async (packageDTO: PakcageDTOType) => {
   return await db.insert(packagesTable).values({

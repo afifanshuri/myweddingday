@@ -8,6 +8,7 @@ import ServiceTitleSection from "@/components/serviceComponents/ServiceTitleSect
 import DirectionButtons from "@/components/serviceComponents/DirectionButtons";
 import StylesSelector from "@/components/serviceComponents/StylesSelector";
 import CustomTextarea from "@/components/commonComponents/CustomTextarea";
+import PromptTextbox from "@/components/serviceComponents/PromptTextbox";
 
 export default function ServicePage() {
   const params = useParams();
@@ -39,11 +40,7 @@ export default function ServicePage() {
           <p>Styles</p>
           <StylesSelector currentPath={currentServiceId} />
         </div>
-
-        <div>
-          <p>Describe your ideas</p>
-          <CustomTextarea className="w-full" />
-        </div>
+        <PromptTextbox currentPath={currentServiceId}/>
         <DirectionButtons />
       </div>
     </div>

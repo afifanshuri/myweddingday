@@ -33,14 +33,14 @@ export default function StylesSelector({
   const preferenceStore = usePreferenceStore((state) =>
     getPreferenceStoreById(currentPath, state),
   );
-  const setStyleToStore = usePreferenceStore((state) => state.setStyles);
+  const updateStyles = usePreferenceStore((state) => state.updatePreferenceDetails);
   const selectedStyles = preferenceStore.style;
 
   const toggleSelectStyles = (style: string) => {
     const newStyles = selectedStyles.includes(style)
       ? selectedStyles.filter((s) => s !== style)
       : [...selectedStyles, style];
-    setStyleToStore(currentPath, newStyles);
+    updateStyles(currentPath, {style:newStyles});
   };
   return (
     <div className="flex flex-row gap-2 flex-wrap">

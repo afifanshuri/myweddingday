@@ -9,7 +9,7 @@ import {
 import CustomInput from "../commonComponents/CustomInput";
 import CustomTextarea from "../commonComponents/CustomTextarea";
 import { useState } from "react";
-import { PackageType } from "@/types/basicTypes";
+import { PackageType } from "@/types/dataTypes";
 import { useAdminStore } from "@/app/store/adminStore";
 
 export default function PackageDetailSection({

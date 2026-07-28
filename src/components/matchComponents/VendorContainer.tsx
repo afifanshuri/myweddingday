@@ -1,4 +1,4 @@
-import { VendorType } from "@/types/basicTypes";
+import { VendorType } from "@/types/dataTypes";
 import Image from "next/image";
 
 export default function VendorContainer({ vendor }: { vendor: VendorType }) {

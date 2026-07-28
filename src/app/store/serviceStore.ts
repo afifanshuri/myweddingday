@@ -1,4 +1,4 @@
-import { ServiceType } from "@/types/basicTypes";
+import { ServiceType } from "@/types/dataTypes";
 import { create } from "zustand";
 
 type ServiceStore = {

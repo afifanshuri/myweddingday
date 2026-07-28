@@ -42,9 +42,8 @@ const vendorsTable = pgTable("vendorsTable", {
   serviceId: integer()
     .notNull()
     .references(() => servicesTable.id),
-  locationId: integer()
-    .notNull()
-    .references(() => locationTable.id),
+  locationId: integer().array()
+    .notNull(),
   detail: varchar({ length: 500 }),
   contact: varchar({ length: 11 }),
   filePath: varchar({ length: 255 }),

@@ -1,7 +1,7 @@
 "use client";
 import { retrieveServicesListFromSearchParams } from "@/services/serviceService";
 import { retrieveVendorsByService } from "@/services/vendorService";
-import { ServiceType, VendorType } from "@/types/basicTypes";
+import { ServiceType, VendorType } from "@/types/dataTypes";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
