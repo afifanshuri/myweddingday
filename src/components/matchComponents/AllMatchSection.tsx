@@ -1,4 +1,6 @@
 "use client";
+import { usePreferenceStore } from "@/app/store/preferenceStore";
+import { useServiceStore } from "@/app/store/serviceStore";
 import { retrieveServicesListFromSearchParams } from "@/services/serviceService";
 import { retrieveVendorsByService } from "@/services/vendorService";
 import { ServiceType, VendorType } from "@/types/dataTypes";
@@ -10,20 +12,17 @@ export default function AllMatchSection() {
   const [services, setServices] = useState<ServiceType[]>([]);
   const [currentServiceId, setCurrentServiceId] = useState<number | null>(null);
   const [currentVendors, setCurrentVendors] = useState<VendorType[]>([]);
-  const searchParams = useSearchParams();
+
 
   useEffect(() => {
     const initData = async () => {
-      const selectedServices = searchParams.get("serviceIds");
+      const selectedServices = useServiceStore((state) => state.selectedService);
       if (!selectedServices) {
         return;
       }
 
-      const serviceList =
-        await retrieveServicesListFromSearchParams(selectedServices);
-      const vendorList = await retrieveVendorsByService(selectedServices);
 
-      setServices(serviceList);
+      const vendorList = await retrieveVendorsByService(selectedServices);
       setVendors(vendorList);
       setCurrentServiceId(selectedServices.split(",").map(Number)[0]);
     };

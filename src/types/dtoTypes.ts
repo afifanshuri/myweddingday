@@ -11,4 +11,11 @@ type PakcageDTOType = {
   tags: string[];
 };
 
+type PreferenceDTOType = {
+  serviceId: number;
+  budget: number;
+  description: string;
+  embedding: number[] | null;
+}
+
 export type { PakcageDTOType };

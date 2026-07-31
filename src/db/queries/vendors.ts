@@ -35,4 +35,6 @@ const insertVendor = async (data: VendorType) => {
   }
 };
 
+const findVendorsByEmbeddings = async (data: )
+
 export { getAllVendorsByServiceIdArray, getVendorById, insertVendor };

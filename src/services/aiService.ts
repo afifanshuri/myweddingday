@@ -11,6 +11,7 @@ Description: ${pkg.details}
 Package Name: ${pkg.name}
 Price: RM ${pkg.price}
 Tags: ${pkg.tags.join(", ")}
+Locations: ${vendor.locationId.join(", ")}
     `.trim();
 
     const response = await ai.models.embedContent({

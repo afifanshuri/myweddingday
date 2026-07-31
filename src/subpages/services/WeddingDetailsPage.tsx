@@ -8,7 +8,6 @@ import { useState } from "react";
 export default function WeddingDetailsPage({locations}:{locations:LocationType[]}) {
   
   const weddingDetailsFromStore = usePreferenceStore((state) => state.weddingDetails);
-  const vendorFromStore = useAdminStore((state) => state.vendor);
   const updateWeddingDetails = usePreferenceStore((state) => state.updateWeddingDetails);
   const toggleSelectLocation = (id:number) => {
     const newLocationlist = weddingDetailsFromStore.locations.includes(id) ?
@@ -50,7 +49,7 @@ export default function WeddingDetailsPage({locations}:{locations:LocationType[]
           <div className="w-full">
             <p>Estimated Guests</p>
             <CustomInput
-            value ={weddingDetailsFromStore.pax}
+              value = {weddingDetailsFromStore.pax ?? 0}
               type="number"
               className="w-full"
               onChange={(e) => {updateWeddingDetails({pax:Number(e.target.value)})}}
