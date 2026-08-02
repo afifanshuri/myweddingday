@@ -57,12 +57,7 @@ const clothingStyles = [
 export type PreferenceStore = {
   weddingDetails : WeddingDetailType;
   totalBudget: number;
-  pelaminPreference: BasicPreferenceType;
-  venuePreference: BasicPreferenceType;
-  photographerPreference: BasicPreferenceType;
-  cateringPreference: BasicPreferenceType;
-  muaPreference: BasicPreferenceType;
-  clothingPreference: BasicPreferenceType;
+  preferencesList: BasicPreferenceType[];
   updatePreferenceDetails: (id:number, data: Partial<BasicPreferenceType>) => void;
   updateWeddingDetails: (data: Partial<WeddingDetailType>) => void;
   deleteAllPreferenceData: () => void;
@@ -76,97 +71,62 @@ export const usePreferenceStore = create<PreferenceStore>((set) => ({
     pax: 0,
   },
   totalBudget: 0,
-  pelaminPreference: {
+  preferencesList: [ {
+    serviceId: SERVICE_ID.PELAMIN,
     budget: 0,
     description: "",
     style: [],
     styleOptions: pelaminStyles,
-  },
-  venuePreference: {
+    embedding: null,
+  }, 
+  {
+    serviceId: SERVICE_ID.VENUE,
     budget: 0,
     description: "",
     style: [],
     styleOptions: venueStyles,
+    embedding: null,
   },
-  photographerPreference: {
+  {
+    serviceId: SERVICE_ID.PHOTOGRAPHER,
     budget: 0,
     description: "",
     style: [],
     styleOptions: photographerStyles,
+    embedding: null,
   },
-  cateringPreference: {
+  {
+    serviceId: SERVICE_ID.CATERING,
     budget: 0,
     description: "",
     style: [],
     styleOptions: cateringStyles,
+    embedding: null,
   },
-  muaPreference: {
+  {
+    serviceId: SERVICE_ID.MUA,
     budget: 0,
     description: "",
     style: [],
     styleOptions: muaStyles,
+    embedding: null,
   },
-  clothingPreference: {
+  {
+    serviceId: SERVICE_ID.CLOTHING,
     budget: 0,
     description: "",
     style: [],
     styleOptions: clothingStyles,
+    embedding: null,
   },
+  ],
 
   updatePreferenceDetails: (id, data) => {
-    set((state) => {
-      switch (id) {
-        case SERVICE_ID.VENUE:
-          return {
-            venuePreference: {
-              ...state.venuePreference,
-              ...data,
-            },
-          };
-
-        case SERVICE_ID.PELAMIN:
-          return {
-            pelaminPreference: {
-              ...state.pelaminPreference,
-              ...data,
-            },
-          };
-
-        case SERVICE_ID.CATERING:
-          return {
-            cateringPreference: {
-              ...state.cateringPreference,
-              ...data,
-            },
-          };
-
-        case SERVICE_ID.PHOTOGRAPHER:
-          return {
-            photographerPreference: {
-              ...state.photographerPreference,
-              ...data,
-            },
-          };
-
-        case SERVICE_ID.CLOTHING:
-          return {
-            clothingPreference: {
-              ...state.clothingPreference,
-              ...data,
-            },
-          };
-        case SERVICE_ID.MUA:
-          return {
-            muaPreference: {
-              ...state.muaPreference,
-              ...data,
-            },
-          };
-
-        default:
-          return state;
-      }
-    })
+    set((state) => ({
+      preferencesList: state.preferencesList.map((preference) =>
+        preference.serviceId === id ? { ...preference, ...data } : preference,
+      )
+    }))
   },
   updateWeddingDetails: (data) => {
     set((state) => ({
@@ -178,42 +138,55 @@ export const usePreferenceStore = create<PreferenceStore>((set) => ({
   },
   deleteAllPreferenceData: () => {
     set(() => ({
-      pelaminPreference: {
-        budget: 0,
-        description: "",
-        style: [],
-        styleOptions: pelaminStyles,
-      },
-      venuePreference: {
-        budget: 0,
-        description: "",
-        style: [],
-        styleOptions: venueStyles,
-      },
-      photographerPreference: {
-        budget: 0,
-        description: "",
-        style: [],
-        styleOptions: photographerStyles,
-      },
-      cateringPreference: {
-        budget: 0,
-        description: "",
-        style: [],
-        styleOptions: cateringStyles,
-      },
-      muaPreference: {
-        budget: 0,
-        description: "",
-        style: [],
-        styleOptions: muaStyles,
-      },
-      clothingPreference: {
-        budget: 0,
-        description: "",
-        style: [],
-        styleOptions: clothingStyles,
-      },
+      preferencesList: [ {
+    serviceId: SERVICE_ID.PELAMIN,
+    budget: 0,
+    description: "",
+    style: [],
+    styleOptions: pelaminStyles,
+    embedding: null,
+  }, 
+  {
+    serviceId: SERVICE_ID.VENUE,
+    budget: 0,
+    description: "",
+    style: [],
+    styleOptions: venueStyles,
+    embedding: null,
+  },
+  {
+    serviceId: SERVICE_ID.PHOTOGRAPHER,
+    budget: 0,
+    description: "",
+    style: [],
+    styleOptions: photographerStyles,
+    embedding: null,
+  },
+  {
+    serviceId: SERVICE_ID.CATERING,
+    budget: 0,
+    description: "",
+    style: [],
+    styleOptions: cateringStyles,
+    embedding: null,
+  },
+  {
+    serviceId: SERVICE_ID.MUA,
+    budget: 0,
+    description: "",
+    style: [],
+    styleOptions: muaStyles,
+    embedding: null,
+  },
+  {
+    serviceId: SERVICE_ID.CLOTHING,
+    budget: 0,
+    description: "",
+    style: [],
+    styleOptions: clothingStyles,
+    embedding: null,
+  },
+  ],
     }));
   },
 }));

@@ -12,31 +12,9 @@ export const BudgetSlider = ({
   currentPath: number;
   className: string;
 }) => {
-  function getPreferenceStoreById(id: number, state: PreferenceStore) {
-    switch (id) {
-      case SERVICE_ID.VENUE:
-        return state.venuePreference.budget;
-      case SERVICE_ID.PELAMIN:
-        return state.pelaminPreference.budget;
-      case SERVICE_ID.CATERING:
-        return state.cateringPreference.budget;
-      case SERVICE_ID.PHOTOGRAPHER:
-        return state.photographerPreference.budget;
-      case SERVICE_ID.MUA:
-        return state.muaPreference.budget;
-      case SERVICE_ID.CLOTHING:
-        return state.clothingPreference.budget;
-      default:
-        throw new Error(`Unknown service id: ${id}`);
-    }
-  }
-
-  const budget = usePreferenceStore((state) =>
-    getPreferenceStoreById(currentPath, state),
-  );
-
+  const budget = usePreferenceStore((state) => state.preferencesList.find((preference) => preference.serviceId === currentPath)?.budget);
   const updateBudget = usePreferenceStore((state) => state.updatePreferenceDetails);
-
+  
   return (
     <div
       className={`rounded-lg p-4 ${className} bg-white border border-(--positive) text-(--positive-tertiary) shadow-sm`}

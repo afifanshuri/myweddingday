@@ -1,10 +1,8 @@
 "use client";
 import { usePreferenceStore } from "@/app/store/preferenceStore";
 import { useServiceStore } from "@/app/store/serviceStore";
-import { retrieveServicesListFromSearchParams } from "@/services/serviceService";
-import { retrieveVendorsByService } from "@/services/vendorService";
+import { retrieveVendorsByPreference } from "@/services/vendorService";
 import { ServiceType, VendorType } from "@/types/dataTypes";
-import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function AllMatchSection() {
@@ -12,19 +10,21 @@ export default function AllMatchSection() {
   const [services, setServices] = useState<ServiceType[]>([]);
   const [currentServiceId, setCurrentServiceId] = useState<number | null>(null);
   const [currentVendors, setCurrentVendors] = useState<VendorType[]>([]);
-
+  const selectedServices = useServiceStore((state) => state.selectedService);
+  const selectedLocations = usePreferenceStore((state) => state.weddingDetails.locations);
 
   useEffect(() => {
     const initData = async () => {
-      const selectedServices = useServiceStore((state) => state.selectedService);
+      
       if (!selectedServices) {
         return;
       }
 
-
-      const vendorList = await retrieveVendorsByService(selectedServices);
-      setVendors(vendorList);
-      setCurrentServiceId(selectedServices.split(",").map(Number)[0]);
+      console.log("Selected Services:", selectedServices);
+      const preferencesList = usePreferenceStore.getState().preferencesList.filter((p) => selectedServices.includes(p.serviceId)).map((p) => ({ serviceId: p.serviceId, budget: p.budget, embedding: p.embedding, location: selectedLocations }));
+      console.log("Preferences List1:", preferencesList);
+      const result = await retrieveVendorsByPreference(preferencesList);
+      console.log("Retrieved vendors:", result);
     };
     initData();
   }, []);

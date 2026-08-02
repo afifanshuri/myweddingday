@@ -1,4 +1,4 @@
-import { PackageType } from "./dataTypes";
+import { PackageType, VendorType } from "./dataTypes";
 
 type PakcageDTOType = {
   name: string;
@@ -18,4 +18,18 @@ type PreferenceDTOType = {
   embedding: number[] | null;
 }
 
-export type { PakcageDTOType };
+type VendorMatchDTOType = {
+  serviceId: number;
+  location: number[];
+  budget: number;
+  embedding: number[] | null;
+}
+
+type VendorAndPackagesMatchDTOType = {
+  vendor: VendorType;
+  packages: PackageType[];
+};
+
+
+
+export type { PakcageDTOType, VendorMatchDTOType, PreferenceDTOType, VendorAndPackagesMatchDTOType };

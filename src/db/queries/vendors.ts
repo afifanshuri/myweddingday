@@ -1,7 +1,8 @@
 import { db } from "@/db";
-import { vendorsTable } from "../schema";
-import { eq, inArray } from "drizzle-orm";
+import { packagesTable, vendorsTable } from "../schema";
+import { and, eq, getColumns, gte, inArray, lte, or, sql } from "drizzle-orm";
 import { VendorType } from "@/types/dataTypes";
+import { VendorMatchDTOType } from "@/types/dtoTypes";
 
 const getAllVendorsByServiceIdArray = async (serviceId: number[]) => {
   return await db
@@ -35,6 +36,48 @@ const insertVendor = async (data: VendorType) => {
   }
 };
 
-const findVendorsByEmbeddings = async (data: )
+const findVendorsByPreferences = async (preferencesList: VendorMatchDTOType[]) => {
+  const results = [];
+try{
+  console.log("Preferences List in findVendorsByPreferences:", preferencesList);
+for (const preference of preferencesList) {
+  const result = await db
+    .select({
+      vendor: getColumns(vendorsTable),
+      package: getColumns(packagesTable),
+    })
+    .from(vendorsTable)
+    .innerJoin(
+      packagesTable,
+      eq(vendorsTable.id, packagesTable.vendorId)
+    )
+    .where(
+      and(
+        eq(vendorsTable.serviceId, preference.serviceId),
+        lte(packagesTable.price, preference.budget),
+        sql`${vendorsTable.locationId} && ARRAY[${sql.join(preference.location, sql`, `)}]::integer[]`
+      )
+    )
+    .orderBy(
+      sql`${packagesTable.embedding} <=> ${preference.embedding}`
+    )
+    .limit(5);
 
-export { getAllVendorsByServiceIdArray, getVendorById, insertVendor };
+  results.push(...result);
+}
+console.log("Results from findVendorsByPreferences:", results);
+  return Array.from(results.reduce((acc, item) => 
+    {
+      if(!acc.has(item.vendor.id)){
+        acc.set(item.vendor.id, { vendor: item.vendor, packages: [] });
+      }
+      acc.get(item.vendor.id)?.packages.push(item.package);
+      return acc;
+    }, new Map()).values());
+    
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+export { getAllVendorsByServiceIdArray, getVendorById, insertVendor, findVendorsByPreferences };
