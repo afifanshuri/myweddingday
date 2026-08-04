@@ -36,48 +36,52 @@ const insertVendor = async (data: VendorType) => {
   }
 };
 
-const findVendorsByPreferences = async (preferencesList: VendorMatchDTOType[]) => {
+const findVendorsByPreferences = async (
+  preferencesList: VendorMatchDTOType[],
+) => {
   const results = [];
-try{
-  console.log("Preferences List in findVendorsByPreferences:", preferencesList);
-for (const preference of preferencesList) {
-  const result = await db
-    .select({
-      vendor: getColumns(vendorsTable),
-      package: getColumns(packagesTable),
-    })
-    .from(vendorsTable)
-    .innerJoin(
-      packagesTable,
-      eq(vendorsTable.id, packagesTable.vendorId)
-    )
-    .where(
-      and(
-        eq(vendorsTable.serviceId, preference.serviceId),
-        lte(packagesTable.price, preference.budget),
-        sql`${vendorsTable.locationId} && ARRAY[${sql.join(preference.location, sql`, `)}]::integer[]`
-      )
-    )
-    .orderBy(
-      sql`${packagesTable.embedding} <=> ${preference.embedding}`
-    )
-    .limit(5);
+  try {
+    for (const preference of preferencesList) {
+      const result = await db
+        .select({
+          vendor: getColumns(vendorsTable),
+          package: getColumns(packagesTable),
+        })
+        .from(vendorsTable)
+        .innerJoin(packagesTable, eq(vendorsTable.id, packagesTable.vendorId))
+        .where(
+          and(
+            eq(vendorsTable.serviceId, preference.serviceId),
+            lte(packagesTable.price, preference.budget),
+            sql`${vendorsTable.locationId} && ARRAY[${sql.join(preference.location, sql`, `)}]::integer[]`,
+          ),
+        )
+        .orderBy(sql`${packagesTable.embedding} <=> ${preference.embedding}`)
+        .limit(5);
 
-  results.push(...result);
-}
-console.log("Results from findVendorsByPreferences:", results);
-  return Array.from(results.reduce((acc, item) => 
-    {
-      if(!acc.has(item.vendor.id)){
-        acc.set(item.vendor.id, { vendor: item.vendor, packages: [] });
-      }
-      acc.get(item.vendor.id)?.packages.push(item.package);
-      return acc;
-    }, new Map()).values());
-    
+      results.push(...result);
+    }
+    const array = Array.from(
+      results
+        .reduce((acc, item) => {
+          if (!acc.has(item.vendor.id)) {
+            acc.set(item.vendor.id, { vendor: item.vendor, packages: [] });
+          }
+          acc.get(item.vendor.id)?.packages.push(item.package);
+          return acc;
+        }, new Map())
+        .values(),
+    );
+    console.log("Vendors retrieved from DB:", array);
+    return array;
   } catch (e) {
     console.error(e);
   }
-}
+};
 
-export { getAllVendorsByServiceIdArray, getVendorById, insertVendor, findVendorsByPreferences };
+export {
+  getAllVendorsByServiceIdArray,
+  getVendorById,
+  insertVendor,
+  findVendorsByPreferences,
+};
