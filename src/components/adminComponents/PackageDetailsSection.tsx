@@ -15,9 +15,13 @@ import { useAdminStore } from "@/app/store/adminStore";
 export default function PackageDetailSection({
   pkg,
   index,
+  pkgError,
+  onFieldChange,
 }: {
   pkg: PackageType;
   index: number;
+  pkgError?: { name?: string; price?: string; details?: string } | null;
+  onFieldChange?: (field: "name" | "price" | "details") => void;
 }) {
   const [displayPackageForm, setDisplayPackageForm] = useState(true);
   const deletePackageFromStore = useAdminStore((state) => state.deletePackage);
@@ -64,9 +68,13 @@ export default function PackageDetailSection({
             className="w-full"
             onChange={(e) => {
               updatePackageToStore(pkg.id, { name: e.target.value });
+              onFieldChange?.("name");
             }}
             value={pkg.name ?? "Package" + pkg.id}
           ></CustomInput>
+          {pkgError?.name ? (
+            <p className="text-red-500 text-sm mt-1">{pkgError.name}</p>
+          ) : null}
         </div>
         <div>
           <p>Package Price</p>
@@ -76,9 +84,13 @@ export default function PackageDetailSection({
             className="w-1/4"
             onChange={(e) => {
               updatePackageToStore(pkg.id, { price: Number(e.target.value) });
+              onFieldChange?.("price");
             }}
             value={pkg.price ?? 0}
           ></CustomInput>
+          {pkgError?.price ? (
+            <p className="text-red-500 text-sm mt-1">{pkgError.price}</p>
+          ) : null}
         </div>
         <div>
           <p>Package Description</p>
@@ -86,9 +98,13 @@ export default function PackageDetailSection({
             className="w-full"
             onChange={(e) => {
               updatePackageToStore(pkg.id, { details: e.target.value });
+              onFieldChange?.("details");
             }}
             value={pkg.details ?? ""}
           ></CustomTextarea>
+          {pkgError?.details ? (
+            <p className="text-red-500 text-sm mt-1">{pkgError.details}</p>
+          ) : null}
         </div>
         <div className="flex flex-col flex-wrap gap-2">
           <p>Tags</p>
