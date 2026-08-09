@@ -18,46 +18,27 @@ import {
 
 export const ServiceSelector = ({
   servicesList,
+  errors,
+  onFieldChange,
 }: {
   servicesList: ServiceType[];
+  errors?: {
+    services?: string;
+  };
+  onFieldChange: () => void;
 }) => {
-  const router = useRouter();
-  const [clickedNext, setClickedNext] = useState(false);
-  const allServices = useServiceStore((state) => state.selectedService);
-  const addAllServicesToStore = useServiceStore(
-    (state) => state.addAllSelectedService,
+  const existingServicesFromStore = usePreferenceStore(
+    (state) => state.weddingDetails.services,
   );
-  const deleteAllServicesFromStore = useServiceStore(
-    (state) => state.deleteAllService,
+  const updateWeddingDetails = usePreferenceStore(
+    (state) => state.updateWeddingDetails,
   );
-  const deleteAllPreferenceData = usePreferenceStore(
-    (state) => state.deleteAllPreferenceData,
-  );
-
-  const [selectedServices, setSelectedServices] =
-    useState<number[]>(allServices);
 
   const toggleClickService = (id: number) => {
-    if (selectedServices.includes(id)) {
-      setSelectedServices(selectedServices.filter((s) => s != id));
-    } else {
-      setSelectedServices([...selectedServices, id]);
-    }
-  };
-
-  const onSubmitChoice = () => {
-    console.log(selectedServices);
-    addAllServicesToStore(selectedServices);
-    setClickedNext(true);
-    if (selectedServices.length !== 0) {
-      router.push(`/weddingplan/${selectedServices[0]}`);
-    }
-  };
-
-  const onGoBack = () => {
-    deleteAllServicesFromStore();
-    deleteAllPreferenceData();
-    router.push("/");
+    const newServices = existingServicesFromStore.includes(id)
+      ? existingServicesFromStore.filter((s) => s !== id)
+      : [...existingServicesFromStore, id];
+    updateWeddingDetails({ services: newServices });
   };
 
   const retrieveServiceIcon = (id: number) => {
@@ -88,20 +69,20 @@ export const ServiceSelector = ({
           return (
             <div
               key={index}
-              className={`flex flex-col border-2 p-4 xl:p-6 gap-2 rounded-lg  hover:cursor-pointer transition ${selectedServices.includes(s.id) ? "bg-(--positive) border-(--positive-secondary)" : "bg-auto border-(--secondary) bg-white hover:bg-(--secondary) hover:border-(--tertiary)"}`}
+              className={`flex flex-col border-2 p-4 xl:p-6 gap-2 rounded-lg  hover:cursor-pointer transition ${existingServicesFromStore.includes(s.id) ? "bg-(--positive) border-(--positive-secondary)" : "bg-auto border-(--secondary) bg-white hover:bg-(--secondary) hover:border-(--tertiary)"}`}
               onClick={() => {
-                setClickedNext(false);
                 toggleClickService(s.id);
+                onFieldChange();
               }}
             >
               <div
-                className={`brightness-70 flex flex-row text-[24px] xl:text-[30px] ${selectedServices.includes(s.id) ? "text-(--positive-secondary)" : "text-(--tertiary)"}`}
+                className={`brightness-70 flex flex-row text-[24px] xl:text-[30px] ${existingServicesFromStore.includes(s.id) ? "text-(--positive-secondary)" : "text-(--tertiary)"}`}
               >
                 <div className="flex-2 flex-wrap">
                   {retrieveServiceIcon(s.id)}
                 </div>
                 <BsCheck
-                  className={`justify-end ${selectedServices.includes(s.id) ? "" : "hidden"}`}
+                  className={`justify-end ${existingServicesFromStore.includes(s.id) ? "" : "hidden"}`}
                 />
               </div>
 
@@ -112,15 +93,11 @@ export const ServiceSelector = ({
           );
         })}
       </div>
-      <p
-        className={`${selectedServices.length === 0 && clickedNext ? "flex" : "hidden"} text-red-600`}
-      >
-        Please choose a service
+      <p className={`${errors?.services ? "flex" : "hidden"} text-red-600`}>
+        {errors?.services
+          ? errors.services
+          : "Please select at least one service"}
       </p>
-      <div className="flex justify-end gap-2">
-        <MainButton onClick={() => onGoBack()}>Back</MainButton>
-        <MainButton onClick={onSubmitChoice}>Continue</MainButton>
-      </div>
     </div>
   );
 };

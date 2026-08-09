@@ -3,6 +3,14 @@ type WeddingDetailType = {
   date: Date | null;
   coupleName: string;
   pax: number;
+  services: number[];
+};
+
+type WeddingDetailsFormErrors = {
+  coupleName?: string;
+  date?: string;
+  pax?: string;
+  locations?: string;
 };
 
 type LocationType = {
@@ -43,6 +51,7 @@ type ClassnameType = {
 
 export type {
   WeddingDetailType,
+  WeddingDetailsFormErrors,
   VendorType,
   ServiceType,
   PackageType,

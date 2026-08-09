@@ -1,4 +1,5 @@
 "use client";
+import { usePreferenceStore } from "@/app/store/preferenceStore";
 import { useServiceStore } from "@/app/store/serviceStore";
 import { ClassnameType } from "@/types/dataTypes";
 import { usePathname } from "next/navigation";
@@ -11,7 +12,9 @@ const ProgressBar = ({
   className: string;
   currentPath: number;
 }) => {
-  const selectedServices = useServiceStore((state) => state.selectedService);
+  const selectedServices = usePreferenceStore(
+    (state) => state.weddingDetails.services,
+  );
   const totalSelectedServices = selectedServices.length;
   const currentIndex = selectedServices.findIndex((i) => i === currentPath);
   const index = currentIndex >= 0 ? currentIndex + 1 : 0;

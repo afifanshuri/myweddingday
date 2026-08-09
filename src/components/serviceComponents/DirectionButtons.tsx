@@ -10,7 +10,9 @@ import { useRouter } from "next/navigation";
 export default function DirectionButtons() {
   const router = useRouter();
   const currentPath = usePathname();
-  const serviceChoiceList = useServiceStore((state) => state.selectedService);
+  const serviceChoiceList = usePreferenceStore(
+    (state) => state.weddingDetails.services,
+  );
   const currentServicePlanPage = useServiceStore(
     (state) => state.currentActiveServicePage,
   );
@@ -20,28 +22,30 @@ export default function DirectionButtons() {
     const currIndex = serviceChoiceList.findIndex(
       (e) => e === currentServicePlanPage,
     );
-    const nextPath = direction === "back"
-      ? currentPath === "/weddingplan"
-        ? "/"
-        : currIndex - 1 < 0
-          ? mainPage
-          : `${mainPage}/${serviceChoiceList[currIndex - 1]}`
-      : currIndex + 1 > serviceChoiceList.length - 1
-        ? matchPage
-        : `${mainPage}/${serviceChoiceList[currIndex + 1]}`;
-        console.log("nextPath", nextPath);
-    if(nextPath === matchPage) {
-      const preferencesList:BasicPreferenceType[] = [];
-      for(const id of serviceChoiceList) {
-        const preference = usePreferenceStore.getState().preferencesList.find((p) => p.serviceId == id);
-        if(preference) {
+    const nextPath =
+      direction === "back"
+        ? currentPath === "/weddingplan"
+          ? "/"
+          : currIndex - 1 < 0
+            ? mainPage
+            : `${mainPage}/${serviceChoiceList[currIndex - 1]}`
+        : currIndex + 1 > serviceChoiceList.length - 1
+          ? matchPage
+          : `${mainPage}/${serviceChoiceList[currIndex + 1]}`;
+    console.log("nextPath", nextPath);
+    if (nextPath === matchPage) {
+      const preferencesList: BasicPreferenceType[] = [];
+      for (const id of serviceChoiceList) {
+        const preference = usePreferenceStore
+          .getState()
+          .preferencesList.find((p) => p.serviceId == id);
+        if (preference) {
           preferencesList.push(preference);
         }
       }
       savePreferencesDetails(preferencesList);
     }
     router.push(nextPath);
-
   };
   return (
     <div className="flex flex-row gap-4 justify-end">
