@@ -36,6 +36,7 @@ export const useAdminStore = create<AdminStore>((set) => ({
         details: null,
         vendorId: null,
         tags: [],
+        filters: {},
       };
 
       return {
@@ -46,7 +47,6 @@ export const useAdminStore = create<AdminStore>((set) => ({
   deletePackage: (id: number) => {
     set((state) => {
       const newPkgList = state.packageList.filter((p) => p.id !== id);
-
       return { packageList: newPkgList };
     });
   },

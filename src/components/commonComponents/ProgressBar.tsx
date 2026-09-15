@@ -1,9 +1,5 @@
 "use client";
-import { usePreferenceStore } from "@/app/store/preferenceStore";
-import { useServiceStore } from "@/app/store/serviceStore";
-import { ClassnameType } from "@/types/dataTypes";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePreferenceStore } from "@/store/preferenceStore";
 
 const ProgressBar = ({
   className = "",
@@ -19,7 +15,6 @@ const ProgressBar = ({
   const currentIndex = selectedServices.findIndex((i) => i === currentPath);
   const index = currentIndex >= 0 ? currentIndex + 1 : 0;
   const progressPercentage = (index / totalSelectedServices) * 100;
-  console.log(progressPercentage);
 
   return (
     <div className={className}>

@@ -1,4 +1,4 @@
-import { SERVICE_ID } from "@/constants/commonConstants";
+import { SERVICE_ID } from "@/config/serviceCriteria";
 import {
   GiAmpleDress,
   GiFamilyHouse,

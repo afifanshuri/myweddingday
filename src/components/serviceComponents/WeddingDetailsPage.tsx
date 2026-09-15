@@ -1,9 +1,8 @@
 "use client";
-import { usePreferenceStore } from "@/app/store/preferenceStore";
+import { usePreferenceStore } from "@/store/preferenceStore";
 import CustomInput from "@/components/commonComponents/CustomInput";
 import MainButton from "@/components/commonComponents/MainButton";
 import { ServiceSelector } from "@/components/serviceComponents/ServiceSelector";
-import WeddingDetailsPageButtons from "@/components/serviceComponents/WeddingDetailsPageButtons";
 import { validateWeddingDetails } from "@/services/fieldValidationService";
 import {
   LocationType,

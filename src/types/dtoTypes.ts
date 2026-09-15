@@ -7,29 +7,24 @@ type PakcageDTOType = {
   vendorId: number | null;
   filePath?: string;
   vendorName: string;
-  embedding?: number[] | null;
+  filters: Record<string, any>;
   tags: string[];
 };
-
-type PreferenceDTOType = {
-  serviceId: number;
-  budget: number;
-  description: string;
-  embedding: number[] | null;
-}
 
 type VendorMatchDTOType = {
   serviceId: number;
   location: number[];
   budget: number;
-  embedding: number[] | null;
-}
+  criteria: Record<string, any>;
+};
 
 type VendorAndPackagesMatchDTOType = {
   vendor: VendorType;
   packages: PackageType[];
 };
 
-
-
-export type { PakcageDTOType, VendorMatchDTOType, PreferenceDTOType, VendorAndPackagesMatchDTOType };
+export type {
+  PakcageDTOType,
+  VendorMatchDTOType,
+  VendorAndPackagesMatchDTOType,
+};

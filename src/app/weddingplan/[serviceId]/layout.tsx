@@ -1,7 +1,3 @@
-import { ProgressBar } from "@/components/commonComponents/ProgressBar";
-import { BudgetSlider } from "@/components/serviceComponents/BudgetSlider";
-import DirectionButtons from "@/components/serviceComponents/DirectionButtons";
-
 export default function VendorsLayout({
   children,
 }: Readonly<{

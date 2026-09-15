@@ -3,6 +3,7 @@
 type CustomDialogProps = {
   open: boolean;
   onClose: () => void;
+  onConfirm?: () => void;
   title: string;
   children: React.ReactNode;
 };
@@ -10,6 +11,7 @@ type CustomDialogProps = {
 export default function CustomDialog({
   open,
   onClose,
+  onConfirm,
   title,
   children,
 }: CustomDialogProps) {
@@ -36,7 +38,13 @@ export default function CustomDialog({
             Cancel
           </button>
 
-          <button className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+          <button
+            onClick={() => {
+              if (onConfirm) onConfirm();
+              onClose();
+            }}
+            className="rounded-md bg-(--positive) px-4 py-2 text-white hover:brightness-90"
+          >
             Confirm
           </button>
         </div>

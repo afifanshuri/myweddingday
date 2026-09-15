@@ -1,4 +1,3 @@
-import { useServiceStore } from "@/app/store/serviceStore";
 import { ServiceType } from "@/types/dataTypes";
 
 const retrieveServicesListByIds = async (

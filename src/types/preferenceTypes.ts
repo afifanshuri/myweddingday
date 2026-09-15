@@ -1,12 +1,8 @@
 type BasicPreferenceType = {
   serviceId: number;
   budget: number;
-  style: string[];
-  styleOptions: string[];
   description: string;
-  embedding: number[] | null;
+  criteria: Record<string, any>;
 };
 
-export type {
-  BasicPreferenceType,
-};
+export type { BasicPreferenceType };

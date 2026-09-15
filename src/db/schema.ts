@@ -2,26 +2,16 @@ import {
   integer,
   pgTable,
   varchar,
-  vector,
-  bigint,
   numeric,
   timestamp,
+  jsonb,
 } from "drizzle-orm/pg-core";
-import { number } from "motion/react";
 
 export const timestamps = {
   updated_at: timestamp(),
   created_at: timestamp().defaultNow().notNull(),
   deleted_at: timestamp(),
 };
-
-const usersTable = pgTable("users", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  createdAt: timestamp().defaultNow().notNull(),
-  name: varchar({ length: 255 }).notNull(),
-  age: integer().notNull(),
-  email: varchar({ length: 255 }).notNull().unique(),
-});
 
 const servicesTable = pgTable("servicesTable", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -42,10 +32,12 @@ const vendorsTable = pgTable("vendorsTable", {
   serviceId: integer()
     .notNull()
     .references(() => servicesTable.id),
-  locationId: integer().array()
-    .notNull(),
+  locationId: integer().array().notNull(),
   detail: varchar({ length: 500 }),
   contact: varchar({ length: 11 }),
+  instagram: varchar({ length: 200 }),
+  tiktok: varchar({ length: 200 }),
+  facebook: varchar({ length: 200 }),
   filePath: varchar({ length: 255 }),
   rating: numeric({ mode: "number" }),
 });
@@ -57,14 +49,9 @@ const packagesTable = pgTable("packagesTable", {
   price: numeric({ mode: "number" }).notNull(),
   filePath: varchar({ length: 255 }),
   details: varchar({ length: 1000 }),
+  duration: numeric({ mode: "number" }),
   vendorId: integer().references(() => vendorsTable.id),
-  embedding: vector("embedding", { dimensions: 3072 }),
+  filters: jsonb("filters").default("{}"),
 });
 
-export {
-  usersTable,
-  servicesTable,
-  locationTable,
-  vendorsTable,
-  packagesTable,
-};
+export { servicesTable, locationTable, vendorsTable, packagesTable };

@@ -1,12 +1,8 @@
 "use client";
-import { usePreferenceStore } from "@/app/store/preferenceStore";
-import { useServiceStore } from "@/app/store/serviceStore";
+import { usePreferenceStore } from "@/store/preferenceStore";
 import { ServiceType } from "@/types/dataTypes";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import MainButton from "../commonComponents/MainButton";
 import { BsCheck } from "react-icons/bs";
-import { SERVICE_ID } from "@/constants/commonConstants";
+import { SERVICE_ID } from "@/config/serviceCriteria";
 import {
   GiAmpleDress,
   GiFamilyHouse,

@@ -1,14 +1,15 @@
 "use client";
-import { useServiceStore } from "@/app/store/serviceStore";
+import { useServiceStore } from "@/store/serviceStore";
+import { usePreferenceStore } from "@/store/preferenceStore";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
 import { ProgressBar } from "@/components/commonComponents/ProgressBar";
 import { BudgetSlider } from "@/components/serviceComponents/BudgetSlider";
 import ServiceTitleSection from "@/components/serviceComponents/ServiceTitleSection";
 import DirectionButtons from "@/components/serviceComponents/DirectionButtons";
-import StylesSelector from "@/components/serviceComponents/StylesSelector";
-import CustomTextarea from "@/components/commonComponents/CustomTextarea";
 import PromptTextbox from "@/components/serviceComponents/PromptTextbox";
+import FieldRenderer from "@/components/serviceComponents/FieldRenderer";
+import { SERVICE_CRITERIA } from "@/config/serviceCriteria";
 
 export default function ServicePage() {
   const params = useParams();
@@ -16,10 +17,17 @@ export default function ServicePage() {
   const changeCurrentActivePage = useServiceStore(
     (state) => state.changeCurrentActiveServicePage,
   );
+  
+  const preferencesList = usePreferenceStore((state) => state.preferencesList);
+  const criteria = preferencesList.find((p) => p.serviceId === currentServiceId)?.criteria ?? {};
+
+  const updateCriteria = usePreferenceStore((state) => state.updateCriteria);
+
+  const fields = SERVICE_CRITERIA[currentServiceId] ?? [];
 
   useEffect(() => {
     changeCurrentActivePage(currentServiceId);
-  }, []);
+  }, [currentServiceId, changeCurrentActivePage]);
 
   return (
     <div>
@@ -35,12 +43,17 @@ export default function ServicePage() {
         className="mb-10"
         currentPath={currentServiceId}
       ></BudgetSlider>
-      <div className="flex flex-col gap-10">
-        <div>
-          <p>Styles</p>
-          <StylesSelector currentPath={currentServiceId} />
-        </div>
-        <PromptTextbox currentPath={currentServiceId}/>
+
+      <div className="flex flex-col gap-6">
+        {fields.map((field) => (
+          <FieldRenderer
+            key={field.key}
+            field={field}
+            value={criteria[field.key]}
+            onChange={(key, value) => updateCriteria(currentServiceId, key, value)}
+          />
+        ))}
+        <PromptTextbox currentPath={currentServiceId} />
         <DirectionButtons />
       </div>
     </div>

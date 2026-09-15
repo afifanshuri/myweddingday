@@ -1,9 +1,6 @@
-import { SERVICE_ID } from "@/constants/commonConstants";
+import { SERVICE_ID } from "@/config/serviceCriteria";
 import CustomInput from "../commonComponents/CustomInput";
-import {
-  PreferenceStore,
-  usePreferenceStore,
-} from "@/app/store/preferenceStore";
+import { usePreferenceStore } from "@/store/preferenceStore";
 
 export const BudgetSlider = ({
   currentPath,
@@ -12,9 +9,15 @@ export const BudgetSlider = ({
   currentPath: number;
   className: string;
 }) => {
-  const budget = usePreferenceStore((state) => state.preferencesList.find((preference) => preference.serviceId === currentPath)?.budget);
-  const updateBudget = usePreferenceStore((state) => state.updatePreferenceDetails);
-  
+  const budget = usePreferenceStore((state) =>
+    state.preferencesList.find(
+      (preference) => preference.serviceId === currentPath,
+    )?.budget,
+  );
+  const updateBudget = usePreferenceStore(
+    (state) => state.updatePreferenceDetails,
+  );
+
   return (
     <div
       className={`rounded-lg p-4 ${className} bg-white border border-(--positive) text-(--positive-tertiary) shadow-sm`}
@@ -27,9 +30,17 @@ export const BudgetSlider = ({
             defaultValue={budget}
             type="number"
             className="w-1/3"
-            onChange={(e) => updateBudget(currentPath, {budget: Number(e.target.value)})}
+            onChange={(e) =>
+              updateBudget(currentPath, {
+                budget: Number(e.target.value),
+              })
+            }
           ></CustomInput>
-          <p className={`${currentPath == SERVICE_ID.CATERING ? "flex" : "hidden"}`}>per pax</p>
+          <p
+            className={`${currentPath == SERVICE_ID.CATERING ? "flex" : "hidden"}`}
+          >
+            per pax
+          </p>
         </div>
       </div>
     </div>

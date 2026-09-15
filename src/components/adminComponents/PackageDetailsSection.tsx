@@ -10,7 +10,9 @@ import CustomInput from "../commonComponents/CustomInput";
 import CustomTextarea from "../commonComponents/CustomTextarea";
 import { useState } from "react";
 import { PackageType } from "@/types/dataTypes";
-import { useAdminStore } from "@/app/store/adminStore";
+import { useAdminStore } from "@/store/adminStore";
+import FieldRenderer from "../serviceComponents/FieldRenderer";
+import { SERVICE_CRITERIA } from "@/config/serviceCriteria";
 
 export default function PackageDetailSection({
   pkg,
@@ -26,10 +28,12 @@ export default function PackageDetailSection({
   const [displayPackageForm, setDisplayPackageForm] = useState(true);
   const deletePackageFromStore = useAdminStore((state) => state.deletePackage);
   const updatePackageToStore = useAdminStore((state) => state.updatePackage);
+  const vendorServiceId = useAdminStore((state) => state.vendor.serviceId);
   const [currentTag, setCurrentTag] = useState<string>("");
 
+  const fields = SERVICE_CRITERIA[vendorServiceId] ?? [];
+
   function onDeletePackage(id: number) {
-    console.log("to delete" + id);
     deletePackageFromStore(id);
   }
 
@@ -106,6 +110,26 @@ export default function PackageDetailSection({
             <p className="text-red-500 text-sm mt-1">{pkgError.details}</p>
           ) : null}
         </div>
+
+        {/* Config-driven filter fields based on vendor's service */}
+        {fields.length > 0 && (
+          <div className="flex flex-col gap-4 border-t border-(--tertiary) pt-4">
+            <p className="font-semibold text-sm opacity-70">Service Filters</p>
+            {fields.map((field) => (
+              <FieldRenderer
+                key={field.key}
+                field={field}
+                value={pkg.filters?.[field.key]}
+                onChange={(key, value) => {
+                  updatePackageToStore(pkg.id, {
+                    filters: { ...(pkg.filters ?? {}), [key]: value },
+                  });
+                }}
+              />
+            ))}
+          </div>
+        )}
+
         <div className="flex flex-col flex-wrap gap-2">
           <p>Tags</p>
           <div className="flex flex-row gap-1 text-[10px]">
@@ -148,7 +172,6 @@ export default function PackageDetailSection({
             type="file"
             className="cursor-pointer border border-(--fourth) rounded-lg w-3/4 xl:w-full"
             onChange={(e) => {
-              console.log(e.target.files?.[0]);
               updatePackageToStore(pkg.id, {
                 file: e.target.files?.[0],
               });

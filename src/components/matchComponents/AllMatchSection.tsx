@@ -1,7 +1,6 @@
 "use client";
-import { usePreferenceStore } from "@/app/store/preferenceStore";
-import { useServiceStore } from "@/app/store/serviceStore";
-import { retrieveServicesListByIds } from "@/services/serviceService";
+import { usePreferenceStore } from "@/store/preferenceStore";
+import { useServiceStore } from "@/store/serviceStore";
 import { retrieveVendorsByPreference } from "@/services/vendorService";
 import { PackageType, ServiceType, VendorType } from "@/types/dataTypes";
 import { useEffect, useState } from "react";
@@ -11,21 +10,25 @@ export default function AllMatchSection() {
     [],
   );
   const [vendorsList, setVendorsList] = useState<VendorType[]>([]);
-  const [servicesList, setservicesList] = useState<ServiceType[]>([]);
+  const [servicesList, setServicesList] = useState<ServiceType[]>([]);
   const [activeServiceTab, setActiveServiceTab] = useState<number | null>(null);
-  const selectedServiceIds = useServiceStore((state) => state.selectedService);
+  const selectedServiceIds = usePreferenceStore(
+    (state) => state.weddingDetails.services,
+  );
   const selectedLocations = usePreferenceStore(
     (state) => state.weddingDetails.locations,
   );
 
+  const initServices = useServiceStore((state) => state.initServices);
+  const servicesFromStore = useServiceStore((state) => state.service);
+
   useEffect(() => {
     const initData = async () => {
-      if (!selectedServiceIds) {
+      if (!selectedServiceIds || selectedServiceIds.length === 0) {
         return;
       }
-      const servicesListFromDB =
-        await retrieveServicesListByIds(selectedServiceIds);
-      setservicesList(servicesListFromDB);
+
+      await initServices();
 
       const preferencesList = usePreferenceStore
         .getState()
@@ -33,27 +36,30 @@ export default function AllMatchSection() {
         .map((p) => ({
           serviceId: p.serviceId,
           budget: p.budget,
-          embedding: p.embedding,
+          criteria: p.criteria,
           location: selectedLocations,
         }));
       const result: { vendor: VendorType; packages: PackageType[] }[] =
         await retrieveVendorsByPreference(preferencesList);
-      console.log("Vendors retrieved from API:", result);
       setVendorsList([...result.map((r) => r.vendor)]);
     };
     initData();
   }, []);
 
   useEffect(() => {
-    const fetchVendors = async () => {
-      if (activeServiceTab !== null) {
-        setVendorsInActiveTab(
-          vendorsList.filter((v) => v.serviceId == activeServiceTab),
-        );
-      }
-    };
-    fetchVendors();
-  }, [activeServiceTab]);
+    const filtered = servicesFromStore.filter((s) =>
+      selectedServiceIds.includes(s.id),
+    );
+    setServicesList(filtered);
+  }, [servicesFromStore, selectedServiceIds]);
+
+  useEffect(() => {
+    if (activeServiceTab !== null) {
+      setVendorsInActiveTab(
+        vendorsList.filter((v) => v.serviceId == activeServiceTab),
+      );
+    }
+  }, [activeServiceTab, vendorsList]);
 
   return (
     <div className="bg-white rounded-lg p-4 border border-(--secondary)">
@@ -71,7 +77,7 @@ export default function AllMatchSection() {
                 return (
                   <div
                     key={index}
-                    className="border rounded-lg p-1"
+                    className="border rounded-lg p-1 cursor-pointer"
                     onClick={() => {
                       setActiveServiceTab(service.id);
                     }}

@@ -37,6 +37,7 @@ type PackageType = {
   details: string | null;
   vendorId: number | null;
   tags: string[];
+  filters: Record<string, any>;
 };
 
 type ServiceType = {

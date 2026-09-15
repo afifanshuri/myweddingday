@@ -3,9 +3,11 @@ import { create } from "zustand";
 
 type ServiceStore = {
   service: ServiceType[];
+  isLoaded: boolean;
   selectedService: number[];
   currentActiveServicePage: number;
   currentActiveServiceTab: number;
+  initServices: () => Promise<void>;
   addAllService: (services: ServiceType[]) => void;
   addSelectedService: (id: number) => void;
   removeSelectedService: (id: number) => void;
@@ -15,14 +17,23 @@ type ServiceStore = {
   deleteAllService: () => void;
 };
 
-export const useServiceStore = create<ServiceStore>((set) => ({
+export const useServiceStore = create<ServiceStore>((set, get) => ({
   service: [],
+  isLoaded: false,
   selectedService: [],
   currentActiveServicePage: 0,
   currentActiveServiceTab: 0,
+
+  initServices: async () => {
+    if (get().isLoaded) return;
+    const services = await fetch("/api/services").then((r) => r.json());
+    set({ service: services, isLoaded: true });
+  },
+
   addAllService: (services: ServiceType[]) => {
     set(() => ({
       service: services,
+      isLoaded: true,
     }));
   },
   addSelectedService: (id: number) => {

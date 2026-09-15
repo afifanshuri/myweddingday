@@ -1,10 +1,8 @@
 "use client";
-import { useServiceStore } from "@/app/store/serviceStore";
+import { useServiceStore } from "@/store/serviceStore";
 import { usePathname } from "next/navigation";
 import MainButton from "../commonComponents/MainButton";
-import { savePreferencesDetails } from "@/services/preferencesService";
-import { usePreferenceStore } from "@/app/store/preferenceStore";
-import { BasicPreferenceType } from "@/types/preferenceTypes";
+import { usePreferenceStore } from "@/store/preferenceStore";
 import { useRouter } from "next/navigation";
 
 export default function DirectionButtons() {
@@ -32,19 +30,6 @@ export default function DirectionButtons() {
         : currIndex + 1 > serviceChoiceList.length - 1
           ? matchPage
           : `${mainPage}/${serviceChoiceList[currIndex + 1]}`;
-    console.log("nextPath", nextPath);
-    if (nextPath === matchPage) {
-      const preferencesList: BasicPreferenceType[] = [];
-      for (const id of serviceChoiceList) {
-        const preference = usePreferenceStore
-          .getState()
-          .preferencesList.find((p) => p.serviceId == id);
-        if (preference) {
-          preferencesList.push(preference);
-        }
-      }
-      savePreferencesDetails(preferencesList);
-    }
     router.push(nextPath);
   };
   return (

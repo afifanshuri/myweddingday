@@ -1,8 +1,8 @@
 "use client";
-import { useServiceStore } from "@/app/store/serviceStore";
+import { useServiceStore } from "@/store/serviceStore";
 import MainButton from "../commonComponents/MainButton";
 import { useRouter } from "next/navigation";
-import { usePreferenceStore } from "@/app/store/preferenceStore";
+import { usePreferenceStore } from "@/store/preferenceStore";
 import { validateWeddingDetails } from "@/services/fieldValidationService";
 
 export default function WeddingDetailsPageButtons(onSubmit: () => boolean) {

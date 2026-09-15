@@ -2,9 +2,11 @@
 import PackageDetailSection from "@/components/adminComponents/PackageDetailsSection";
 import CustomInput from "@/components/commonComponents/CustomInput";
 import CustomTextarea from "@/components/commonComponents/CustomTextarea";
+import CustomDialog from "@/components/commonComponents/CustomDialog";
 import { LocationType, ServiceType } from "@/types/dataTypes";
 import { useEffect, useState } from "react";
-import { useAdminStore } from "../store/adminStore";
+import { useAdminStore } from "@/store/adminStore";
+import { useServiceStore } from "@/store/serviceStore";
 import MainButton from "@/components/commonComponents/MainButton";
 import { FaStar } from "react-icons/fa";
 
@@ -19,14 +21,17 @@ type FieldErrors = {
 };
 
 export default function AdminPage() {
-  const [servicesList, setServicesList] = useState<ServiceType[]>([]);
   const [locationList, setLocationList] = useState<LocationType[]>([]);
   const [rating, setRating] = useState(0);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const vendorFromStore = useAdminStore((state) => state.vendor);
   const packageListFromStore = useAdminStore((state) => state.packageList);
   const addPackageToStore = useAdminStore((state) => state.addPackage);
   const updateVendorDataToStore = useAdminStore((state) => state.updateVendor);
+
+  const initServices = useServiceStore((state) => state.initServices);
+  const servicesList = useServiceStore((state) => state.service);
 
   const [errors, setErrors] = useState<FieldErrors>({});
 
@@ -36,13 +41,10 @@ export default function AdminPage() {
         res.json(),
       );
       setLocationList(locationsList);
-      const servicesList = await fetch("/api/services").then((res) =>
-        res.json(),
-      );
-      setServicesList(servicesList);
+      await initServices();
     }
     populateData();
-  }, []);
+  }, [initServices]);
 
   function toggleSelectLocation(id: number) {
     if (id) {
@@ -126,7 +128,6 @@ export default function AdminPage() {
       });
     }
 
-    // Clean up empty package error array if none
     if (
       newErrors.packages &&
       newErrors.packages.every((p) => Object.keys(p).length === 0)
@@ -139,11 +140,13 @@ export default function AdminPage() {
     return Object.keys(newErrors).length === 0;
   }
 
-  async function saveVendor() {
+  function handleSaveClick() {
     const ok = validateFields();
-    if (!ok) {
-      return;
-    }
+    if (!ok) return;
+    setShowConfirm(true);
+  }
+
+  async function saveVendor() {
     try {
       const response = await fetch("/api/vendors", {
         method: "POST",
@@ -154,7 +157,6 @@ export default function AdminPage() {
       });
 
       if (response.ok) {
-        console.log("In The After Response From Vendor API (page.tsx)");
         const data = await response.json();
         updateVendorDataToStore({ id: data.id });
         savePackages(data.id);
@@ -174,15 +176,11 @@ export default function AdminPage() {
         formData.append(`file_${index}`, pkg.file);
       }
     });
-    console.info("In Save Vendor Method (page.tsx)");
     try {
-      const response = await fetch("/api/packages", {
+      await fetch("/api/packages", {
         method: "POST",
         body: formData,
       });
-
-      if (response.ok) {
-      }
     } catch (e) {
       console.error(e);
     }
@@ -240,7 +238,7 @@ export default function AdminPage() {
         <div>
           <p>Locations Covered</p>
           <div className="flex flex-row gap-2 text-[10px]">
-            {locationList.map((l, index) => {
+            {locationList.map((l) => {
               return (
                 <div
                   key={l.id}
@@ -321,7 +319,6 @@ export default function AdminPage() {
       <div className="flex flex-col border border-(--secondary) bg-white p-4 rounded-lg gap-4 min-h-1/2 min-w-full xl:min-w-1/4">
         <p className="libre-font text-[20px] mb-6">Package Details</p>
         {packageListFromStore.map((p, index) => {
-          console.log("current pkg: " + p.name);
           return (
             <PackageDetailSection
               key={p.id}
@@ -361,9 +358,18 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <MainButton className="min-w-1/4" onClick={() => saveVendor()}>
+      <MainButton className="min-w-1/4" onClick={() => handleSaveClick()}>
         Add Vendor
       </MainButton>
+
+      <CustomDialog
+        open={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={() => saveVendor()}
+        title="Confirm Save"
+      >
+        <p>Are you sure you want to save this vendor?</p>
+      </CustomDialog>
     </div>
   );
 }
