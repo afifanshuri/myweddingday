@@ -14,7 +14,6 @@ export type PreferenceStore = {
     id: number,
     data: Partial<BasicPreferenceType>,
   ) => void;
-  updateCriteria: (serviceId: number, key: string, value: any) => void;
   updateWeddingDetails: (
     data: Partial<PreferenceStore["weddingDetails"]>,
   ) => void;
@@ -38,41 +37,19 @@ export const usePreferenceStore = create<PreferenceStore>((set, get) => ({
         return {
           preferencesList: [
             ...state.preferencesList,
-            { serviceId: id, budget: 0, description: "", criteria: {}, ...data },
-          ],
-        };
-      }
-      return {
-        preferencesList: state.preferencesList.map((p) =>
-          p.serviceId === id ? { ...p, ...data } : p,
-        ),
-      };
-    });
-  },
-
-  updateCriteria: (serviceId, key, value) => {
-    set((state) => {
-      const exists = state.preferencesList.some(
-        (p) => p.serviceId === serviceId,
-      );
-      if (!exists) {
-        return {
-          preferencesList: [
-            ...state.preferencesList,
             {
-              serviceId,
+              serviceId: id,
               budget: 0,
               description: "",
-              criteria: { [key]: value },
+              criteria: {},
+              ...data,
             },
           ],
         };
       }
       return {
         preferencesList: state.preferencesList.map((p) =>
-          p.serviceId === serviceId
-            ? { ...p, criteria: { ...p.criteria, [key]: value } }
-            : p,
+          p.serviceId === id ? { ...p, ...data } : p,
         ),
       };
     });

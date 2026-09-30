@@ -1,12 +1,15 @@
-"use client";
+﻿"use client";
 import { CriteriaField } from "@/config/serviceCriteria";
 import CustomInput from "@/components/commonComponents/CustomInput";
 import { BsCheckCircle } from "react-icons/bs";
 
 interface FieldRendererProps {
   field: CriteriaField;
-  value: any;
-  onChange: (key: string, value: any) => void;
+  value: unknown;
+  onChange: (
+    key: string,
+    value: string | number | boolean | string[] | undefined,
+  ) => void;
 }
 
 export default function FieldRenderer({
@@ -15,15 +18,37 @@ export default function FieldRenderer({
   onChange,
 }: FieldRendererProps) {
   switch (field.type) {
+    case "text":
+    case "date":
+    case "time":
+      return (
+        <div>
+          <p>{field.label}</p>
+          <CustomInput
+            type={field.type}
+            value={typeof value === "string" ? value : ""}
+            className="w-full"
+            onChange={(e) => onChange(field.key, e.target.value)}
+          />
+        </div>
+      );
     case "number":
       return (
         <div>
           <p>{field.label}</p>
           <CustomInput
             type="number"
-            value={value ?? ""}
+            value={typeof value === "number" ? value : ""}
+            min={field.min}
+            max={field.max}
+            step={field.step ?? "any"}
             className="w-full"
-            onChange={(e) => onChange(field.key, Number(e.target.value))}
+            onChange={(e) =>
+              onChange(
+                field.key,
+                e.target.value === "" ? undefined : Number(e.target.value),
+              )
+            }
           />
         </div>
       );
@@ -40,7 +65,7 @@ export default function FieldRenderer({
         >
           <input
             type="checkbox"
-            checked={value ?? false}
+            checked={value === true}
             readOnly
             className="accent-(--positive-tertiary)"
           />
@@ -53,7 +78,7 @@ export default function FieldRenderer({
         <div>
           <p>{field.label}</p>
           <select
-            value={value ?? ""}
+            value={typeof value === "string" ? value : ""}
             className="border border-(--secondary) rounded-lg w-full p-2"
             onChange={(e) => onChange(field.key, e.target.value)}
           >
@@ -68,7 +93,7 @@ export default function FieldRenderer({
       );
 
     case "multi-select": {
-      const selected: string[] = value ?? [];
+      const selected: string[] = Array.isArray(value) ? value : [];
       return (
         <div>
           <p>{field.label}</p>

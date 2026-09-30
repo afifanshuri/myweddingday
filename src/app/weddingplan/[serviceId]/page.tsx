@@ -9,7 +9,12 @@ import ServiceTitleSection from "@/components/serviceComponents/ServiceTitleSect
 import DirectionButtons from "@/components/serviceComponents/DirectionButtons";
 import PromptTextbox from "@/components/serviceComponents/PromptTextbox";
 import FieldRenderer from "@/components/serviceComponents/FieldRenderer";
-import { SERVICE_CRITERIA } from "@/config/serviceCriteria";
+import {
+  clearHiddenCriteria,
+  isCriteriaVisible,
+  SERVICE_CRITERIA,
+} from "@/config/serviceCriteria";
+import { useUserStore } from "@/store/userStore";
 
 export default function ServicePage() {
   const params = useParams();
@@ -17,12 +22,16 @@ export default function ServicePage() {
   const changeCurrentActivePage = useServiceStore(
     (state) => state.changeCurrentActiveServicePage,
   );
-  
+
   const preferencesList = usePreferenceStore((state) => state.preferencesList);
-  const criteria = preferencesList.find((p) => p.serviceId === currentServiceId)?.criteria ?? {};
+  const criteria =
+    preferencesList.find((p) => p.serviceId === currentServiceId)?.criteria ??
+    {};
 
-  const updateCriteria = usePreferenceStore((state) => state.updateCriteria);
-
+  const updatePreferenceDetails = usePreferenceStore(
+    (state) => state.updatePreferenceDetails,
+  );
+  const user = useUserStore((state) => state.user);
   const fields = SERVICE_CRITERIA[currentServiceId] ?? [];
 
   useEffect(() => {
@@ -45,17 +54,29 @@ export default function ServicePage() {
       ></BudgetSlider>
 
       <div className="flex flex-col gap-6">
-        {fields.map((field) => (
-          <FieldRenderer
-            key={field.key}
-            field={field}
-            value={criteria[field.key]}
-            onChange={(key, value) => updateCriteria(currentServiceId, key, value)}
-          />
-        ))}
+        {fields
+          .filter((field) =>
+            isCriteriaVisible(field, criteria, fields, user?.role),
+          )
+          .map((field) => (
+            <FieldRenderer
+              key={field.key}
+              field={field}
+              value={criteria[field.key]}
+              onChange={(key, value) =>
+                updatePreferenceDetails(currentServiceId, {
+                  criteria: clearHiddenCriteria(fields, {
+                    ...criteria,
+                    [key]: value,
+                  }),
+                })
+              }
+            />
+          ))}
         <PromptTextbox currentPath={currentServiceId} />
         <DirectionButtons />
       </div>
     </div>
   );
 }
+

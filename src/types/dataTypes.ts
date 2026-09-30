@@ -1,3 +1,13 @@
+type UserType = {
+  id: number;
+  createdAt: Date;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  role: "user" | "admin";
+};
+
 type WeddingDetailType = {
   locations: number[];
   date: Date | null;
@@ -51,6 +61,7 @@ type ClassnameType = {
 };
 
 export type {
+  UserType,
   WeddingDetailType,
   WeddingDetailsFormErrors,
   VendorType,
