@@ -17,6 +17,8 @@ type ServiceStore = {
   deleteAllService: () => void;
 };
 
+let servicesRequest: Promise<void> | null = null;
+
 export const useServiceStore = create<ServiceStore>((set, get) => ({
   service: [],
   isLoaded: false,
@@ -26,8 +28,20 @@ export const useServiceStore = create<ServiceStore>((set, get) => ({
 
   initServices: async () => {
     if (get().isLoaded) return;
-    const services = await fetch("/api/services").then((r) => r.json());
-    set({ service: services, isLoaded: true });
+    if (servicesRequest) return servicesRequest;
+
+    servicesRequest = (async () => {
+      const response = await fetch("/api/services");
+      if (!response.ok) throw new Error("Failed to load services");
+      const services: ServiceType[] = await response.json();
+      set({ service: services, isLoaded: true });
+    })();
+
+    try {
+      await servicesRequest;
+    } finally {
+      servicesRequest = null;
+    }
   },
 
   addAllService: (services: ServiceType[]) => {

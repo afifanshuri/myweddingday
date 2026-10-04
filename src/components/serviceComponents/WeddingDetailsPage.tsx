@@ -4,24 +4,28 @@ import CustomInput from "@/components/commonComponents/CustomInput";
 import MainButton from "@/components/commonComponents/MainButton";
 import { ServiceSelector } from "@/components/serviceComponents/ServiceSelector";
 import { validateWeddingDetails } from "@/services/fieldValidationService";
-import {
-  LocationType,
-  ServiceType,
-  WeddingDetailType,
-} from "@/types/dataTypes";
+import { LocationType, WeddingDetailType } from "@/types/dataTypes";
 import { WeddingFormErrors } from "@/types/errorTypes";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useServiceStore } from "@/store/serviceStore";
 
 export default function WeddingDetailsPage({
   locations,
-  services,
 }: {
   locations: LocationType[];
-  services: ServiceType[];
 }) {
   const router = useRouter();
   const [errors, setErrors] = useState<WeddingFormErrors>({});
+
+  const initServices = useServiceStore((state) => state.initServices);
+  const services = useServiceStore((state) => state.service);
+
+  useEffect(() => {
+    initServices().catch((error) => {
+      console.error("Failed to load services:", error);
+    });
+  }, [initServices]);
 
   const weddingDetailsFromStore = usePreferenceStore(
     (state) => state.weddingDetails,
@@ -88,21 +92,12 @@ export default function WeddingDetailsPage({
           <div className="w-full">
             <p>Wedding Date</p>
             <CustomInput
-              value={
-                weddingDetailsFromStore.date
-                  ? weddingDetailsFromStore.date.toISOString().split("T")[0]
-                  : ""
-              }
+              value={weddingDetailsFromStore.date ?? ""}
               type="date"
               placeholder="e.g. Amira & Syafiq"
               className="w-full"
               onChange={(e) => {
-                updateWeddingDetails({ date: new Date(e.target.value) });
-                setErrors((prev) => {
-                  const next = { ...prev };
-                  delete next.date;
-                  return next;
-                });
+                updateWeddingDetails({ date: e.target.value || null });
               }}
             ></CustomInput>
             <p className={`${errors?.date ? "flex" : "hidden"} text-red-600`}>

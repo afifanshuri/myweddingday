@@ -8,7 +8,6 @@ import { useEffect, useState } from "react";
 import { useAdminStore } from "@/store/adminStore";
 import { useServiceStore } from "@/store/serviceStore";
 import MainButton from "@/components/commonComponents/MainButton";
-import { FaStar } from "react-icons/fa";
 
 type FieldErrors = {
   vendorName?: string;
@@ -16,13 +15,11 @@ type FieldErrors = {
   locationId?: string;
   contact?: string;
   detail?: string;
-  rating?: string;
   packages?: { name?: string; price?: string; details?: string }[];
 };
 
 export default function AdminPage() {
   const [locationList, setLocationList] = useState<LocationType[]>([]);
-  const [rating, setRating] = useState(0);
   const [showConfirm, setShowConfirm] = useState(false);
 
   const vendorFromStore = useAdminStore((state) => state.vendor);
@@ -102,10 +99,6 @@ export default function AdminPage() {
     const detail = vendorFromStore.detail ?? "";
     if (detail.toString().trim() === "") {
       newErrors.detail = "Description is required";
-    }
-
-    if (!vendorFromStore.rating || vendorFromStore.rating === 0) {
-      newErrors.rating = "Rating is required";
     }
 
     if (!packageListFromStore || packageListFromStore.length === 0) {
@@ -188,7 +181,7 @@ export default function AdminPage() {
 
   return (
     <div className="flex flex-col justify-center items-center mx-auto p-10 gap-4">
-      <div className="flex flex-col border border-(--secondary) bg-white p-4 rounded-lg gap-4 min-h-1/2 min-w-full xl:min-w-1/4">
+      <div className="flex flex-col border border-(--secondary) bg-white p-4 rounded-lg gap-4 min-h-1/2 min-w-full xl:min-w-1/2">
         <p className="libre-font text-[20px] mb-6">Vendor Details</p>
         <div>
           <p>Vendor Name</p>
@@ -273,6 +266,46 @@ export default function AdminPage() {
             <p className="text-red-500 text-sm mt-1">{errors.contact}</p>
           ) : null}
         </div>
+        <div className="flex flex-col gap-4">
+          <p className="font-medium">Social Media (Optional)</p>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {(
+              [
+                {
+                  key: "instagram",
+                  label: "Instagram (IG)",
+                  placeholder: "https://www.instagram.com/yourprofile",
+                },
+                {
+                  key: "tiktok",
+                  label: "TikTok",
+                  placeholder: "https://www.tiktok.com/@yourprofile",
+                },
+                {
+                  key: "facebook",
+                  label: "Facebook (FB)",
+                  placeholder: "https://www.facebook.com/yourpage",
+                },
+              ] as const
+            ).map(({ key, label, placeholder }) => (
+              <div key={key} className="flex flex-col gap-2">
+                <label htmlFor={`vendor-${key}`}>{label}</label>
+                <CustomInput
+                  id={`vendor-${key}`}
+                  name={key}
+                  type="url"
+                  maxLength={200}
+                  placeholder={placeholder}
+                  className="w-full"
+                  value={vendorFromStore[key] ?? ""}
+                  onChange={(e) =>
+                    updateVendorDataToStore({ [key]: e.target.value || null })
+                  }
+                />
+              </div>
+            ))}
+          </div>
+        </div>
         <div>
           <p>Description</p>
           <CustomTextarea
@@ -290,33 +323,8 @@ export default function AdminPage() {
             <p className="text-red-500 text-sm mt-1">{errors.detail}</p>
           ) : null}
         </div>
-        <div>
-          <p>Rating</p>
-          <div className="flex flex-row gap-4 text-[30px]">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <FaStar
-                key={i}
-                className={`cursor-pointer ${
-                  i <= rating ? "text-amber-400" : "text-gray-300"
-                }`}
-                onClick={() => {
-                  setRating(i);
-                  updateVendorDataToStore({ rating: i });
-                  setErrors((prev) => {
-                    const next = { ...prev };
-                    delete next.rating;
-                    return next;
-                  });
-                }}
-              />
-            ))}
-          </div>
-          {errors.rating ? (
-            <p className="text-red-500 text-sm mt-1">{errors.rating}</p>
-          ) : null}
-        </div>
       </div>
-      <div className="flex flex-col border border-(--secondary) bg-white p-4 rounded-lg gap-4 min-h-1/2 min-w-full xl:min-w-1/4">
+      <div className="flex flex-col border border-(--secondary) bg-white p-4 rounded-lg gap-4 min-h-1/2 min-w-full xl:min-w-1/2">
         <p className="libre-font text-[20px] mb-6">Package Details</p>
         {packageListFromStore.map((p, index) => {
           return (

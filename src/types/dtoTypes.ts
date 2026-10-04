@@ -1,4 +1,4 @@
-import { PackageType, VendorType } from "./dataTypes";
+import type { findVendorsByPreferences } from "@/db/queries/vendors";
 
 type PakcageDTOType = {
   name: string;
@@ -16,12 +16,11 @@ type VendorMatchDTOType = {
   location: number[];
   budget: number;
   criteria: Record<string, any>;
+  requiredFields?: string[];
 };
 
-type VendorAndPackagesMatchDTOType = {
-  vendor: VendorType;
-  packages: PackageType[];
-};
+type VendorAndPackagesMatchDTOType =
+  Awaited<ReturnType<typeof findVendorsByPreferences>>[number];
 
 export type {
   PakcageDTOType,

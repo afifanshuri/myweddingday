@@ -33,7 +33,7 @@ export default function Home() {
           Describe your wedding. Choose freely from over 10,000+ wedding
           vendors, tailored exactly to your liking
         </p>
-        <div className="mb-2 opacity-50 hover:opacity-100 text-black">
+        <div className="flex flex-row gap-2 mb-2 opacity-50 hover:opacity-100 text-black">
           <MainButton href="/weddingplan">Start Planning</MainButton>
           <MainButton href="/login">Log In</MainButton>
         </div>

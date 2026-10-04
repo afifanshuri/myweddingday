@@ -1,6 +1,6 @@
 type UserType = {
   id: number;
-  createdAt: Date;
+  createdAt: string | null;
   email: string;
   firstName: string;
   lastName: string;
@@ -10,7 +10,7 @@ type UserType = {
 
 type WeddingDetailType = {
   locations: number[];
-  date: Date | null;
+  date: string | null;
   coupleName: string;
   pax: number;
   services: number[];
@@ -36,6 +36,9 @@ type VendorType = {
   locationId: number[];
   detail: string | null;
   contact: string | null;
+  instagram: string | null;
+  facebook: string | null;
+  tiktok: string | null;
   rating: number | null;
 };
 

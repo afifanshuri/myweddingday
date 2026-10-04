@@ -3,6 +3,7 @@ type BasicPreferenceType = {
   budget: number;
   description: string;
   criteria: Record<string, any>;
+  requiredFields?: string[];
 };
 
 export type { BasicPreferenceType };

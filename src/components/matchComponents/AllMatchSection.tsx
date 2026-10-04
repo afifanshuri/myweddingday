@@ -1,100 +1,86 @@
 "use client";
-import { usePreferenceStore } from "@/store/preferenceStore";
-import { useServiceStore } from "@/store/serviceStore";
-import { retrieveVendorsByPreference } from "@/services/vendorService";
-import { PackageType, ServiceType, VendorType } from "@/types/dataTypes";
-import { useEffect, useState } from "react";
 
-export default function AllMatchSection() {
-  const [vendorsInActiveTab, setVendorsInActiveTab] = useState<VendorType[]>(
-    [],
-  );
-  const [vendorsList, setVendorsList] = useState<VendorType[]>([]);
-  const [servicesList, setServicesList] = useState<ServiceType[]>([]);
+import { ServiceType } from "@/types/dataTypes";
+import { VendorAndPackagesMatchDTOType } from "@/types/dtoTypes";
+import { useState } from "react";
+import VendorContainer from "./VendorContainer";
+
+export default function AllMatchSection({
+  matches,
+  topMatches,
+  servicesList,
+  onSelect,
+}: {
+  matches: VendorAndPackagesMatchDTOType[];
+  topMatches: VendorAndPackagesMatchDTOType[];
+  servicesList: Pick<ServiceType, "id" | "serviceName">[];
+  onSelect: (vendorId: number) => void;
+}) {
   const [activeServiceTab, setActiveServiceTab] = useState<number | null>(null);
-  const selectedServiceIds = usePreferenceStore(
-    (state) => state.weddingDetails.services,
-  );
-  const selectedLocations = usePreferenceStore(
-    (state) => state.weddingDetails.locations,
-  );
-
-  const initServices = useServiceStore((state) => state.initServices);
-  const servicesFromStore = useServiceStore((state) => state.service);
-
-  useEffect(() => {
-    const initData = async () => {
-      if (!selectedServiceIds || selectedServiceIds.length === 0) {
-        return;
-      }
-
-      await initServices();
-
-      const preferencesList = usePreferenceStore
-        .getState()
-        .preferencesList.filter((p) => selectedServiceIds.includes(p.serviceId))
-        .map((p) => ({
-          serviceId: p.serviceId,
-          budget: p.budget,
-          criteria: p.criteria,
-          location: selectedLocations,
-        }));
-      const result: { vendor: VendorType; packages: PackageType[] }[] =
-        await retrieveVendorsByPreference(preferencesList);
-      setVendorsList([...result.map((r) => r.vendor)]);
-    };
-    initData();
-  }, []);
-
-  useEffect(() => {
-    const filtered = servicesFromStore.filter((s) =>
-      selectedServiceIds.includes(s.id),
-    );
-    setServicesList(filtered);
-  }, [servicesFromStore, selectedServiceIds]);
-
-  useEffect(() => {
-    if (activeServiceTab !== null) {
-      setVendorsInActiveTab(
-        vendorsList.filter((v) => v.serviceId == activeServiceTab),
-      );
-    }
-  }, [activeServiceTab, vendorsList]);
+  const activeServiceId = servicesList.some(
+    (service) => service.id === activeServiceTab,
+  )
+    ? activeServiceTab
+    : null;
+  const visibleMatches =
+    activeServiceId === null
+      ? matches
+      : matches.filter((match) => match.vendor.serviceId === activeServiceId);
+  const filters = [{ id: null, serviceName: "All services" }, ...servicesList];
 
   return (
-    <div className="bg-white rounded-lg p-4 border border-(--secondary)">
-      <p className="libre-font">All Matches</p>
-      <p className="text-[14px] font-extralight opacity-50">
-        {vendorsList.length} Vendors found
+    <section
+      aria-labelledby="all-match-heading"
+      className="min-w-0 rounded-lg border border-(--secondary) bg-white p-4 sm:p-6"
+    >
+      <h2 id="all-match-heading" className="libre-font text-lg">
+        All Other Matches
+      </h2>
+      <p className="mt-2 text-sm font-normal" aria-live="polite">
+        {visibleMatches.length}{" "}
+        {visibleMatches.length === 1 ? "vendor" : "vendors"} found
       </p>
-      <div>
-        {servicesList.length === 0 ? (
-          <div>Loading...</div>
-        ) : (
-          <div>
-            <div id="servicesListNavContainer" className="flex flex-row gap-2">
-              {servicesList.map((service: ServiceType, index: number) => {
-                return (
-                  <div
-                    key={index}
-                    className="border rounded-lg p-1 cursor-pointer"
-                    onClick={() => {
-                      setActiveServiceTab(service.id);
-                    }}
-                  >
-                    {service.serviceName}
-                  </div>
-                );
-              })}
-            </div>
-            <div id="vendorsContainer" className="grid grid-cols-4 gap-2">
-              {vendorsInActiveTab.map((vendor, index) => {
-                return <div key={index}>{vendor.vendorName}</div>;
-              })}
-            </div>
-          </div>
-        )}
+      <div
+        className="my-5 flex flex-wrap gap-2"
+        role="group"
+        aria-label="Filter matches by service"
+      >
+        {filters.map((service) => (
+          <button
+            key={service.id ?? "all"}
+            type="button"
+            aria-pressed={activeServiceId === service.id}
+            onClick={() => setActiveServiceTab(service.id)}
+            className={`rounded-lg border px-3 py-2 text-sm transition ${activeServiceId === service.id ? "border-(--positive) bg-(--positive) text-(--positive-tertiary)" : "border-(--tertiary) bg-white"}`}
+          >
+            {service.serviceName}
+          </button>
+        ))}
       </div>
-    </div>
+      {visibleMatches.length > 0 ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {visibleMatches.map((match) => (
+            <VendorContainer
+              key={match.vendor.id}
+              match={match}
+              onSelect={onSelect}
+              serviceName={
+                servicesList.find(
+                  (service) => service.id === match.vendor.serviceId,
+                )?.serviceName ?? "Service"
+              }
+              topPick={topMatches.some(
+                (topMatch) => topMatch.vendor.id === match.vendor.id,
+              )}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="py-6 text-sm font-normal">
+          No other vendors match this selection. Your best matches are shown
+          above.
+        </p>
+      )}
+    </section>
   );
 }

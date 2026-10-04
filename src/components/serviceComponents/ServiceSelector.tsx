@@ -31,10 +31,11 @@ export const ServiceSelector = ({
   );
 
   const toggleClickService = (id: number) => {
-    const newServices = existingServicesFromStore.includes(id)
-      ? existingServicesFromStore.filter((s) => s !== id)
-      : [...existingServicesFromStore, id];
-    updateWeddingDetails({ services: newServices });
+    updateWeddingDetails({
+      services: existingServicesFromStore.includes(id)
+        ? existingServicesFromStore.filter((s) => s !== id)
+        : [...existingServicesFromStore, id],
+    });
   };
 
   const retrieveServiceIcon = (id: number) => {

@@ -1,5 +1,5 @@
 import { VendorType } from "@/types/dataTypes";
-import { VendorMatchDTOType } from "@/types/dtoTypes";
+import { VendorMatchDTOType, VendorAndPackagesMatchDTOType } from "@/types/dtoTypes";
 
 const retrieveVendorsByService = async (
   serviceId: number[],
@@ -11,7 +11,7 @@ const retrieveVendorsByService = async (
 
 const retrieveVendorsByPreference = async (
   preferencesList: VendorMatchDTOType[],
-) => {
+): Promise<VendorAndPackagesMatchDTOType[]> => {
   const response = await fetch("/api/match/vendors", {
     method: "POST",
     headers: {
@@ -19,6 +19,7 @@ const retrieveVendorsByPreference = async (
     },
     body: JSON.stringify(preferencesList),
   });
+  if (!response.ok) throw new Error("Unable to load vendor matches");
   const data = await response.json();
   return data;
 };

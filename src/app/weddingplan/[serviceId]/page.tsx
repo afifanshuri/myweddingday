@@ -24,6 +24,12 @@ export default function ServicePage() {
   );
 
   const preferencesList = usePreferenceStore((state) => state.preferencesList);
+  const requiredFields =
+    preferencesList.find((p) => p.serviceId === currentServiceId)
+      ?.requiredFields ?? [];
+  const updateRequiredFields = usePreferenceStore(
+    (state) => state.updateRequiredFields,
+  );
   const criteria =
     preferencesList.find((p) => p.serviceId === currentServiceId)?.criteria ??
     {};
@@ -33,6 +39,21 @@ export default function ServicePage() {
   );
   const user = useUserStore((state) => state.user);
   const fields = SERVICE_CRITERIA[currentServiceId] ?? [];
+  const visibleFields = fields.filter((field) =>
+    isCriteriaVisible(field, criteria, fields, user?.role),
+  );
+  const criteriaGroups = [
+    {
+      id: "basic",
+      title: "Basic Criteria",
+      fields: visibleFields.filter((field) => field.group === "basic"),
+    },
+    {
+      id: "optional",
+      title: "Optional Criteria",
+      fields: visibleFields.filter((field) => field.group !== "basic"),
+    },
+  ];
 
   useEffect(() => {
     changeCurrentActivePage(currentServiceId);
@@ -54,24 +75,51 @@ export default function ServicePage() {
       ></BudgetSlider>
 
       <div className="flex flex-col gap-6">
-        {fields
-          .filter((field) =>
-            isCriteriaVisible(field, criteria, fields, user?.role),
-          )
-          .map((field) => (
-            <FieldRenderer
-              key={field.key}
-              field={field}
-              value={criteria[field.key]}
-              onChange={(key, value) =>
-                updatePreferenceDetails(currentServiceId, {
-                  criteria: clearHiddenCriteria(fields, {
-                    ...criteria,
-                    [key]: value,
-                  }),
-                })
-              }
-            />
+        <p className="text-sm">
+          Leave fields blank if you have no preference. Select a value, then
+          tick “Must have” if every result must match it.
+        </p>
+        {criteriaGroups
+          .filter((group) => group.fields.length > 0)
+          .map((group) => (
+            <section
+              key={group.id}
+              aria-labelledby={`${group.id}-criteria-heading`}
+              className="rounded-lg border border-(--tertiary) bg-white p-4 sm:p-6 shadow-sm"
+            >
+              <h2
+                id={`${group.id}-criteria-heading`}
+                className="font-semibold mb-6"
+              >
+                {group.title}
+              </h2>
+              <div className="flex flex-col gap-6">
+                {group.fields.map((field) => (
+                  <FieldRenderer
+                    key={field.key}
+                    field={field}
+                    value={criteria[field.key]}
+                    required={requiredFields.includes(field.key)}
+                    onRequiredChange={(key, checked) =>
+                      updateRequiredFields(
+                        currentServiceId,
+                        checked
+                          ? [...requiredFields, key]
+                          : requiredFields.filter((item) => item !== key),
+                      )
+                    }
+                    onChange={(key, value) =>
+                      updatePreferenceDetails(currentServiceId, {
+                        criteria: clearHiddenCriteria(fields, {
+                          ...criteria,
+                          [key]: value,
+                        }),
+                      })
+                    }
+                  />
+                ))}
+              </div>
+            </section>
           ))}
         <PromptTextbox currentPath={currentServiceId} />
         <DirectionButtons />

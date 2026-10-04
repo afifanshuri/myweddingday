@@ -12,7 +12,11 @@ import { useState } from "react";
 import { PackageType } from "@/types/dataTypes";
 import { useAdminStore } from "@/store/adminStore";
 import FieldRenderer from "../serviceComponents/FieldRenderer";
-import { clearHiddenCriteria, isCriteriaVisible, SERVICE_CRITERIA } from "@/config/serviceCriteria";
+import {
+  clearHiddenCriteria,
+  isCriteriaVisible,
+  SERVICE_CRITERIA,
+} from "@/config/serviceCriteria";
 
 export default function PackageDetailSection({
   pkg,
@@ -115,18 +119,25 @@ export default function PackageDetailSection({
         {fields.length > 0 && (
           <div className="flex flex-col gap-4 border-t border-(--tertiary) pt-4">
             <p className="font-semibold text-sm opacity-70">Service Filters</p>
-            {fields.filter((field) => isCriteriaVisible(field, pkg.filters ?? {}, fields)).map((field) => (
-              <FieldRenderer
-                key={field.key}
-                field={field}
-                value={pkg.filters?.[field.key]}
-                onChange={(key, value) => {
-                  updatePackageToStore(pkg.id, {
-                    filters: clearHiddenCriteria(fields, { ...(pkg.filters ?? {}), [key]: value }),
-                  });
-                }}
-              />
-            ))}
+            {fields
+              .filter((field) =>
+                isCriteriaVisible(field, pkg.filters ?? {}, fields),
+              )
+              .map((field) => (
+                <FieldRenderer
+                  key={field.key}
+                  field={field}
+                  value={pkg.filters?.[field.key]}
+                  onChange={(key, value) => {
+                    updatePackageToStore(pkg.id, {
+                      filters: clearHiddenCriteria(fields, {
+                        ...(pkg.filters ?? {}),
+                        [key]: value,
+                      }),
+                    });
+                  }}
+                />
+              ))}
           </div>
         )}
 
