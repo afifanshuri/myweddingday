@@ -1,14 +1,44 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
 
 export default function LoginPage() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setMessage("Authentication is not connected yet.");
+    if (isSubmitting) return;
+    const form = new FormData(event.currentTarget);
+    const email = String(form.get("email") ?? "").trim();
+    const password = String(form.get("password") ?? "");
+    setIsSubmitting(true);
+    setMessage("");
+    try {
+      const supabase = createClient();
+      const { data, error } = isRegistering
+        ? await supabase.auth.signUp({ email, password })
+        : await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setMessage(isRegistering ? "Unable to create account. Check your details and try again." : "Unable to sign in. Check your email and password.");
+        return;
+      }
+      if (!data.session) {
+        setMessage("Check your email to confirm your account, then sign in.");
+        return;
+      }
+      // This selects a destination only; the write API independently verifies admin access.
+      router.replace(data.user?.app_metadata.role === "admin" ? "/admin" : "/weddingplan");
+      router.refresh();
+    } catch {
+      setMessage("Unable to connect. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -29,6 +59,7 @@ export default function LoginPage() {
               name="email"
               autoComplete="email"
               required
+              disabled={isSubmitting}
               className="mt-2 block w-full rounded-sm border border-stone-300 bg-transparent px-3 py-2.5 outline-none focus:border-(--positive-tertiary)"
             />
           </label>
@@ -40,6 +71,7 @@ export default function LoginPage() {
               autoComplete={isRegistering ? "new-password" : "current-password"}
               minLength={6}
               required
+              disabled={isSubmitting}
               className="mt-2 block w-full rounded-sm border border-stone-300 bg-transparent px-3 py-2.5 outline-none focus:border-(--positive-tertiary)"
             />
           </label>
@@ -52,9 +84,10 @@ export default function LoginPage() {
 
           <button
             type="submit"
+            disabled={isSubmitting}
             className="w-full rounded-sm bg-(--positive-secondary) px-4 py-3 text-sm font-medium text-white transition hover:opacity-90"
           >
-            {isRegistering ? "Create account" : "Sign in"}
+            {isSubmitting ? "Please wait..." : isRegistering ? "Create account" : "Sign in"}
           </button>
         </form>
 
@@ -62,6 +95,7 @@ export default function LoginPage() {
           {isRegistering ? "Already have an account?" : "New here?"}{" "}
           <button
             type="button"
+            disabled={isSubmitting}
             onClick={() => {
               setIsRegistering(!isRegistering);
               setMessage("");

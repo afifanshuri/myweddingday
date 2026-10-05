@@ -181,6 +181,7 @@ export default function PackageDetailSection({
           <p>Add a file</p>
           <input
             type="file"
+            accept="image/jpeg,image/png,image/webp"
             className="cursor-pointer border border-(--fourth) rounded-lg w-3/4 xl:w-full"
             onChange={(e) => {
               updatePackageToStore(pkg.id, {

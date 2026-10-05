@@ -13,8 +13,7 @@ const saveImageToBucket = async (
     const { data, error } = await supabase.storage
       .from(pathURL)
       .upload(fileName ?? generateFilename(null), file);
-    console.log("error " + error);
-    console.log(data);
+    if (error) throw new Error("Unable to upload image");
     return data?.fullPath;
   }
 };
@@ -26,6 +25,7 @@ const retrieveImageFromBucket = async (pathURL: string, fileName: string) => {
     const { data, error } = await supabase.storage
       .from(pathURL)
       .download(fileName);
+    if (error) throw new Error("Unable to download image");
     return data;
   }
 };

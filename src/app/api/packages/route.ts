@@ -1,41 +1,13 @@
-import { insertAllToPackage } from "@/db/queries/packages";
-import { savePackageListToDTO } from "@/services/packageService";
-import { PackageType } from "@/types/dataTypes";
-import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin, requireSameOrigin } from "@/services/adminAuthService";
+import { errorResponse } from "@/services/requestValidation";
 
-export async function POST(request: NextRequest) {
-  console.log("Inside POST METHOD Packages");
+// Separate package creation could leave partially saved vendors. Use the combined endpoint.
+export async function POST(request: Request) {
   try {
-    const data = await request.formData();
-    const vendor = JSON.parse(data.get("vendor") as string);
-    const packageList: PackageType[] = [];
-
-    let index = 0;
-
-    while (data.has(`package_${index}`)) {
-      const pkg = JSON.parse(data.get(`package_${index}`) as string);
-      const file = data.get(`file_${index}`) as File | null;
-
-      packageList.push({
-        ...pkg,
-        file: file,
-      });
-
-      index++;
-    }
-    console.log(packageList);
-    const pkgDTOList = await savePackageListToDTO(vendor, packageList);
-    await insertAllToPackage(pkgDTOList);
-    return new NextResponse(null, { status: 204 });
-  } catch (e) {
-    console.error(e);
-    return NextResponse.json(
-      {
-        error: "Failed to save packages",
-      },
-      {
-        status: 500,
-      },
-    );
+    requireSameOrigin(request);
+    await requireAdmin();
+    return Response.json({ error: "Submit vendor and packages together to /api/vendors" }, { status: 410 });
+  } catch (error) {
+    return errorResponse(error, "Unable to authorize package submission");
   }
 }

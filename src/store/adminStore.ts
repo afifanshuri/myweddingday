@@ -8,10 +8,10 @@ type AdminStore = {
   deletePackage: (id: number) => void;
   updatePackage: (id: number, data: Partial<PackageType>) => void;
   updateVendor: (data: Partial<VendorType>) => void;
+  resetDraft: () => void;
 };
 
-export const useAdminStore = create<AdminStore>((set) => ({
-  vendor: {
+const emptyVendor = (): VendorType => ({
     id: 0,
     createdAt: new Date(),
     vendorName: "<Vendor Name>",
@@ -23,8 +23,12 @@ export const useAdminStore = create<AdminStore>((set) => ({
     facebook: null,
     tiktok: null,
     rating: null,
-  },
+});
+
+export const useAdminStore = create<AdminStore>((set) => ({
+  vendor: emptyVendor(),
   packageList: [],
+  resetDraft: () => set({ vendor: emptyVendor(), packageList: [] }),
   addPackage: () => {
     set((state) => {
       const currentId =
