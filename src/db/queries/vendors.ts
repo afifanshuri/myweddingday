@@ -25,6 +25,7 @@ const getVendorById = async (id: number) => {
 const findVendorsByPreferences = async (
   preferencesList: VendorMatchDTOType[],
 ) => {
+  console.log("in findVendorsByPreferences");
   const results = [];
   for (const preference of preferencesList) {
     const requiredFields = new Set(preference.requiredFields ?? []);

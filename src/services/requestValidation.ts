@@ -126,6 +126,7 @@ export function validatePackages(value: unknown, id: number) {
 }
 
 export function validatePreferences(value: unknown): VendorMatchDTOType[] {
+  console.log("in validatePreferences");
   if (!Array.isArray(value) || value.length > 6) throw new RequestError("Invalid preferences list");
   const seen = new Set<number>();
   return value.map((entry) => {
@@ -146,6 +147,7 @@ export function validatePreferences(value: unknown): VendorMatchDTOType[] {
 
 // Bound the stream before parsing, including requests without Content-Length.
 export async function readBody(request: Request, maxBytes: number): Promise<Response> {
+  console.log("in readbody");
   if (Number(request.headers.get("content-length")) > maxBytes) throw new RequestError("Request is too large", 413);
   const reader = request.body?.getReader();
   const chunks: Uint8Array[] = [];

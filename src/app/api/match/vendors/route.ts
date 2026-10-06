@@ -4,6 +4,7 @@ import { errorResponse, parseJson, readBody, validatePreferences } from "@/servi
 
 export async function POST(data: NextRequest) {
   try {
+    console.log("in POST");
     const body = await readBody(data, 64 * 1024);
     const preferencesList = validatePreferences(parseJson(await body.text()));
     const result = await findVendorsByPreferences(preferencesList);

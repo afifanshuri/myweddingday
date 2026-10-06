@@ -12,6 +12,7 @@ const retrieveVendorsByService = async (
 const retrieveVendorsByPreference = async (
   preferencesList: VendorMatchDTOType[],
 ): Promise<VendorAndPackagesMatchDTOType[]> => {
+  console.log("in retrieveVendorsByPreference");
   const response = await fetch("/api/match/vendors", {
     method: "POST",
     headers: {

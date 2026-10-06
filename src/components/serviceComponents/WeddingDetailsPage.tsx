@@ -4,28 +4,26 @@ import CustomInput from "@/components/commonComponents/CustomInput";
 import MainButton from "@/components/commonComponents/MainButton";
 import { ServiceSelector } from "@/components/serviceComponents/ServiceSelector";
 import { validateWeddingDetails } from "@/services/fieldValidationService";
-import { LocationType, WeddingDetailType } from "@/types/dataTypes";
+import { LocationType, ServiceType, WeddingDetailType } from "@/types/dataTypes";
 import { WeddingFormErrors } from "@/types/errorTypes";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useServiceStore } from "@/store/serviceStore";
 
 export default function WeddingDetailsPage({
-  locations,
+  latestLocations,
+  latestServices,
 }: {
-  locations: LocationType[];
+  latestLocations: LocationType[];
+  latestServices: ServiceType[];
 }) {
   const router = useRouter();
   const [errors, setErrors] = useState<WeddingFormErrors>({});
 
-  const initServices = useServiceStore((state) => state.initServices);
-  const services = useServiceStore((state) => state.service);
-
+  const addAllServices = useServiceStore((state) => state.addAllService);
   useEffect(() => {
-    initServices().catch((error) => {
-      console.error("Failed to load services:", error);
-    });
-  }, [initServices]);
+    addAllServices(latestServices);
+  }, [addAllServices, latestServices]);
 
   const weddingDetailsFromStore = usePreferenceStore(
     (state) => state.weddingDetails,
@@ -128,7 +126,7 @@ export default function WeddingDetailsPage({
         <div>
           <p>Vendor Locations</p>
           <div className="flex flex-row gap-2 text-[10px]">
-            {locations.map((l) => {
+            {latestLocations.map((l) => {
               return (
                 <div
                   key={l.id}
@@ -155,7 +153,7 @@ export default function WeddingDetailsPage({
         </div>
       </div>
       <ServiceSelector
-        servicesList={services}
+        servicesList={latestServices}
         errors={errors}
         onFieldChange={() => {
           setErrors((prev) => {

@@ -36,6 +36,7 @@ export default function VendorSection() {
   useEffect(() => {
     const loadMatches = async () => {
       try {
+        console.log("in loadMatches");
         setResult({ matches: [], error: null, loading: true });
         const preferencesList = preferences
           .filter((preference) =>
@@ -48,10 +49,14 @@ export default function VendorSection() {
             requiredFields: preference.requiredFields ?? [],
             location: selectedLocations,
           }));
+          console.log("before retrieveVendorsByPreference");
+          console.log("preferencesList:", preferencesList);
         const retrievedMatches =
           preferencesList.length > 0
             ? await retrieveVendorsByPreference(preferencesList)
             : [];
+
+          console.log("after retrieveVendorsByPreference");
         setResult({ matches: retrievedMatches, error: null, loading: false });
       } catch {
         setResult({
