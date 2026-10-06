@@ -3,6 +3,7 @@ import { usePreferenceStore } from "@/store/preferenceStore";
 import { useServiceStore } from "@/store/serviceStore";
 import { useRouter } from "next/navigation";
 import { VscDebugRestart, VscListFlat } from "react-icons/vsc";
+import MainButton from "@/components/commonComponents/MainButton";
 
 export function Navbar() {
   const coupleName = usePreferenceStore(
@@ -30,18 +31,19 @@ export function Navbar() {
         Specially curated vendors for {coupleName || "your wedding"}
       </p>
       <div className="flex gap-3 xl:self-end mr-6 mb-4 text-[10px] xl:text-[16px] text-(--positive-tertiary)">
-        <div className="flex flex-row gap-2 bg-(--positive-secondary) p-2 rounded-2xl items-center opacity-70 hover:opacity-100 hover:cursor-pointer">
+        <MainButton variant="secondary" size="small" disabled>
           <VscListFlat />
           <p>Edit Preferences</p>
-        </div>
+        </MainButton>
 
-        <div
-          className="flex flex-row gap-2 bg-(--positive-secondary) p-2 rounded-2xl items-center hover:cursor-pointer opacity-70 hover:opacity-100"
+        <MainButton
+          variant="secondary"
+          size="small"
           onClick={() => resetData()}
         >
           <VscDebugRestart />
           <p>Start Over</p>
-        </div>
+        </MainButton>
       </div>
     </div>
   );

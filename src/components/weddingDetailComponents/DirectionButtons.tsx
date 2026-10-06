@@ -34,7 +34,7 @@ export default function DirectionButtons() {
   };
   return (
     <div className="flex flex-row gap-4 justify-end">
-      <MainButton onClick={() => changePage("back")}>Back</MainButton>
+      <MainButton variant="secondary" onClick={() => changePage("back")}>Back</MainButton>
       <MainButton onClick={() => changePage("next")}>Continue</MainButton>
     </div>
   );

@@ -1,4 +1,6 @@
-﻿"use client";
+"use client";
+import MainButton from "@/components/commonComponents/MainButton";
+
 import { CriteriaField, hasCriteriaValue } from "@/config/serviceCriteria";
 import CustomInput from "@/components/commonComponents/CustomInput";
 import { BsCheckCircle } from "react-icons/bs";
@@ -109,22 +111,18 @@ export default function FieldRenderer({
         );
       }
       return (
-        <div
-          className={`flex flex-row items-center gap-2 p-2 border rounded-lg cursor-pointer transition ${
-            value
-              ? "bg-(--positive) border-(--positive)"
-              : "bg-white border-(--tertiary)"
-          }`}
+        <MainButton
+          variant="choice"
+          size="small"
+          aria-pressed={value === true}
+          className="w-full justify-start rounded-lg text-left"
           onClick={() => onChange(field.key, !value)}
         >
-          <input
-            type="checkbox"
-            checked={value === true}
-            readOnly
-            className="accent-(--positive-tertiary)"
-          />
+          <span aria-hidden="true" className="flex size-4 shrink-0 items-center justify-center rounded border border-(--positive-secondary)">
+            {value === true && <BsCheckCircle className="size-3" />}
+          </span>
           <p>{field.label}</p>
-        </div>
+        </MainButton>
       );
 
     case "single-select":
@@ -158,7 +156,7 @@ export default function FieldRenderer({
             className="flex flex-row gap-2 flex-wrap"
           >
             {field.options?.map((opt) => (
-              <button
+              <MainButton variant="choice" size="small"
                 type="button"
                 aria-pressed={selected.includes(opt)}
                 key={opt}
@@ -168,18 +166,14 @@ export default function FieldRenderer({
                     : [...selected, opt];
                   onChange(field.key, newVal);
                 }}
-                className={`text-sm text-left border transition cursor-pointer flex flex-row items-center gap-2 px-3 py-2 rounded-2xl ${
-                  selected.includes(opt)
-                    ? "bg-(--positive) text-white border-(--positive)"
-                    : "border-(--positive) text-(--positive-secondary) bg-white"
-                }`}
+                className="text-left"
               >
                 <BsCheckCircle
                   aria-hidden="true"
                   className={`transition ${selected.includes(opt) ? "flex" : "hidden"}`}
                 />
                 {opt}
-              </button>
+              </MainButton>
             ))}
           </div>
         </div>

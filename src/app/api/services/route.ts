@@ -1,4 +1,4 @@
-import { getAllServices, getServicesById } from "@/db/queries/services";
+import { getAllServices } from "@/db/queries/services";
 import { NextResponse } from "next/server";
 
 export async function GET() {

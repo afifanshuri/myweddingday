@@ -3,9 +3,9 @@ import {
 } from "@/db/queries/vendors";
 import { VendorType } from "@/types/dataTypes";
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin, requireSameOrigin } from "@/services/adminAuthService";
-import { errorResponse, object, parseJson, readBody, RequestError, validateVendor, validatePackages } from "@/services/requestValidation";
-import { saveVendorSubmission } from "@/services/vendorCreationService";
+import { requireAdmin, requireSameOrigin } from "@/services/others/adminAuthService";
+import { errorResponse, object, parseJson, readBody, RequestError, validateVendor, validatePackages } from "@/services/others/requestValidation";
+import { saveVendorSubmission } from "@/services/others/vendorCreationService";
 
 export async function GET(request: NextRequest) {
   let result: VendorType[] = [];

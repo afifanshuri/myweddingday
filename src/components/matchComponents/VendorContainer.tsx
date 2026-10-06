@@ -1,3 +1,4 @@
+import MainButton from "@/components/commonComponents/MainButton";
 import { VendorAndPackagesMatchDTOType } from "@/types/dtoTypes";
 import { SERVICE_ID } from "@/config/serviceCriteria";
 import { FaStar } from "react-icons/fa";
@@ -17,11 +18,11 @@ export default function VendorContainer({ match, serviceName, topPick = false, o
   const cheapestPrice = prices.length > 0 ? Math.min(...prices) : null;
 
   return (
-    <button
+    <MainButton variant="custom" size="none"
       type="button"
       onClick={() => onSelect(match.vendor.id)}
       aria-label={`View packages for ${match.vendor.vendorName}`}
-      className={`flex h-full w-full min-w-0 flex-col gap-4 rounded-lg border p-4 text-left cursor-pointer transition hover:border-(--positive) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--positive-tertiary) ${topPick ? "border-(--positive) bg-(--background)" : "border-(--tertiary) bg-white"}`}
+      className={`flex h-full w-full min-w-0 flex-col items-stretch justify-start gap-4 rounded-lg border p-4 text-left cursor-pointer transition hover:border-(--positive) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--positive-tertiary) ${topPick ? "border-(--positive) bg-(--background)" : "border-(--tertiary) bg-white"}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-(--positive-tertiary)">{serviceName}</p>
@@ -41,6 +42,6 @@ export default function VendorContainer({ match, serviceName, topPick = false, o
           )}
         </p>
       </div>
-    </button>
+    </MainButton>
   );
 }

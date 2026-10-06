@@ -1,4 +1,6 @@
 "use client";
+import MainButton from "@/components/commonComponents/MainButton";
+
 
 type CustomDialogProps = {
   open: boolean;
@@ -37,26 +39,24 @@ export default function CustomDialog({
         <div>{children}</div>
 
         <div className="mt-6 flex justify-end gap-2">
-          <button
+          <MainButton variant="secondary"
             type="button"
             disabled={busy}
             onClick={onClose}
-            className="rounded-md border px-4 py-2 hover:bg-gray-100"
           >
             Cancel
-          </button>
+          </MainButton>
 
-          <button
+          <MainButton
             type="button"
             disabled={busy}
             onClick={() => {
               if (onConfirm) onConfirm();
               else onClose();
             }}
-            className="rounded-md bg-(--positive) px-4 py-2 text-white hover:brightness-90"
           >
             {busy ? "Saving..." : "Confirm"}
-          </button>
+          </MainButton>
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { getAllLocations } from "@/db/queries/locations";
 import { getAllServices } from "@/db/queries/services";
-import WeddingDetailsPage from "@/components/serviceComponents/WeddingDetailsPage";
+import WeddingDetailsPage from "@/components/weddingDetailComponents/WeddingDetailsPage";
 
 export default async function VendorsPage() {
   const [locations, services] = await Promise.all([
@@ -9,7 +9,10 @@ export default async function VendorsPage() {
   ]);
   return (
     <div>
-      <WeddingDetailsPage latestLocations={locations} latestServices={services} />
+      <WeddingDetailsPage
+        latestLocations={locations}
+        latestServices={services}
+      />
     </div>
   );
 }

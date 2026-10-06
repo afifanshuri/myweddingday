@@ -4,7 +4,7 @@ import { useServiceStore } from "@/store/serviceStore";
 import AllMatchSection from "@/components/matchComponents/AllMatchSection";
 import TopMatchSection from "@/components/matchComponents/TopMatchSection";
 import { useEffect, useState } from "react";
-import { retrieveVendorsByPreference } from "@/services/vendorService";
+import { APIGetVendorsByPreferences } from "@/services/api/vendors";
 import { VendorAndPackagesMatchDTOType } from "@/types/dtoTypes";
 import VendorPackagesView from "@/components/matchComponents/VendorPackagesView";
 
@@ -49,14 +49,14 @@ export default function VendorSection() {
             requiredFields: preference.requiredFields ?? [],
             location: selectedLocations,
           }));
-          console.log("before retrieveVendorsByPreference");
+          console.log("before APIGetVendorsByPreferences");
           console.log("preferencesList:", preferencesList);
         const retrievedMatches =
           preferencesList.length > 0
-            ? await retrieveVendorsByPreference(preferencesList)
+            ? await APIGetVendorsByPreferences(preferencesList)
             : [];
 
-          console.log("after retrieveVendorsByPreference");
+          console.log("after APIGetVendorsByPreferences");
         setResult({ matches: retrievedMatches, error: null, loading: false });
       } catch {
         setResult({

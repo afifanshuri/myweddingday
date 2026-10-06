@@ -1,4 +1,6 @@
 "use client";
+import MainButton from "@/components/commonComponents/MainButton";
+
 
 import { ServiceType } from "@/types/dataTypes";
 import { VendorAndPackagesMatchDTOType } from "@/types/dtoTypes";
@@ -46,15 +48,14 @@ export default function AllMatchSection({
         aria-label="Filter matches by service"
       >
         {filters.map((service) => (
-          <button
+          <MainButton variant="choice" size="small"
             key={service.id ?? "all"}
             type="button"
             aria-pressed={activeServiceId === service.id}
             onClick={() => setActiveServiceTab(service.id)}
-            className={`rounded-lg border px-3 py-2 text-sm transition ${activeServiceId === service.id ? "border-(--positive) bg-(--positive) text-(--positive-tertiary)" : "border-(--tertiary) bg-white"}`}
           >
             {service.serviceName}
-          </button>
+          </MainButton>
         ))}
       </div>
       {visibleMatches.length > 0 ? (

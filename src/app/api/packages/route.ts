@@ -1,5 +1,5 @@
-import { requireAdmin, requireSameOrigin } from "@/services/adminAuthService";
-import { errorResponse } from "@/services/requestValidation";
+import { requireAdmin, requireSameOrigin } from "@/services/others/adminAuthService";
+import { errorResponse } from "@/services/others/requestValidation";
 
 // Separate package creation could leave partially saved vendors. Use the combined endpoint.
 export async function POST(request: Request) {

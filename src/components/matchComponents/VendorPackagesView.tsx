@@ -1,3 +1,4 @@
+import MainButton from "@/components/commonComponents/MainButton";
 import { VendorAndPackagesMatchDTOType } from "@/types/dtoTypes";
 import { SERVICE_ID } from "@/config/serviceCriteria";
 import {
@@ -33,14 +34,14 @@ export default function VendorPackagesView({
 
   return (
     <section className="flex flex-col gap-6" aria-labelledby="vendor-packages-title">
-      <button
+      <MainButton variant="ghost" size="small"
         type="button"
         onClick={onBack}
-        className="flex w-fit items-center gap-2 rounded-lg py-2 pr-3 text-sm cursor-pointer text-(--positive-tertiary) hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+        className="w-fit"
       >
         <FaArrowLeft aria-hidden="true" />
         Back to matches
-      </button>
+      </MainButton>
 
       <header className="overflow-hidden rounded-xl border border-(--tertiary) bg-white">
         <div className="h-2 bg-(--positive)" />
@@ -67,17 +68,17 @@ export default function VendorPackagesView({
           {socialLinks.length > 0 && (
             <nav aria-label={`${vendor.vendorName} social media`} className="flex flex-wrap gap-2">
               {socialLinks.map(({ label, url, icon: Icon }) => (
-                <a
+                <MainButton variant="secondary" size="small"
                   key={label}
-                  href={url}
+                  href={url!}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={`${vendor.vendorName} on ${label} (opens in a new tab)`}
-                  className="flex items-center gap-2 rounded-lg border border-(--tertiary) px-3 py-2 text-sm font-normal text-(--positive-tertiary) transition hover:bg-(--secondary) focus-visible:outline-2 focus-visible:outline-offset-2"
+                  className="font-normal"
                 >
                   <Icon aria-hidden="true" />
                   {label}
-                </a>
+                </MainButton>
               ))}
             </nav>
           )}

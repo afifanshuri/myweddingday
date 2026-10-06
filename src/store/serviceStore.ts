@@ -1,5 +1,6 @@
 import { ServiceType } from "@/types/dataTypes";
 import { create } from "zustand";
+import { APIGetServicesAll } from "@/services/api/services";
 
 type ServiceStore = {
   service: ServiceType[];
@@ -31,9 +32,7 @@ export const useServiceStore = create<ServiceStore>((set, get) => ({
     if (servicesRequest) return servicesRequest;
 
     servicesRequest = (async () => {
-      const response = await fetch("/api/services");
-      if (!response.ok) throw new Error("Failed to load services");
-      const services: ServiceType[] = await response.json();
+      const services = await APIGetServicesAll();
       set({ service: services, isLoaded: true });
     })();
 

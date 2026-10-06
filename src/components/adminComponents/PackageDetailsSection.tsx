@@ -1,4 +1,6 @@
 "use client";
+import MainButton from "@/components/commonComponents/MainButton";
+
 import {
   BsChevronDown,
   BsChevronRight,
@@ -11,7 +13,7 @@ import CustomTextarea from "../commonComponents/CustomTextarea";
 import { useState } from "react";
 import { PackageType } from "@/types/dataTypes";
 import { useAdminStore } from "@/store/adminStore";
-import FieldRenderer from "../serviceComponents/FieldRenderer";
+import FieldRenderer from "../commonComponents/FieldRenderer";
 import {
   clearHiddenCriteria,
   isCriteriaVisible,
@@ -42,36 +44,63 @@ export default function PackageDetailSection({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-row justify-between items-center w-full bg-(--tertiary) rounded-lg p-2 cursor-pointer">
-        <p>{pkg.name !== "" ? pkg.name : "Package " + index}</p>
-        <div className="flex flex-row gap-2">
-          <BsTrash
-            className="text-red-500 cursor-pointer"
+    <div className="overflow-hidden rounded-2xl border border-(--tertiary)">
+      <div className="flex items-center justify-between gap-3 bg-(--secondary)/70 px-4 py-3">
+        <p className="min-w-0 break-words text-sm text-(--positive-tertiary)">
+          {pkg.name !== "" ? pkg.name : "Package " + (index + 1)}
+        </p>
+        <div className="flex shrink-0 items-center gap-1">
+          <MainButton
+            variant="danger"
+            size="icon"
+            type="button"
+            aria-label={`Delete package ${index + 1}`}
             onClick={() => {
               onDeletePackage(pkg.id);
             }}
-          />
-          <BsChevronRight
-            className={`cursor-pointer ${displayPackageForm ? "hidden" : "flex"}`}
+          >
+            <BsTrash aria-hidden="true" />
+          </MainButton>
+          <MainButton
+            variant="ghost"
+            size="icon"
+            type="button"
+            aria-label={`Expand package ${index + 1}`}
+            aria-expanded={false}
+            className={displayPackageForm ? "hidden" : ""}
             onClick={() => {
               setDisplayPackageForm(true);
             }}
-          />
-          <BsChevronDown
-            className={`cursor-pointer ${displayPackageForm ? "flex" : "hidden"}`}
+          >
+            <BsChevronRight aria-hidden="true" />
+          </MainButton>
+          <MainButton
+            variant="ghost"
+            size="icon"
+            type="button"
+            aria-label={`Collapse package ${index + 1}`}
+            aria-expanded={true}
+            className={displayPackageForm ? "" : "hidden"}
             onClick={() => {
               setDisplayPackageForm(false);
             }}
-          />
+          >
+            <BsChevronDown aria-hidden="true" />
+          </MainButton>
         </div>
       </div>
       <div
-        className={`bg-(--secondary) p-4 opacity-80 ${displayPackageForm ? "flex flex-col gap-4" : "hidden"}`}
+        className={`bg-white p-4 sm:p-5 ${displayPackageForm ? "flex flex-col gap-5" : "hidden"}`}
       >
         <div>
-          <p>Package Name</p>
+          <label
+            htmlFor={`package-name-${pkg.id}`}
+            className="mb-2 block text-sm"
+          >
+            Package Name
+          </label>
           <CustomInput
+            id={`package-name-${pkg.id}`}
             type="text"
             className="w-full"
             onChange={(e) => {
@@ -85,24 +114,38 @@ export default function PackageDetailSection({
           ) : null}
         </div>
         <div>
-          <p>Package Price</p>
-          RM{" "}
-          <CustomInput
-            type="text"
-            className="w-1/4"
-            onChange={(e) => {
-              updatePackageToStore(pkg.id, { price: Number(e.target.value) });
-              onFieldChange?.("price");
-            }}
-            value={pkg.price ?? 0}
-          ></CustomInput>
+          <label
+            htmlFor={`package-price-${pkg.id}`}
+            className="mb-2 block text-sm"
+          >
+            Package Price
+          </label>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-(--positive-tertiary)">RM</span>
+            <CustomInput
+              id={`package-price-${pkg.id}`}
+              type="text"
+              className="min-w-0 w-full"
+              onChange={(e) => {
+                updatePackageToStore(pkg.id, { price: Number(e.target.value) });
+                onFieldChange?.("price");
+              }}
+              value={pkg.price ?? 0}
+            ></CustomInput>
+          </div>
           {pkgError?.price ? (
             <p className="text-red-500 text-sm mt-1">{pkgError.price}</p>
           ) : null}
         </div>
         <div>
-          <p>Package Description</p>
+          <label
+            htmlFor={`package-description-${pkg.id}`}
+            className="mb-2 block text-sm"
+          >
+            Package Description
+          </label>
           <CustomTextarea
+            id={`package-description-${pkg.id}`}
             className="w-full"
             onChange={(e) => {
               updatePackageToStore(pkg.id, { details: e.target.value });
@@ -117,8 +160,10 @@ export default function PackageDetailSection({
 
         {/* Config-driven filter fields based on vendor's service */}
         {fields.length > 0 && (
-          <div className="flex flex-col gap-4 border-t border-(--tertiary) pt-4">
-            <p className="font-semibold text-sm opacity-70">Service Filters</p>
+          <div className="flex flex-col gap-4 rounded-xl border border-(--secondary) bg-(--background) p-4 text-sm">
+            <p className="text-xs font-semibold tracking-wide text-(--positive-tertiary) uppercase">
+              Service Filters
+            </p>
             {fields
               .filter((field) =>
                 isCriteriaVisible(field, pkg.filters ?? {}, fields),
@@ -142,27 +187,39 @@ export default function PackageDetailSection({
         )}
 
         <div className="flex flex-col flex-wrap gap-2">
-          <p>Tags</p>
-          <div className="flex flex-row gap-1 text-[10px]">
+          <label htmlFor={`package-tags-${pkg.id}`} className="text-sm">
+            Tags
+          </label>
+          <p className="text-xs font-normal text-foreground/60">
+            Type a tag and press Enter to add it.
+          </p>
+          <div className="flex flex-wrap gap-2 text-xs">
             {pkg.tags.map((t, index) => (
               <div
                 key={index}
-                className="flex flex-row items-center p-2 border rounded-xl bg-(--fourth)"
+                className="flex items-center rounded-full border border-(--tertiary) bg-(--secondary) py-1.5 pr-1.5 pl-3 text-(--positive-tertiary)"
               >
                 <BsTag className="text-[12px] mr-0.5" />
                 {t}
-                <BsX
-                  className="text-[12px] ml-2 cursor-pointer"
+                <MainButton
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  aria-label={`Remove tag ${t}`}
+                  className="ml-2 flex size-6 cursor-pointer items-center justify-center rounded-full hover:bg-(--tertiary)"
                   onClick={() => {
                     const newTags = pkg.tags.filter((_, i) => i !== index);
                     updatePackageToStore(pkg.id, { tags: newTags });
                   }}
-                />
+                >
+                  <BsX aria-hidden="true" className="size-4" />
+                </MainButton>
               </div>
             ))}
           </div>
 
           <CustomInput
+            id={`package-tags-${pkg.id}`}
             type="text"
             placeholder="e.g. Modern, outdoor, malay traditional..."
             onKeyDown={(e) => {
@@ -178,11 +235,18 @@ export default function PackageDetailSection({
           ></CustomInput>
         </div>
         <div className="flex flex-col">
-          <p>Add a file</p>
+          <label htmlFor={`package-file-${pkg.id}`} className="mb-2 text-sm">
+            Package image
+          </label>
+          <p className="mb-3 text-xs font-normal text-foreground/60">
+            Upload a JPG, PNG, or WebP image.
+          </p>
           <input
+            id={`package-file-${pkg.id}`}
             type="file"
+            multiple={true}
             accept="image/jpeg,image/png,image/webp"
-            className="cursor-pointer border border-(--fourth) rounded-lg w-3/4 xl:w-full"
+            className="w-full cursor-pointer rounded-xl border border-dashed border-(--fourth) bg-(--background)"
             onChange={(e) => {
               updatePackageToStore(pkg.id, {
                 file: e.target.files?.[0],

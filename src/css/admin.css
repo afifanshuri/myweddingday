@@ -1,0 +1,58 @@
+.admin-page input:not([type="checkbox"]):not([type="file"]),
+.admin-page select,
+.admin-page textarea {
+  min-height: 2.75rem;
+  border: 1px solid var(--tertiary);
+  border-radius: 0.75rem;
+  background: white;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+
+.admin-page textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.admin-page input:focus-visible,
+.admin-page select:focus-visible,
+.admin-page textarea:focus-visible,
+.admin-page button:focus-visible {
+  outline: 2px solid var(--positive-tertiary);
+  outline-offset: 3px;
+}
+
+.admin-page input:disabled,
+.admin-page select:disabled,
+.admin-page textarea:disabled {
+  background: var(--secondary);
+  color: var(--positive-tertiary);
+}
+
+.admin-page input[type="file"] {
+  max-width: 100%;
+  padding: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.admin-page input[type="file"]::file-selector-button {
+  margin-right: 0.75rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: var(--secondary);
+  color: var(--positive-tertiary);
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-page input,
+  .admin-page select,
+  .admin-page textarea {
+    transition: none;
+  }
+}

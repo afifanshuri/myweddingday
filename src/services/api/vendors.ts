@@ -1,7 +1,7 @@
 import { VendorType } from "@/types/dataTypes";
 import { VendorMatchDTOType, VendorAndPackagesMatchDTOType } from "@/types/dtoTypes";
 
-const retrieveVendorsByService = async (
+const APIGetVendorsByServiceIds = async (
   serviceId: number[],
 ): Promise<VendorType[]> => {
   return await fetch(`api/vendors?serviceIds=${serviceId.join(",")}`).then(
@@ -9,10 +9,10 @@ const retrieveVendorsByService = async (
   );
 };
 
-const retrieveVendorsByPreference = async (
+const APIGetVendorsByPreferences = async (
   preferencesList: VendorMatchDTOType[],
 ): Promise<VendorAndPackagesMatchDTOType[]> => {
-  console.log("in retrieveVendorsByPreference");
+  console.log("in APIGetVendorsByPreferences");
   const response = await fetch("/api/match/vendors", {
     method: "POST",
     headers: {
@@ -25,4 +25,16 @@ const retrieveVendorsByPreference = async (
   return data;
 };
 
-export { retrieveVendorsByService, retrieveVendorsByPreference };
+export { APIGetVendorsByServiceIds, APIGetVendorsByPreferences };
+
+export async function APICreateVendorWithPackages(
+  formData: FormData,
+): Promise<{ id: number; vendorName: string }> {
+  const response = await fetch("/api/vendors", {
+    method: "POST",
+    body: formData,
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error ?? "Unable to save vendor");
+  return data;
+}

@@ -4,11 +4,11 @@ import { usePreferenceStore } from "@/store/preferenceStore";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
 import { ProgressBar } from "@/components/commonComponents/ProgressBar";
-import { BudgetSlider } from "@/components/serviceComponents/BudgetSlider";
-import ServiceTitleSection from "@/components/serviceComponents/ServiceTitleSection";
-import DirectionButtons from "@/components/serviceComponents/DirectionButtons";
-import PromptTextbox from "@/components/serviceComponents/PromptTextbox";
-import FieldRenderer from "@/components/serviceComponents/FieldRenderer";
+import AIBudgetInput from "@/components/weddingDetailComponents/AIBudgetInput";
+import ServiceTitleSection from "@/components/weddingDetailComponents/ServiceTitleSection";
+import DirectionButtons from "@/components/weddingDetailComponents/DirectionButtons";
+import PromptTextbox from "@/components/weddingDetailComponents/PromptTextbox";
+import FieldRenderer from "@/components/commonComponents/FieldRenderer";
 import {
   clearHiddenCriteria,
   isCriteriaVisible,
@@ -24,6 +24,9 @@ export default function ServicePage() {
   );
 
   const preferencesList = usePreferenceStore((state) => state.preferencesList);
+  const currentService = useServiceStore((state) =>
+    state.service.find((service) => service.id === currentServiceId),
+  );
   const requiredFields =
     preferencesList.find((p) => p.serviceId === currentServiceId)
       ?.requiredFields ?? [];
@@ -69,10 +72,21 @@ export default function ServicePage() {
         />
       </div>
 
-      <BudgetSlider
+      <AIBudgetInput
+        key={currentServiceId}
         className="mb-10"
-        currentPath={currentServiceId}
-      ></BudgetSlider>
+        service={
+          currentService ?? { id: currentServiceId, serviceName: "Your Budget" }
+        }
+        budget={
+          preferencesList.find(
+            (preference) => preference.serviceId === currentServiceId,
+          )?.budget ?? 0
+        }
+        onChange={(budget) =>
+          updatePreferenceDetails(currentServiceId, { budget })
+        }
+      />
 
       <div className="flex flex-col gap-6">
         <p className="text-sm">
@@ -121,7 +135,6 @@ export default function ServicePage() {
               </div>
             </section>
           ))}
-        <PromptTextbox currentPath={currentServiceId} />
         <DirectionButtons />
       </div>
     </div>

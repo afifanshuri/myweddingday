@@ -8,6 +8,9 @@ import { useEffect, useRef, useState } from "react";
 import { useAdminStore } from "@/store/adminStore";
 import { useServiceStore } from "@/store/serviceStore";
 import MainButton from "@/components/commonComponents/MainButton";
+import { APIGetLocationsAll } from "@/services/api/locations";
+import { APICreateVendorWithPackages } from "@/services/api/vendors";
+import "@/css/admin.css";
 
 type FieldErrors = {
   vendorName?: string;
@@ -39,9 +42,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     async function populateData() {
-      const locationsList = await fetch("/api/locations").then((res) =>
-        res.json(),
-      );
+      const locationsList = await APIGetLocationsAll();
       setLocationList(locationsList);
       await initServices();
     }
@@ -162,12 +163,7 @@ export default function AdminPage() {
       packageListFromStore.forEach((pkg, index) => {
         if (pkg.file) formData.append(`file_${index}`, pkg.file);
       });
-      const response = await fetch("/api/vendors", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "Unable to save vendor");
+      const data = await APICreateVendorWithPackages(formData);
       updateVendorDataToStore({ id: data.id });
       setSaved(true);
       setShowConfirm(false);
@@ -180,13 +176,28 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="flex flex-col justify-center items-center mx-auto p-10 gap-4">
-      <fieldset disabled={isSaving || saved} className={`contents ${isSaving || saved ? "pointer-events-none" : ""}`}>
-        <div className="flex flex-col border border-(--secondary) bg-white p-4 rounded-lg gap-4 min-h-1/2 min-w-full xl:min-w-1/2">
-          <p className="libre-font text-[20px] mb-6">Vendor Details</p>
+    <main className={`admin-page mx-auto max-w-7xl px-4 py-8 sm:px-8 sm:py-12`}>
+      <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="mb-3 text-xs font-semibold tracking-widest text-(--positive-tertiary) uppercase">Vendor administration</p>
+          <h1 className="libre-font text-3xl text-(--positive-tertiary) sm:text-4xl">Add a vendor</h1>
+          <p className="mt-3 text-sm font-normal text-foreground/60">Create a vendor profile and add the packages couples can explore.</p>
+        </div>
+        <span className="rounded-full border border-(--tertiary) bg-white px-4 py-2 text-xs text-(--positive-tertiary)">{saved ? "Saved" : "New vendor"}</span>
+      </header>
+      <fieldset disabled={isSaving || saved} className={`grid min-w-0 gap-6 lg:grid-cols-[0.9fr_1.1fr] ${isSaving || saved ? "pointer-events-none" : ""}`}>
+        <section aria-labelledby="vendor-details-heading" className="flex min-w-0 flex-col gap-5 self-start rounded-3xl border border-(--tertiary) bg-white p-5 shadow-sm sm:p-7">
+          <div className="flex items-center gap-3 border-b border-(--secondary) pb-5">
+            <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-(--secondary) text-(--positive-tertiary)">01</span>
+            <div>
+              <h2 id="vendor-details-heading" className="libre-font text-xl">Vendor details</h2>
+              <p className="mt-1 text-xs font-normal text-foreground/60">Business information and contact details</p>
+            </div>
+          </div>
           <div>
-            <p>Vendor Name</p>
+            <label htmlFor="vendor-name" className="mb-2 block text-sm">Vendor Name</label>
           <CustomInput
+            id="vendor-name"
             className="w-full"
             value={vendorFromStore.vendorName === "<Vendor Name>" ? "" : vendorFromStore.vendorName}
               onChange={(e) => {
@@ -203,7 +214,7 @@ export default function AdminPage() {
             ) : null}
           </div>
           <div>
-            <p>Service Type</p>
+            <label htmlFor="serviceDropdown" className="mb-2 block text-sm">Service Type</label>
             <select
               name="services"
               id="serviceDropdown"
@@ -232,19 +243,21 @@ export default function AdminPage() {
             ) : null}
           </div>
           <div>
-            <p>Locations Covered</p>
-            <div className="flex flex-row gap-2 text-[10px]">
+            <p className="mb-2 text-sm">Locations Covered</p>
+            <p className="mb-3 text-xs font-normal text-foreground/60">Select all areas this vendor serves.</p>
+            <div className="flex flex-wrap gap-2 text-xs">
               {locationList.map((l) => {
                 return (
-                  <div
+                  <MainButton variant="choice" size="small"
+                    type="button"
+                    aria-pressed={vendorFromStore.locationId.includes(l.id)}
                     key={l.id}
-                    className={`${vendorFromStore.locationId.includes(l.id) ? "bg-(--positive) border-(--positive)" : "bg-white border-(--tertiary)"} cursor-pointer hover:bg-(--positive) p-2 border rounded-lg`}
                     onClick={() => {
                       toggleSelectLocation(l.id);
                     }}
                   >
                     {l.locationName}
-                  </div>
+                  </MainButton>
                 );
               })}
             </div>
@@ -253,8 +266,9 @@ export default function AdminPage() {
             ) : null}
           </div>
           <div>
-            <p>Contact</p>
+            <label htmlFor="vendor-contact" className="mb-2 block text-sm">Contact</label>
           <CustomInput
+            id="vendor-contact"
             className="w-full"
             value={vendorFromStore.contact ?? ""}
               onChange={(e) => {
@@ -270,9 +284,9 @@ export default function AdminPage() {
               <p className="text-red-500 text-sm mt-1">{errors.contact}</p>
             ) : null}
           </div>
-          <div className="flex flex-col gap-4">
-            <p className="font-medium">Social Media (Optional)</p>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="flex flex-col gap-4 border-t border-(--secondary) pt-5">
+            <p className="text-sm">Social Media <span className="font-normal text-foreground/50">(Optional)</span></p>
+            <div className="grid grid-cols-1 gap-4">
               {(
                 [
                   {
@@ -293,7 +307,7 @@ export default function AdminPage() {
                 ] as const
               ).map(({ key, label, placeholder }) => (
                 <div key={key} className="flex flex-col gap-2">
-                  <label htmlFor={`vendor-${key}`}>{label}</label>
+                  <label htmlFor={`vendor-${key}`} className="text-xs text-foreground/70">{label}</label>
                   <CustomInput
                     id={`vendor-${key}`}
                     name={key}
@@ -311,8 +325,9 @@ export default function AdminPage() {
             </div>
           </div>
           <div>
-            <p>Description</p>
+            <label htmlFor="vendor-description" className="mb-2 block text-sm">Description</label>
           <CustomTextarea
+            id="vendor-description"
             className="w-full"
             value={vendorFromStore.detail ?? ""}
               onChange={(e) => {
@@ -328,9 +343,22 @@ export default function AdminPage() {
               <p className="text-red-500 text-sm mt-1">{errors.detail}</p>
             ) : null}
           </div>
-        </div>
-        <div className="flex flex-col border border-(--secondary) bg-white p-4 rounded-lg gap-4 min-h-1/2 min-w-full xl:min-w-1/2">
-          <p className="libre-font text-[20px] mb-6">Package Details</p>
+        </section>
+        <section aria-labelledby="package-details-heading" className="flex min-w-0 flex-col gap-5 self-start rounded-3xl border border-(--tertiary) bg-white p-5 shadow-sm sm:p-7">
+          <div className="flex items-center gap-3 border-b border-(--secondary) pb-5">
+            <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-(--secondary) text-(--positive-tertiary)">02</span>
+            <div className="min-w-0 flex-1">
+              <h2 id="package-details-heading" className="libre-font text-xl">Package details</h2>
+              <p className="mt-1 text-xs font-normal text-foreground/60">Pricing, inclusions, and package images</p>
+            </div>
+            <span className="rounded-full bg-(--secondary) px-3 py-1 text-xs">{packageListFromStore.length}</span>
+          </div>
+          {packageListFromStore.length === 0 && (
+            <div className="rounded-2xl bg-(--background) px-5 py-8 text-center">
+              <p className="text-sm text-(--positive-tertiary)">No packages added yet</p>
+              <p className="mt-2 text-xs font-normal text-foreground/60">Add your first package with its price and what&apos;s included.</p>
+            </div>
+          )}
           {packageListFromStore.map((p, index) => {
             return (
               <PackageDetailSection
@@ -361,28 +389,32 @@ export default function AdminPage() {
             <p className="text-red-500 text-sm mt-1">{errors.packages[0].name}</p>
           ) : null}
 
-          <div
-            className="flex flex-row justify-between items-center w-full border border-dashed border-(--fourth) rounded-lg p-2 cursor-pointer"
+          <MainButton variant="custom" size="none"
+            type="button"
+            className="w-full cursor-pointer rounded-2xl border border-dashed border-(--positive-secondary) bg-(--background) px-4 py-4 text-sm text-(--positive-tertiary) transition-colors hover:bg-(--secondary) motion-reduce:transition-none"
             onClick={() => {
               addNewPackage();
             }}
           >
-            <p>+ Add a package</p>
-          </div>
-        </div>
+            + Add a package
+          </MainButton>
+        </section>
 
-        <MainButton disabled={isSaving || saved} className="min-w-1/4 disabled:opacity-50" onClick={() => handleSaveClick()}>
+        <div className="flex flex-col gap-4 rounded-2xl border border-(--tertiary) bg-white p-5 sm:flex-row sm:items-center sm:justify-between lg:col-span-2">
+          <p className="text-sm font-normal text-foreground/60">Review the vendor details and packages before saving.</p>
+        <MainButton disabled={isSaving || saved} className="w-full px-7 py-3 text-sm text-(--positive-tertiary) disabled:opacity-50 sm:w-auto" onClick={() => handleSaveClick()}>
           {saved ? "Vendor saved" : isSaving ? "Saving..." : "Add Vendor"}
         </MainButton>
+        </div>
       </fieldset>
-      {saved && <p role="status">Vendor and packages saved successfully.</p>}
+      {saved && <p role="status" className="mt-5 rounded-xl border border-(--positive-secondary) bg-(--positive)/20 p-4 text-sm text-(--positive-tertiary)">Vendor and packages saved successfully.</p>}
       {saved && <MainButton onClick={() => {
         resetDraft();
         setSaved(false);
         setErrors({});
         setSaveError(null);
       }}>Add another vendor</MainButton>}
-      {!showConfirm && saveError && <p role="alert" className="text-red-600">{saveError}</p>}
+      {!showConfirm && saveError && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">{saveError}</p>}
 
       <CustomDialog
         open={showConfirm}
@@ -394,6 +426,6 @@ export default function AdminPage() {
         <p>Are you sure you want to save this vendor?</p>
         {saveError && <p role="alert" className="mt-2 text-red-600">{saveError}</p>}
       </CustomDialog>
-    </div>
+    </main>
   );
 }

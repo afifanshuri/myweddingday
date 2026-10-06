@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fffbf2;
+  --secondary: #f5edda;
+  --tertiary: #f0e3c9;
+  --fourth: #c7ae8b;
+  --positive: #bfcc94;
+  --positive-secondary: #a4ad7f;
+  --positive-tertiary: #717855;
+  --positive-tertiary: #373b2b;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground: #0a0a0a;
+    --background: #fffbf2;
+    --secondary: #f5edda;
+    --tertiary: #f0e3c9;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: (--font-josefin);
+  font-weight: 600;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+.home-pricing {
+  background: linear-gradient(
+    to bottom,
+    var(--background) 0%,
+    color-mix(in srgb, var(--background) 92%, var(--secondary)) 12%,
+    color-mix(in srgb, var(--background) 68%, var(--secondary)) 24%,
+    color-mix(in srgb, var(--background) 32%, var(--secondary)) 36%,
+    color-mix(in srgb, var(--background) 8%, var(--secondary)) 48%,
+    var(--secondary) 60%
+  );
+}
+
+textarea,
+select,
+input {
+  padding: 5px;
+}
+
+.libre-font {
+  font-family: var(--font-libre);
+}
+
+.poppins-font {
+  font-family: (--font-poppins);
+  font-weight: 600;
+}
+
+.josefin-font {
+  font-family: var(--font-josefin);
+}

@@ -1,0 +1,126 @@
+/* Call-site utilities can override defaults for cards and compact controls. */
+@layer components {
+  .main-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: 600;
+    line-height: 1.5;
+    text-decoration: none;
+    transition: background-color 180ms, border-color 180ms, box-shadow 180ms, color 180ms;
+  }
+
+  .main-button:focus-visible {
+    outline: 2px solid var(--positive-tertiary);
+    outline-offset: 4px;
+  }
+
+  .main-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .main-button--size-regular {
+    min-height: 2.75rem;
+    border-radius: 0.875rem;
+    padding: 0.65rem 1.25rem;
+    font-size: 0.875rem;
+  }
+
+  .main-button--size-small {
+    min-height: 2.25rem;
+    border-radius: 0.75rem;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.875rem;
+  }
+
+  .main-button--size-icon {
+    width: 2.25rem;
+    height: 2.25rem;
+    flex-shrink: 0;
+    border-radius: 0.625rem;
+    padding: 0;
+  }
+
+  .main-button--size-none {
+    padding: 0;
+  }
+
+  .main-button--primary {
+    border: 1px solid var(--positive-secondary);
+    background: var(--positive);
+    color: var(--positive-tertiary);
+    box-shadow: 0 2px 5px rgb(55 59 43 / 8%);
+  }
+
+  .main-button--primary:hover:not(:disabled) {
+    background: var(--positive-secondary);
+    box-shadow: 0 3px 8px rgb(55 59 43 / 12%);
+  }
+
+  .main-button--secondary,
+  .main-button--choice {
+    border: 1px solid var(--tertiary);
+    background: white;
+    color: var(--positive-tertiary);
+  }
+
+  .main-button--secondary:hover:not(:disabled),
+  .main-button--choice:hover:not(:disabled) {
+    border-color: var(--positive-secondary);
+    background: var(--secondary);
+  }
+
+  .main-button--choice {
+    border-radius: 999px;
+  }
+
+  .main-button--choice[aria-pressed="true"] {
+    border-color: var(--positive-secondary);
+    background: color-mix(in srgb, var(--positive) 30%, white);
+  }
+
+  .main-button--ghost {
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--positive-tertiary);
+  }
+
+  .main-button--ghost:hover:not(:disabled) {
+    background: var(--secondary);
+  }
+
+  .main-button--danger {
+    border: 1px solid transparent;
+    background: transparent;
+    color: #b91c1c;
+  }
+
+  .main-button--danger:hover:not(:disabled) {
+    background: #fef2f2;
+  }
+
+  .main-button--link {
+    border: 0;
+    background: transparent;
+    color: var(--positive-tertiary);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  .main-button--link:hover:not(:disabled) {
+    color: #717855;
+  }
+
+  .main-button--custom {
+    text-decoration: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .main-button {
+      transition: none;
+    }
+  }
+}

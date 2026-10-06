@@ -1,6 +1,6 @@
 import { findVendorsByPreferences } from "@/db/queries/vendors";
 import { NextRequest, NextResponse } from "next/server";
-import { errorResponse, parseJson, readBody, validatePreferences } from "@/services/requestValidation";
+import { errorResponse, parseJson, readBody, validatePreferences } from "@/services/others/requestValidation";
 
 export async function POST(data: NextRequest) {
   try {

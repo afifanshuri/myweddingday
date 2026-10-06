@@ -1,8 +1,10 @@
 "use client";
+import MainButton from "@/components/commonComponents/MainButton";
+
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
+import { APICreateAuthAccount, APICreateAuthSession } from "@/services/api/auth";
 
 export default function LoginPage() {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -19,10 +21,9 @@ export default function LoginPage() {
     setIsSubmitting(true);
     setMessage("");
     try {
-      const supabase = createClient();
       const { data, error } = isRegistering
-        ? await supabase.auth.signUp({ email, password })
-        : await supabase.auth.signInWithPassword({ email, password });
+        ? await APICreateAuthAccount(email, password)
+        : await APICreateAuthSession(email, password);
       if (error) {
         setMessage(isRegistering ? "Unable to create account. Check your details and try again." : "Unable to sign in. Check your email and password.");
         return;
@@ -82,28 +83,27 @@ export default function LoginPage() {
             </p>
           )}
 
-          <button
+          <MainButton
             type="submit"
             disabled={isSubmitting}
-            className="w-full rounded-sm bg-(--positive-secondary) px-4 py-3 text-sm font-medium text-white transition hover:opacity-90"
+            className="w-full"
           >
             {isSubmitting ? "Please wait..." : isRegistering ? "Create account" : "Sign in"}
-          </button>
+          </MainButton>
         </form>
 
         <p className="mt-6 text-center text-sm text-stone-600">
           {isRegistering ? "Already have an account?" : "New here?"}{" "}
-          <button
+          <MainButton variant="link" size="none"
             type="button"
             disabled={isSubmitting}
             onClick={() => {
               setIsRegistering(!isRegistering);
               setMessage("");
             }}
-            className="font-medium text-(--positive-tertiary) underline underline-offset-4"
           >
             {isRegistering ? "Sign in" : "Create an account"}
-          </button>
+          </MainButton>
         </p>
       </section>
     </main>

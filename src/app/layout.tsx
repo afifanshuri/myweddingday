@@ -1,22 +1,17 @@
-import "./globals.css";
-import { Libre_Baskerville, Poppins, Josefin_Sans } from "next/font/google";
+import "@/css/globals.css";
 
-const poppins = Poppins({
+import { DM_Sans, Libre_Baskerville } from "next/font/google";
+
+const dmSans = DM_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-poppins",
+  variable: "--font-dm-sans",
+  display: "swap",
 });
 
 const libre = Libre_Baskerville({
   subsets: ["latin"],
   weight: "400",
   variable: "--font-libre",
-});
-
-const josefin = Josefin_Sans({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-josefin",
 });
 
 export default function RootLayout({
@@ -26,9 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full antialiased">
-      <body
-        className={`${poppins.variable} ${libre.variable} ${josefin.variable}`}
-      >
+      <body className={`${dmSans.variable} ${libre.variable}`}>
         {children}
       </body>
     </html>
