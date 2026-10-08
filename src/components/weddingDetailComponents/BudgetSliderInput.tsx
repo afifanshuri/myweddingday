@@ -6,7 +6,7 @@ import { SERVICE_ID } from "@/config/serviceCriteria";
 import type { ServiceType } from "@/types/dataTypes";
 import "@/css/budget-input.css";
 
-export default function AIBudgetInput({
+export default function BudgetSliderInput({
   service,
   budget,
   hasError = false,
@@ -21,7 +21,7 @@ export default function AIBudgetInput({
 }) {
   const isCatering = service.id === SERVICE_ID.CATERING;
   const [sliderMax, setSliderMax] = useState(() =>
-    Math.max(isCatering ? 200 : 100000, Number.isFinite(budget) ? budget : 0),
+    Math.max(isCatering ? 200 : 20000, Number.isFinite(budget) ? budget : 0),
   );
   const max = Math.max(sliderMax, Number.isFinite(budget) ? budget : 0);
   const sliderValue = Number.isFinite(budget) ? Math.max(1, budget) : 1;
@@ -40,16 +40,24 @@ export default function AIBudgetInput({
     <div className={`budget-input-card ${className}`}>
       <div className="budget-input-header">
         <div className="budget-input-heading">
-          <label htmlFor={`ai-budget-${service.id}`} className="budget-input-label">
+          <label
+            htmlFor={`ai-budget-${service.id}`}
+            className="budget-input-label"
+          >
             {service.serviceName}
           </label>
           <p className="budget-input-subtitle">
             {isCatering ? "Budget per guest" : "Total budget"}
           </p>
         </div>
-        <div className={`budget-input-amount-group ${formattedBudget.length > 9 ? "budget-input-long-amount" : ""}`}>
+        <div
+          className={`budget-input-amount-group ${formattedBudget.length > 9 ? "budget-input-long-amount" : ""}`}
+        >
           <span aria-hidden="true">RM</span>
-          <div className="budget-input-amount-field" style={{ width: `${Math.max(4, formattedBudget.length)}ch` }}>
+          <div
+            className="budget-input-amount-field"
+            style={{ width: `${Math.max(4, formattedBudget.length)}ch` }}
+          >
             <span aria-hidden="true" className="budget-input-formatted-amount">
               {formattedBudget}
             </span>
@@ -82,10 +90,7 @@ export default function AIBudgetInput({
           changeBudget(Math.round(Number(event.target.value)))
         }
       />
-      <div
-        aria-hidden="true"
-        className="budget-input-range-labels"
-      >
+      <div aria-hidden="true" className="budget-input-range-labels">
         <span>RM1</span>
         <span>RM{max.toLocaleString("en-MY")}</span>
       </div>

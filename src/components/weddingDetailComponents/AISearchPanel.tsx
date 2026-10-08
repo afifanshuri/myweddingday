@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import AIBudgetInput from "./AIBudgetInput";
+import AIBudgetInput from "./BudgetSliderInput";
 import CustomTextarea from "@/components/commonComponents/CustomTextarea";
 import MainButton from "@/components/commonComponents/MainButton";
 import { SERVICE_ID } from "@/config/serviceCriteria";
@@ -235,7 +235,9 @@ export default function AISearchPanel({
               {description}
             </p>
           </div>
-          <MainButton variant="link" size="none"
+          <MainButton
+            variant="link"
+            size="none"
             type="button"
             className="text-sm"
             onClick={() => {

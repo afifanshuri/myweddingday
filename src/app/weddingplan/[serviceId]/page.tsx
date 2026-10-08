@@ -4,7 +4,7 @@ import { usePreferenceStore } from "@/store/preferenceStore";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
 import { ProgressBar } from "@/components/commonComponents/ProgressBar";
-import AIBudgetInput from "@/components/weddingDetailComponents/AIBudgetInput";
+import AIBudgetInput from "@/components/weddingDetailComponents/BudgetSliderInput";
 import ServiceTitleSection from "@/components/weddingDetailComponents/ServiceTitleSection";
 import DirectionButtons from "@/components/weddingDetailComponents/DirectionButtons";
 import PromptTextbox from "@/components/weddingDetailComponents/PromptTextbox";

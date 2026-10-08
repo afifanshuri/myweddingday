@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 import type { EmblaOptionsType } from "embla-carousel";
 import useEmblaCarousel from "embla-carousel-react";
 import AutoScroll from "embla-carousel-auto-scroll";
@@ -7,11 +7,13 @@ import "@/css/carousel.css";
 
 type PropType = {
   slides: number[];
+  ariaLabel?: string;
+  renderSlide?: (index: number) => ReactNode;
   options?: EmblaOptionsType;
 };
 
 const Carousel = (props: PropType) => {
-  const { slides, options } = props;
+  const { slides, options, renderSlide, ariaLabel = "Feature carousel" } = props;
   const plugins = useMemo(() => [AutoScroll({ speed: 1 })], []);
   const [emblaRef, emblaApi] = useEmblaCarousel(options, plugins);
 
@@ -39,15 +41,19 @@ const Carousel = (props: PropType) => {
     <div
       className="home-carousel"
       role="region"
-      aria-label="Feature carousel"
+      aria-label={ariaLabel}
     >
       <div className="home-carousel-viewport" ref={emblaRef}>
         <div className="home-carousel-container">
           {slides.map((index) => (
             <div className="home-carousel-slide" key={index}>
-              <div className="home-carousel-number">
+              {renderSlide ? (
+                renderSlide(index)
+              ) : (
+                <div className="home-carousel-number">
                 <span>{index + 1}</span>
               </div>
+              )}
             </div>
           ))}
         </div>

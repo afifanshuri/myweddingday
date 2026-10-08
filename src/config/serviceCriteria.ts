@@ -199,7 +199,6 @@ export const ASSET_PATH = {
 export const CRITERIA_PRIORITY_OPTIONS = ["must-have", "preferred"] as const;
 export type CriteriaPriority = (typeof CRITERIA_PRIORITY_OPTIONS)[number];
 
-// Controls the display group only; users choose required matching via Must have.
 const basicField = (field: CriteriaField): CriteriaField => ({
   ...field,
   group: "basic",
@@ -213,31 +212,30 @@ export const SERVICE_CRITERIA: Record<number, CriteriaField[]> = {
   [SERVICE_ID.VENUE]: [
     basicField(
       singleSelectField("venue_type", "Jenis Venue", [
-        "Dewan",
-        "Rumah",
+        "Hall/Event Space",
+        "House / Villa",
         "Hotel Ballroom",
-        "Dewan MPKK / JKKK",
+        "Dewan Serbaguna/Komuniti",
         "Resort",
       ]),
     ),
     basicField(
-      quantityField("seated_capacity", "Kapasiti Duduk Serentak (Pax)", "pax"),
-    ),
-    basicField(
-      singleSelectField("venue_setting", "Ruang Majlis", [
+      singleSelectField("venue_setting", "Ruang Seating", [
         "Indoor",
         "Outdoor",
-        "Hybrid",
+        "Kedua-duanya (Hybrid)",
       ]),
     ),
     basicField(
-      singleSelectField("rental_basis", "Tempoh Sewaan", [
-        "Sehari",
-        "Sesi Pagi",
-        "Sesi Petang",
-        "Sesi Malam",
-      ]),
+      quantityField(
+        "seated_capacity",
+        "Kapasiti Duduk Serentak (Pax)",
+        "hours",
+      ),
     ),
+    basicField(quantityField("rent_hours", "Tempoh Sewaan (Jam)", "pax")),
+    basicField(booleanField("decor_available", "Dekorasi Disediakan")),
+    basicField(booleanField("is_all_in_package", "Pakej All-Inclusive")),
     booleanField("provides_khemah", "Khemah Disediakan"),
     multiSelectField(
       "khemah_types",
@@ -246,168 +244,220 @@ export const SERVICE_CRITERIA: Record<number, CriteriaField[]> = {
       { key: "provides_khemah", value: true },
     ),
     booleanField("air_conditioned", "Berhawa Dingin"),
-    booleanField("parking_available", "Tempat Letak Kereta"),
     booleanField("includes_tables_chairs", "Termasuk Meja dan Kerusi"),
     booleanField("prayer_facilities", "Surau / Ruang Solat"),
     multiSelectField("accessibility", "Kemudahan Akses", [
-      "Pintu Masuk Tanpa Tangga",
+      "Parking Kereta",
+      "Laluan/Tangga OKU",
       "Lif",
       "Tandas Mesra OKU",
     ]),
-    booleanField("rain_backup", "Ruang Alternatif Berbumbung Jika Hujan", {
-      key: "venue_setting",
-      value: ["Outdoor", "Hybrid"],
-    }),
-    multiSelectField("external_vendors_allowed", "Vendor Luar Dibenarkan", [
-      "Katering",
-      "Pelamin",
-      "Sistem Audio",
-    ]),
+    multiSelectField(
+      "external_vendors_allowed",
+      "Vendor Luar Dibenarkan",
+      ["Katering", "Pelamin", "Sistem Audio", "Vendor Makanan / Minuman"],
+      { key: "is_all_in_package", value: false },
+    ),
     ...SHARED_CRITERIA,
   ],
   [SERVICE_ID.PELAMIN]: [
     basicField(
-      singleSelectField("style", "Gaya Pelamin", [
-        "Moden",
-        "Tradisional",
+      multiSelectField("style", "Gaya Pelamin", [
+        "Modern",
+        "Klasik",
         "Minimalis",
-        "Rustic",
         "All White",
         "Floral",
         "Arabic / Islamic",
+        "Grand / Royal",
+        "Lain-lain",
       ]),
     ),
     basicField(
-      singleSelectField("pelamin_size", "Saiz Pelamin", [
-        "Mini / Nikah",
-        "Penuh / Resepsi",
+      multiSelectField("pelamin_size", "Saiz Pelamin", [
+        "Mini (4-6ft)",
+        "Standard (6-8ft)",
+        "Large (10-12ft)",
+        "Extra Large (16-20ft)",
       ]),
     ),
     basicField(
-      multiSelectField("setup_compatibility", "Kesesuaian Lokasi", [
+      multiSelectField("setup_compatibility", "Lokasi Pelamin", [
         "Indoor",
         "Khemah",
         "Outdoor",
       ]),
     ),
-    booleanField("includes_backdrop", "Termasuk Backdrop"),
+    booleanField("backdrop_available", "Backdrop Tersedia"),
+    booleanField("arch_available", "Arch Tersedia"),
     multiSelectField(
       "backdrop_type",
       "Jenis Backdrop",
-      ["Kain", "Dinding Bunga", "Skrin LED", "Panel Kayu"],
-      { key: "includes_backdrop", value: true },
+      ["Kain", "Bunga", "Skrin LED", "Panel Kayu", "Fleksibel"],
+      { key: "backdrop_available", value: true },
     ),
-    singleSelectField("flower_type", "Jenis Bunga", [
-      "Segar",
-      "Tiruan",
-      "Campuran",
-    ]),
-    booleanField("colour_customization", "Warna Boleh Diubah"),
-    booleanField("includes_stage", "Termasuk Pentas / Platform"),
+    booleanField("includes_stage", "Termasuk Stage"),
+    booleanField("includes_lighting", "Termasuk Lighting"),
     ...SHARED_CRITERIA,
   ],
   [SERVICE_ID.CATERING]: [
     basicField(
-      singleSelectField("service_style", "Gaya Hidangan", [
-        "Buffet",
-        "Hidang",
-        "Live Station",
+      quantityField("dish_count", "Bilangan Pax Untuk Dihidangkan", "pax"),
+    ),
+    basicField(
+      singleSelectField("flexible_menu", "Pilih Menu", [
+        "Saya Mahu Pilih Menu",
+        "Saya fleksibel dengan pakej yang disediakan oleh vendor",
       ]),
     ),
     basicField(
-      multiSelectField("cuisine_style", "Jenis Masakan", [
-        "Melayu Tradisional",
-        "Fusion",
-        "Western",
-        "International",
-      ]),
+      multiSelectField(
+        "rice_options",
+        "Pilihan Nasi",
+        [
+          "Nasi Minyak",
+          "Nasi Putih",
+          "Nasi Beriani",
+          "Nasi Tomato",
+          "Nasi Hujan Panas",
+        ],
+        { key: "flexible_menu", value: "Saya Mahu Pilih Menu" },
+      ),
     ),
-    basicField(quantityField("dish_count", "Bilangan Hidangan", "dishes")),
     basicField(
-      multiSelectField("rice_options", "Pilihan Nasi", [
-        "Nasi Minyak",
-        "Nasi Putih",
-        "Nasi Beriani",
-        "Nasi Tomato",
-      ]),
+      multiSelectField(
+        "lauk_options",
+        "Pilihan Menu",
+        [
+          "Ayam",
+          "Daging",
+          "Kambing",
+          "Ikan",
+          "Udang",
+          "Sayur-sayuran",
+          "Buah-buahan",
+          "Papadom",
+        ],
+        { key: "flexible_menu", value: "Saya Mahu Pilih Menu" },
+      ),
     ),
-    singleSelectField("tableware", "Pinggan Mangkuk", [
-      "Seramik / Boleh Guna Semula",
-      "Pakai Buang",
+    basicField(
+      multiSelectField(
+        "drink_cold_options",
+        "Pilihan Minuman Sejuk",
+        ["Punch", "Sirap", "Oren", "Sejuk", "Teh O Ais"],
+        { key: "flexible_menu", value: "Saya Mahu Pilih Menu" },
+      ),
+    ),
+    basicField(
+      multiSelectField(
+        "drink_hot_options",
+        "Pilihan Minuman Panas",
+        ["Teh Tarik", "Kopi", "Teh O"],
+        { key: "flexible_menu", value: "Saya Mahu Pilih Menu" },
+      ),
+    ),
+    basicField(
+      booleanField("includes_dessert", "Termasuk Kuih / Pencuci Mulut", {
+        key: "flexible_menu",
+        value: "Saya Mahu Pilih Menu",
+      }),
+    ),
+    singleSelectField("tableware", "Pilihan Tableware", [
+      "Tableware Seramik / Kaca",
+      "Tableware Pakai Buang",
       "Tidak Termasuk",
     ]),
-    booleanField("menu_tasting", "Sesi Merasa Menu Tersedia"),
-    booleanField("includes_serving_staff", "Termasuk Kakitangan Hidangan"),
-    booleanField("includes_drinks", "Termasuk Minuman"),
-    booleanField("includes_dessert", "Termasuk Pencuci Mulut / Kuih"),
-    booleanField(
-      "includes_meja_beradab",
-      "Termasuk Meja Beradab / Hidangan Pengantin",
-    ),
+    booleanField("includes_serving_staff", "Termasuk Pramusaji / Staf Hidang"),
+    booleanField("includes_makan_beradab", "Termasuk Hidangan Makan Beradab"),
+    booleanField("includes_vip", "Termasuk Hidangan VIP"),
+    booleanField("includes_table_decor", "Termasuk Hiasan Meja"),
+    booleanField("menu_tasting", "Tasting Session Tersedia"),
+
     ...SHARED_CRITERIA,
   ],
   [SERVICE_ID.PHOTOGRAPHER]: [
     basicField(
-      singleSelectField("coverage_type", "Jenis Liputan", [
+      singleSelectField("coverage_type", "Jenis Coverage", [
         "Photo Only",
         "Video Only",
         "Photo + Video",
       ]),
     ),
     basicField(
-      singleSelectField("event_coverage", "Liputan Majlis", [
-        "Akad Sahaja",
-        "Sehari Penuh",
-        "Berbilang Hari",
+      multiSelectField("event_coverage", "Coverage Majlis", [
+        "Pre Wedding / Engagement",
+        "Akad Nikah",
+        "Sanding / Resepsi",
+        "Akad Nikah + Sanding / Resepsi",
+        "Outdoor",
       ]),
     ),
-    basicField(
-      multiSelectField("deliverables", "Hasil Diserahkan", [
-        "Foto Disunting",
-        "Album",
-        "Video Sinematik",
-        "Same-Day Edit",
-        "Rakaman Penuh Majlis",
-      ]),
+    singleSelectField(
+      "different_day_outdoor",
+      "Coverage Outdoor",
+      ["Hari Sama", "Hari Berbeza"],
+      {
+        key: "event_coverage",
+        value: "Outdoor",
+      },
     ),
-    multiSelectField("photography_style", "Gaya Rakaman", [
-      "Tradisional",
-      "Candid / Dokumentari",
-      "Sinematik",
+    multiSelectField("deliverables", "Add Ons", [
+      "Album Foto",
+      "Gambar Berserta Frame",
+      "Edit Hari Yang Sama",
+      "Rakaman Drone",
+      "Rakaman Penuh Majlis",
     ]),
     basicField(
-      quantityField("coverage_hours", "Tempoh Liputan (Jam)", "hours"),
+      quantityField("coverage_hours", "Tempoh Coverage (Jam)", "hours"),
     ),
-    quantityField("photographer_count", "Bilangan Jurugambar", "people"),
-    quantityField(
-      "videographer_count",
-      "Bilangan Juruvideo",
-      "people",
-      {},
-      { key: "coverage_type", value: ["Video Only", "Photo + Video"] },
-    ),
-    booleanField("has_drone", "Drone Shot"),
     ...SHARED_CRITERIA,
   ],
   [SERVICE_ID.CLOTHING]: [
     basicField(
       singleSelectField("clothing_type", "Jenis Pakaian", [
         "Sewa",
-        "Tempah Jahit",
+        "Bespoke / Tempah Jahit",
         "Ready-Made",
       ]),
     ),
+
     basicField(
-      singleSelectField("gender", "Untuk", ["Lelaki", "Perempuan", "Pasangan"]),
+      quantityField(
+        "rental_days",
+        "Tempoh Sewaan (Hari)",
+        "days",
+        {},
+        { key: "clothing_type", value: "Sewa" },
+        "user",
+      ),
     ),
     basicField(
-      multiSelectField("attire_type", "Jenis Busana", [
+      quantityField(
+        "rental_days_min",
+        "Tempoh Sewaan (Hari) Minimum",
+        "days",
+        {},
+        { key: "clothing_type", value: "Sewa" },
+        "admin",
+      ),
+    ),
+    basicField(
+      singleSelectField("gender_clothing", "Untuk", [
+        "Lelaki",
+        "Perempuan",
+        "Pasangan",
+      ]),
+    ),
+    basicField(
+      multiSelectField("attire_type", "Jenis Pakaian", [
         "Baju Melayu",
+        "Baju Songket",
         "Baju Kurung",
-        "Songket",
-        "Gown Moden",
-        "Baju Akad",
-        "Baju Sanding",
+        "Baju Kebaya",
+        "Wedding Dress",
+        "Suit / Tuxedo",
       ]),
     ),
     basicField(
@@ -423,13 +473,15 @@ export const SERVICE_CRITERIA: Record<number, CriteriaField[]> = {
         "Tempahan Ukuran",
       ]),
     ),
-    quantityField("outfit_changes", "Bilangan Persalinan", "outfits"),
-    booleanField("colour_customization", "Warna Boleh Diubah"),
-    multiSelectField("included_accessories", "Aksesori Termasuk", [
+    quantityField("outfit_changes", "Bilangan Sesi Fitting", "sessions"),
+    multiSelectField("included_accessories", "Aksesori", [
       "Songkok",
-      "Samping",
+      "Sampin",
       "Tudung / Hijab",
       "Barang Kemas",
+      "Crown",
+      "Veil",
+      "Bunga Tangan",
     ]),
     booleanField("includes_alterations", "Termasuk Ubah Suai Ukuran"),
     basicField(
@@ -441,41 +493,28 @@ export const SERVICE_CRITERIA: Record<number, CriteriaField[]> = {
         { key: "clothing_type", value: "Tempah Jahit" },
       ),
     ),
-    basicField(
-      quantityField(
-        "rental_days",
-        "Tempoh Sewaan (Hari)",
-        "days",
-        {},
-        { key: "clothing_type", value: "Sewa" },
-      ),
-    ),
     ...SHARED_CRITERIA,
   ],
   [SERVICE_ID.MUA]: [
     basicField(
       multiSelectField("service_scope", "Skop Servis", [
+        "Solekan Basic",
+        "Solekan Tunang",
         "Solekan Nikah",
         "Solekan Sanding",
         "Touch Up",
-        "Keluarga / Pengiring",
       ]),
     ),
-    multiSelectField("makeup_style", "Gaya Solekan", [
-      "Soft / Natural",
-      "Glam",
-      "Tradisional",
-    ]),
     basicField(
-      quantityField("pax_covered", "Bilangan Orang Diliputi", "people"),
+      singleSelectField("gender_mua", "Untuk", [
+        "Lelaki",
+        "Perempuan",
+        "Pasangan",
+        "Lain-lain",
+      ]),
     ),
-    booleanField("includes_hijab_styling", "Termasuk Gaya Hijab"),
+    booleanField("includes_hijab_styling", "Termasuk Hijab Styling"),
     booleanField("includes_hairdo", "Termasuk Dandanan Rambut / Sanggul"),
-    booleanField("includes_trial", "Termasuk Sesi Percubaan"),
-    booleanField(
-      "product_allergy_accommodations",
-      "Penyesuaian Produk untuk Alahan",
-    ),
     basicField(
       multiSelectField("service_location", "Lokasi Servis", [
         "Di Lokasi Pelanggan",

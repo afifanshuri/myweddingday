@@ -31,7 +31,9 @@ export default function WeddingDetailsPage({
   useEffect(() => {
     addAllServices(latestServices);
   }, [addAllServices, latestServices]);
-
+  const deleteAllPreference = usePreferenceStore(
+    (state) => state.deleteAllPreferenceData,
+  );
   const weddingDetailsFromStore = usePreferenceStore(
     (state) => state.weddingDetails,
   );
@@ -61,6 +63,7 @@ export default function WeddingDetailsPage({
   }
 
   function onGoBack() {
+    deleteAllPreference();
     router.push("/");
   }
 
@@ -144,7 +147,9 @@ export default function WeddingDetailsPage({
             <div className="flex flex-wrap gap-2 text-xs">
               {latestLocations.map((l) => {
                 return (
-                  <MainButton variant="choice" size="small"
+                  <MainButton
+                    variant="choice"
+                    size="small"
                     type="button"
                     aria-pressed={weddingDetailsFromStore.locations.includes(
                       l.id,
@@ -195,7 +200,9 @@ export default function WeddingDetailsPage({
         />
       </div>
       <div className="flex justify-end gap-2">
-        <MainButton variant="secondary" onClick={() => onGoBack()}>Back</MainButton>
+        <MainButton variant="secondary" onClick={() => onGoBack()}>
+          Back
+        </MainButton>
         {searchMode === "manual" && (
           <MainButton onClick={onSubmit}>
             Continue with manual search

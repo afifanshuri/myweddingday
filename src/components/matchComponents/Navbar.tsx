@@ -10,9 +10,6 @@ export function Navbar() {
     (state) => state.weddingDetails.coupleName,
   );
 
-  const deleteAllServicesFromStore = useServiceStore(
-    (state) => state.deleteAllService,
-  );
   const deleteAllPreferenceData = usePreferenceStore(
     (state) => state.deleteAllPreferenceData,
   );
@@ -21,7 +18,6 @@ export function Navbar() {
 
   const resetData = () => {
     deleteAllPreferenceData();
-    deleteAllServicesFromStore();
     route.push("/");
   };
 

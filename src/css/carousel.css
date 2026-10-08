@@ -55,6 +55,6 @@
 
 @media (min-width: 768px) {
   .home-carousel {
-    --slide-size: 20%;
+    --slide-size: 33.333333%;
   }
 }

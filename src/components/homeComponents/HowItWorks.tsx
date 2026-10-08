@@ -1,5 +1,5 @@
 import { BsCalendarEvent, BsCheck2, BsGrid, BsSliders } from "react-icons/bs";
-import MainButton from "./MainButton";
+import MainButton from "@/components/commonComponents/MainButton";
 
 const steps = [
   {
