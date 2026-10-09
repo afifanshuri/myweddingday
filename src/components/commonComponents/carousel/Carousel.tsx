@@ -13,17 +13,22 @@ type PropType = {
 };
 
 const Carousel = (props: PropType) => {
-  const { slides, options, renderSlide, ariaLabel = "Feature carousel" } = props;
+  const {
+    slides,
+    options,
+    renderSlide,
+    ariaLabel = "Feature carousel",
+  } = props;
   const plugins = useMemo(() => [AutoScroll({ speed: 1 })], []);
   const [emblaRef, emblaApi] = useEmblaCarousel(options, plugins);
 
   useEffect(() => {
     if (!emblaApi) return;
+    emblaApi.plugins().autoScroll?.play();
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const syncAutoScroll = () => {
       const autoScroll = emblaApi.plugins().autoScroll;
-      if (reducedMotion.matches) autoScroll?.stop();
-      else autoScroll?.play();
+      autoScroll?.play();
     };
 
     syncAutoScroll();
@@ -38,11 +43,7 @@ const Carousel = (props: PropType) => {
   }, [emblaApi]);
 
   return (
-    <div
-      className="home-carousel"
-      role="region"
-      aria-label={ariaLabel}
-    >
+    <div className="home-carousel" role="region" aria-label={ariaLabel}>
       <div className="home-carousel-viewport" ref={emblaRef}>
         <div className="home-carousel-container">
           {slides.map((index) => (
@@ -51,8 +52,8 @@ const Carousel = (props: PropType) => {
                 renderSlide(index)
               ) : (
                 <div className="home-carousel-number">
-                <span>{index + 1}</span>
-              </div>
+                  <span>{index + 1}</span>
+                </div>
               )}
             </div>
           ))}

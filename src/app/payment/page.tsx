@@ -15,7 +15,10 @@ export default function PaymentPage() {
             Plus plan
           </h2>
           <p className="mt-3 text-3xl font-semibold">
-            RM10 <span className="text-sm font-normal">/ month</span>
+            RM20 <span className="text-sm font-normal">one-time</span>
+          </p>
+          <p className="mt-3 text-sm text-foreground/65">
+            Includes 1 year of access from purchase. No automatic renewal.
           </p>
         </div>
         <p className="mt-6 font-normal text-foreground/60">

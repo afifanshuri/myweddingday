@@ -4,17 +4,20 @@ import MainButton from "@/components/commonComponents/MainButton";
 const steps = [
   {
     title: "Tell us about your day",
-    description: "Add your wedding date, guest count, and preferred locations. Choose the services you need help finding.",
+    description:
+      "Add your wedding date, guest count, and preferred locations. Choose the services you need help finding.",
     icon: BsCalendarEvent,
   },
   {
     title: "Make the search yours",
-    description: "Set a budget for each service, choose your preferences, and mark the details your vendors must have.",
+    description:
+      "Set a budget for each service, choose your preferences, and mark the details your vendors must have.",
     icon: BsSliders,
   },
   {
     title: "Explore your matches",
-    description: "Browse recommended vendors and compare their matched packages, prices, and inclusions in one place.",
+    description:
+      "Browse recommended vendors and compare their matched packages, prices, and inclusions in one place.",
     icon: BsGrid,
   },
 ];
@@ -23,7 +26,9 @@ function StepPreview({ step }: { step: number }) {
   if (step === 0) {
     return (
       <div className="space-y-4">
-        <p className="text-xs font-medium text-(--positive-tertiary)">Your wedding details</p>
+        <p className="text-xs font-medium text-(--positive-tertiary)">
+          Your wedding details
+        </p>
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-xl border border-(--tertiary) bg-white px-3 py-2.5">
             <p className="text-[11px] text-foreground/55">Guests</p>
@@ -36,7 +41,10 @@ function StepPreview({ step }: { step: number }) {
         </div>
         <div className="flex flex-wrap gap-2">
           {["Venue", "Catering", "Photography"].map((service) => (
-            <span key={service} className="flex items-center gap-1 rounded-full border border-(--positive-secondary) bg-(--positive)/20 px-2.5 py-1.5 text-[11px] text-(--positive-tertiary)">
+            <span
+              key={service}
+              className="flex items-center gap-1 rounded-full border border-(--positive-secondary) bg-(--positive)/20 px-2.5 py-1.5 text-[11px] text-(--positive-tertiary)"
+            >
               <BsCheck2 /> {service}
             </span>
           ))}
@@ -52,9 +60,13 @@ function StepPreview({ step }: { step: number }) {
           <div className="flex items-center justify-between gap-2">
             <div>
               <p className="text-xs font-medium">Photography</p>
-              <p className="mt-1 text-[11px] text-foreground/55">Total budget</p>
+              <p className="mt-1 text-[11px] text-foreground/55">
+                Total budget
+              </p>
             </div>
-            <p className="libre-font whitespace-nowrap text-lg text-(--positive-tertiary)">RM 3,000</p>
+            <p className="libre-font whitespace-nowrap text-lg text-(--positive-tertiary)">
+              RM 3,000
+            </p>
           </div>
           <div className="relative mt-4 h-1.5 rounded-full bg-(--secondary)">
             <div className="h-full w-2/5 rounded-full bg-(--positive-tertiary)" />
@@ -63,7 +75,9 @@ function StepPreview({ step }: { step: number }) {
         </div>
         <div className="flex items-center justify-between gap-2 rounded-xl border border-(--positive-secondary) bg-(--positive)/15 px-3 py-2.5 text-xs text-(--positive-tertiary)">
           <span>Candid photography</span>
-          <span className="flex items-center gap-1 whitespace-nowrap font-medium"><BsCheck2 /> Must have</span>
+          <span className="flex items-center gap-1 whitespace-nowrap font-medium">
+            <BsCheck2 /> Must have
+          </span>
         </div>
       </div>
     );
@@ -71,15 +85,29 @@ function StepPreview({ step }: { step: number }) {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs font-medium text-(--positive-tertiary)">Compare matched packages</p>
-      {[{ label: "Photography package", price: "RM 2,500", topPick: true }, { label: "Photography package", price: "RM 2,800", topPick: false }].map((item, index) => (
-        <div key={index} className="flex items-center gap-3 rounded-xl border border-(--tertiary) bg-white p-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-(--secondary) text-(--positive-tertiary)"><BsGrid /></span>
+      <p className="text-xs font-medium text-(--positive-tertiary)">
+        Compare matched packages
+      </p>
+      {[
+        { label: "Photography package", price: "RM 2,500", topPick: true },
+        { label: "Photography package", price: "RM 2,800", topPick: false },
+      ].map((item, index) => (
+        <div
+          key={index}
+          className="flex items-center gap-3 rounded-xl border border-(--tertiary) bg-white p-3"
+        >
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-(--secondary) text-(--positive-tertiary)">
+            <BsGrid />
+          </span>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium">{item.label}</p>
             <p className="mt-1 text-xs text-foreground/60">{item.price}</p>
           </div>
-          {item.topPick && <span className="shrink-0 rounded-full bg-(--positive)/25 px-2 py-1 text-[10px] text-(--positive-tertiary)">Top pick</span>}
+          {item.topPick && (
+            <span className="shrink-0 rounded-full bg-(--positive)/25 px-2 py-1 text-[10px] text-(--positive-tertiary)">
+              Top pick
+            </span>
+          )}
         </div>
       ))}
     </div>
@@ -88,7 +116,7 @@ function StepPreview({ step }: { step: number }) {
 
 export default function HowItWorks() {
   return (
-    <section
+    /**<section
       id="how-it-works"
       aria-labelledby="how-it-works-heading"
       className="scroll-mt-24 border-b border-(--tertiary) bg-(--background) px-5 py-20 sm:px-8 sm:py-24"
@@ -124,6 +152,39 @@ export default function HowItWorks() {
           </div>
           <MainButton href="/weddingplan" className="w-full shrink-0 sm:w-auto">Start planning your wedding</MainButton>
         </div>
+      </div>
+    </section>**/
+    <section
+      id="how-it-works"
+      aria-labelledby="how-it-works-heading"
+      className="scroll-mt-24 bg-(--background) px-5 py-20 sm:px-8 sm:py-24 min-h-[100vh]"
+    >
+      <div className="mx-auto max-w-6xl flex flex-col justify-center">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="mb-4 text-xs font-semibold tracking-widest text-(--positive-tertiary) uppercase">
+            From your ideas to your shortlist
+          </p>
+          <h2
+            id="how-it-works-heading"
+            className="libre-font text-3xl text-(--positive-tertiary) sm:text-4xl"
+          >
+            How it works
+          </h2>
+          <p className="mt-5 text-base leading-7 text-foreground/65">
+            Find vendors that fit your wedding, your priorities, and your
+            budget. Start with a few details and take it one step at a time.
+          </p>
+        </div>
+        <video
+          width="80%"
+          muted
+          playsInline
+          autoPlay
+          loop
+          className="rounded-lg shadow-2xl"
+        >
+          <source src="/video/export-1791535597398.mp4" type="video/mp4" />
+        </video>
       </div>
     </section>
   );

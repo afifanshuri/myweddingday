@@ -15,8 +15,8 @@ const pricingPlans = [
   },
   {
     name: "Plus ✨",
-    price: "RM10",
-    description: "More freedom to find the right vendors for your wedding.",
+    price: "RM20",
+    description: "One payment for a full year of wedding planning. No automatic renewal.",
     featured: true,
     benefits: [
       "Unlimited manual searches",
@@ -63,7 +63,7 @@ export default function Pricing() {
                 {plan.price}
               </span>
               <span className="text-sm font-normal text-foreground/60">
-                {plan.featured ? "/ month" : "Free"}
+                {plan.featured ? "one-time · 1 year access" : "Free"}
               </span>
             </p>
             <p className="mt-4 min-h-12 text-sm font-normal leading-6 text-foreground/65">
@@ -95,7 +95,7 @@ export default function Pricing() {
         ))}
       </div>
       <MainButton href="/payment" className="mt-4 px-8 py-3">
-        Upgrade to Plus — RM10/month
+        Get 1 year of Plus — RM20 one-time
       </MainButton>
     </section>
   );

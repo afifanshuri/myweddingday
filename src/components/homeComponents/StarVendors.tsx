@@ -45,7 +45,7 @@ export default function StarVendors() {
     <section
       id="features"
       aria-labelledby="features-heading"
-      className="scroll-mt-24 px-5 py-20 sm:px-8 sm:py-24"
+      className="min-h-[100vh] scroll-mt-24 px-5 py-20 sm:px-8 sm:py-24"
     >
       <div className="mx-auto max-w-2xl text-center">
         <p className="mb-4 text-xs font-semibold tracking-widest text-(--positive-tertiary) uppercase">
