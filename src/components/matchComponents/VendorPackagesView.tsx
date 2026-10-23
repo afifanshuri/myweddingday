@@ -1,4 +1,8 @@
+"use client";
+
 import MainButton from "@/components/commonComponents/MainButton";
+import { usePreferenceStore } from "@/store/preferenceStore";
+import { useServiceStore } from "@/store/serviceStore";
 import { VendorAndPackagesMatchDTOType } from "@/types/dtoTypes";
 import { SERVICE_ID } from "@/config/serviceCriteria";
 import {
@@ -9,6 +13,7 @@ import {
   FaInstagram,
   FaTiktok,
   FaFacebookF,
+  FaCheck,
 } from "react-icons/fa";
 
 const currency = new Intl.NumberFormat("en-MY", {
@@ -24,6 +29,10 @@ export default function VendorPackagesView({
   onBack: () => void;
 }) {
   const vendor = match.vendor;
+  const selectedPackage = usePreferenceStore((state) => state.selectedPackages.find((pkg) => pkg.serviceId === vendor.serviceId));
+  const selectPackage = usePreferenceStore((state) => state.selectPackage);
+  const removeSelectedPackage = usePreferenceStore((state) => state.removeSelectedPackage);
+  const serviceName = useServiceStore((state) => state.service.find((service) => service.id === vendor.serviceId)?.serviceName) ?? `Service ${vendor.serviceId}`;
   const packages = [...match.packages].sort((a, b) => a.price - b.price);
   const isCatering = vendor.serviceId === SERVICE_ID.CATERING;
   const socialLinks = [
@@ -108,11 +117,13 @@ export default function VendorPackagesView({
         ) : (
           <div className="grid grid-cols-1 items-stretch gap-5 md:grid-cols-2">
             {packages.map((pkg, index) => (
-              <article key={pkg.id} className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-(--tertiary) bg-white shadow-sm">
+              <article key={pkg.id} className={`flex min-w-0 flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition-colors motion-reduce:transition-none ${selectedPackage?.packageId === pkg.id ? "border-(--positive-tertiary)" : "border-(--tertiary)"}`}>
                 <div className="flex flex-1 flex-col gap-4 p-5 sm:p-6">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-xs font-normal text-(--positive-tertiary)">Package {index + 1}</span>
-                    {index === 0 && packages.length > 1 && (
+                    {selectedPackage?.packageId === pkg.id ? (
+                      <FaCheck aria-hidden="true" className="text-sm text-(--positive-tertiary)" />
+                    ) : index === 0 && packages.length > 1 && (
                       <span className="rounded-full bg-(--secondary) px-3 py-1 text-xs font-medium text-(--positive-tertiary)">Lowest price</span>
                     )}
                   </div>
@@ -122,6 +133,18 @@ export default function VendorPackagesView({
                   </p>
                 </div>
                 <div className="border-t border-(--secondary) bg-(--background) px-5 py-4 sm:px-6">
+                  <label className="mb-4 flex cursor-pointer items-center gap-2 text-sm">
+                    <input type="radio" name={`package-${vendor.serviceId}`} className="accent-(--positive-tertiary)"
+                      checked={selectedPackage?.packageId === pkg.id}
+                      aria-label={`${selectedPackage?.packageId === pkg.id ? "Unselect" : "Select"} ${pkg.packageName} from ${vendor.vendorName} for my budget`}
+                      onClick={() => {
+                        if (selectedPackage?.packageId === pkg.id) removeSelectedPackage(vendor.serviceId);
+                      }}
+                      onChange={() => selectPackage({ serviceId: vendor.serviceId, serviceName,
+                        vendorId: vendor.id, vendorName: vendor.vendorName, packageId: pkg.id,
+                        packageName: pkg.packageName, unitPrice: Number(pkg.price) })} />
+                    {selectedPackage?.packageId === pkg.id ? "Selected for my budget" : "Select for my budget"}
+                  </label>
                   <p className="text-xs font-normal">{isCatering ? "Price per guest" : "Package price"}</p>
                   <p className="mt-1 flex flex-wrap items-baseline gap-2 text-2xl font-semibold text-(--positive-tertiary)">
                     {currency.format(pkg.price)}

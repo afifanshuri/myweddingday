@@ -6,4 +6,14 @@ type BasicPreferenceType = {
   requiredFields?: string[];
 };
 
-export type { BasicPreferenceType };
+type SelectedPackage = {
+  serviceId: number;
+  serviceName: string;
+  vendorId: number;
+  vendorName: string;
+  packageId: number;
+  packageName: string;
+  unitPrice: number;
+};
+
+export type { BasicPreferenceType, SelectedPackage };

@@ -1,4 +1,5 @@
 import { db } from "@/db";
+import { getVendorImageUrls } from "@/services/others/vendorImageService";
 import { packagesTable, vendorsTable } from "../schema";
 import { and, desc, eq, getColumns, lte, or, sql, type SQL } from "drizzle-orm";
 import { VendorMatchDTOType } from "@/types/dtoTypes";
@@ -107,7 +108,10 @@ const findVendorsByPreferences = async (
       }, new Map<number, { vendor: (typeof results)[0]["vendor"]; packages: (typeof results)[0]["package"][] }>())
       .values(),
   );
-  return array;
+  return Promise.all(array.map(async (match) => ({
+    ...match,
+    vendor: { ...match.vendor, imageUrls: await getVendorImageUrls(match.vendor.imagePaths) },
+  })));
 };
 
 export {

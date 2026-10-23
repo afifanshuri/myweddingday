@@ -3,12 +3,13 @@ import { db } from "@/db";
 import { locationTable, servicesTable, vendorsTable, packagesTable } from "@/db/schema";
 import { eq, inArray } from "drizzle-orm";
 import { createPackageImageStorage } from "./packageImageService";
+import { createVendorImageStorage } from "./vendorImageService";
 import { RequestError, validateVendor, validatePackages } from "./requestValidation";
 
 type VendorInput = ReturnType<typeof validateVendor>;
 type PackageInput = ReturnType<typeof validatePackages>[number];
 
-export async function saveVendorRecords(vendor: VendorInput, packages: (PackageInput & { filePath?: string })[]) {
+export async function saveVendorRecords(vendor: VendorInput & { imagePaths?: string[] }, packages: (PackageInput & { filePath?: string })[]) {
   return db.transaction(async (tx) => {
     const [created] = await tx.insert(vendorsTable).values(vendor)
       .returning({ id: vendorsTable.id, vendorName: vendorsTable.vendorName });
@@ -17,7 +18,7 @@ export async function saveVendorRecords(vendor: VendorInput, packages: (PackageI
   });
 }
 
-export async function saveVendorSubmission(vendor: VendorInput, packages: PackageInput[], files: (File | null)[]) {
+export async function saveVendorSubmission(vendor: VendorInput, packages: PackageInput[], files: (File | null)[], vendorFiles: File[] = []) {
   const [services, locations] = await Promise.all([
     db.select({ id: servicesTable.id }).from(servicesTable).where(eq(servicesTable.id, vendor.serviceId)),
     db.select({ id: locationTable.id }).from(locationTable).where(inArray(locationTable.id, vendor.locationId)),
@@ -26,5 +27,7 @@ export async function saveVendorSubmission(vendor: VendorInput, packages: Packag
     throw new RequestError("Selected service or location does not exist");
   }
   const storage = createPackageImageStorage();
-  return createVendorWithPackages(vendor, packages, files, { ...storage, save: saveVendorRecords });
+  return createVendorWithPackages(vendor, packages, files, {
+    ...storage, uploadVendor: createVendorImageStorage().upload, save: saveVendorRecords,
+  }, vendorFiles);
 }

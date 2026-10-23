@@ -157,16 +157,16 @@ export default function HowItWorks() {
     <section
       id="how-it-works"
       aria-labelledby="how-it-works-heading"
-      className="scroll-mt-24 bg-(--background) px-5 py-20 sm:px-8 sm:py-24 min-h-[100vh]"
+      className="bg-(--background) px-3 py-20 sm:px-4 sm:py-24 min-h-[100vh]"
     >
-      <div className="mx-auto max-w-6xl flex flex-col justify-center">
-        <div className="mx-auto max-w-2xl text-center">
+      <div className="mx-auto grid items-center gap-10 lg:grid-cols-[minmax(0,2fr)_minmax(0,6fr)] px-18">
+        <div className="min-w-0 text-left">
           <p className="mb-4 text-xs font-semibold tracking-widest text-(--positive-tertiary) uppercase">
             From your ideas to your shortlist
           </p>
           <h2
             id="how-it-works-heading"
-            className="libre-font text-3xl text-(--positive-tertiary) sm:text-4xl"
+            className="libre-font text-4xl leading-tight text-(--positive-tertiary) sm:text-5xl lg:text-6xl"
           >
             How it works
           </h2>
@@ -176,12 +176,11 @@ export default function HowItWorks() {
           </p>
         </div>
         <video
-          width="80%"
           muted
           playsInline
           autoPlay
           loop
-          className="rounded-lg shadow-2xl"
+          className="block h-auto w-full min-w-0 rounded-lg border border-(--tertiary)"
         >
           <source src="/video/export-1791535597398.mp4" type="video/mp4" />
         </video>

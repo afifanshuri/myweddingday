@@ -8,11 +8,11 @@ export default function MatchLayout({
   vendors: React.ReactNode;
 }>) {
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex min-h-screen flex-col">
       {children}
-      <div className="flex flex-col xl:flex-row h-full">
-        <div className="min-w-0 flex-4 justify-center items-center">{vendors}</div>
-        <div className="min-w-0 flex-1 justify-center items-center">{budget}</div>
+      <div className="flex flex-col xl:flex-row">
+        <div className="w-full min-w-0 flex-1">{vendors}</div>
+        <div className="w-full min-w-0 xl:sticky xl:top-6 xl:w-80 xl:shrink-0 xl:self-start">{budget}</div>
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, requireSameOrigin } from "@/services/others/adminAuthService";
 import { errorResponse, object, parseJson, readBody, RequestError, validateVendor, validatePackages } from "@/services/others/requestValidation";
 import { saveVendorSubmission } from "@/services/others/vendorCreationService";
+import { MAX_VENDOR_IMAGES } from "@/config/vendorImages";
 
 export async function GET(request: NextRequest) {
   let result: VendorType[] = [];
@@ -38,18 +39,23 @@ export async function POST(request: NextRequest) {
     const data = object(parseJson(payload));
     const vendor = validateVendor(data.vendor);
     const packages = validatePackages(data.packages, vendor.serviceId);
+    const attachments = form.getAll("vendorImages");
+    if (attachments.length > MAX_VENDOR_IMAGES || attachments.some((file) => !(file instanceof File))) {
+      throw new RequestError(`Provide at most ${MAX_VENDOR_IMAGES} vendor images`);
+    }
+    const vendorFiles = attachments as File[];
     const files = packages.map((_, index) => {
       const file = form.get(`file_${index}`);
       if (file !== null && !(file instanceof File)) throw new RequestError("Invalid image attachment");
       return file;
     });
     for (const key of form.keys()) {
-      if (key !== "payload" && !files.some((_, index) => key === `file_${index}`)) {
+      if (key !== "payload" && key !== "vendorImages" && !files.some((_, index) => key === `file_${index}`)) {
         throw new RequestError("Unexpected form field");
       }
-      if (form.getAll(key).length !== 1) throw new RequestError("Duplicate form field");
+      if (key !== "vendorImages" && form.getAll(key).length !== 1) throw new RequestError("Duplicate form field");
     }
-    const response = await saveVendorSubmission(vendor, packages, files);
+    const response = await saveVendorSubmission(vendor, packages, files, vendorFiles);
     return NextResponse.json(response, { status: 201 });
   } catch (e) {
     return errorResponse(e, "Failed to save vendor and packages");

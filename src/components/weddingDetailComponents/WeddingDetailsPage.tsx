@@ -70,8 +70,9 @@ export default function WeddingDetailsPage({
   return (
     <div className="mb-10 space-y-14">
       <SearchModeSelector value={searchMode} onChange={setSearchMode} />
-      <div>
-        <p className="opacity-50 font-light mb-4">Let&apos;s get started!</p>
+
+      <p className="opacity-50 font-light mb-4">Let&apos;s get started!</p>
+      <div className="rounded-2xl border border-(--tertiary) bg-white p-5 sm:p-8">
         <p className="mb-4 libre-font xl:text-[20px]">
           1. Tell Us About Your Wedding
         </p>

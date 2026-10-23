@@ -1,0 +1,27 @@
+.planner-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: var(--background);
+}
+
+.planner-loading-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid var(--tertiary);
+  border-top-color: var(--positive-tertiary);
+  border-radius: 50%;
+  animation: planner-spinner-rotate 800ms linear infinite;
+}
+
+@keyframes planner-spinner-rotate {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .planner-loading-spinner {
+    animation: none;
+  }
+}

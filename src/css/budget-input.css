@@ -43,7 +43,7 @@
   min-width: 0;
   max-width: 100%;
   color: var(--positive-tertiary);
-  font-family: var(--font-libre);
+  font-family: var(--font-heading), Georgia, serif;
   font-size: clamp(1.25rem, 2.5vw, 1.75rem);
   font-weight: 400;
   letter-spacing: -0.05em;

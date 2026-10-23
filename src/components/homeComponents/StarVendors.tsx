@@ -45,7 +45,7 @@ export default function StarVendors() {
     <section
       id="features"
       aria-labelledby="features-heading"
-      className="min-h-[100vh] scroll-mt-24 px-5 py-20 sm:px-8 sm:py-24"
+      className="min-h-[100vh] scroll-mt-24 px-3 py-20 sm:px-4 sm:py-24"
     >
       <div className="mx-auto max-w-2xl text-center">
         <p className="mb-4 text-xs font-semibold tracking-widest text-(--positive-tertiary) uppercase">
@@ -53,7 +53,7 @@ export default function StarVendors() {
         </p>
         <h2
           id="features-heading"
-          className="libre-font text-3xl text-(--positive-tertiary) sm:text-4xl"
+          className="libre-font text-4xl leading-tight text-(--positive-tertiary) sm:text-5xl lg:text-6xl"
         >
           Star vendors
         </h2>

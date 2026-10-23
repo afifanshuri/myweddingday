@@ -39,6 +39,7 @@ const vendorsTable = pgTable("vendorsTable", {
   tiktok: varchar({ length: 200 }),
   facebook: varchar({ length: 200 }),
   filePath: varchar({ length: 255 }),
+  imagePaths: varchar({ length: 255 }).array().default([]).notNull(),
   rating: numeric({ mode: "number" }),
 });
 

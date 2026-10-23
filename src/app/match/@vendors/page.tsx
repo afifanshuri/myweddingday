@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { APIGetVendorsByPreferences } from "@/services/api/vendors";
 import { VendorAndPackagesMatchDTOType } from "@/types/dtoTypes";
 import VendorPackagesView from "@/components/matchComponents/VendorPackagesView";
+import MatchLoading from "@/components/matchComponents/MatchLoading";
 
 export default function VendorSection() {
   const [result, setResult] = useState<{
@@ -83,7 +84,7 @@ export default function VendorSection() {
       aria-busy={result.loading}
     >
       {result.loading ? (
-        <p role="status">Finding your vendor matches...</p>
+        <MatchLoading />
       ) : result.error ? (
         <p role="alert">{result.error}</p>
       ) : selectedServices.length === 0 ? (

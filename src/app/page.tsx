@@ -4,9 +4,9 @@ import Pricing from "@/components/homeComponents/Pricing";
 import MainButton from "@/components/commonComponents/MainButton";
 import Navbar from "@/components/commonComponents/Navbar";
 import HowItWorks from "@/components/homeComponents/HowItWorks";
+import RotatingService from "@/components/homeComponents/RotatingService";
 import { motion } from "motion/react";
 import Image from "next/image";
-
 
 export default function Home() {
   return (
@@ -37,10 +37,12 @@ export default function Home() {
           viewport={{ once: true, amount: 0.3 }}
           className="relative z-10 flex flex-col xl:w-1/2 items-center mx-auto text-center text-white"
         >
-          <p className="libre-font text-[40px] xl:text-[60px] leading-10 xl:leading-14 mb-14 font-light tracking-tighter">
-            Planning a <span className="italic">wedding</span> have never been
-            easier, until now
-          </p>
+          <h1 className="libre-font text-[clamp(1.5rem,7vw,2.25rem)] xl:text-[54px] leading-tight mb-8 font-light tracking-tighter">
+            <span className="inline-flex items-center gap-2 whitespace-nowrap">
+              Finding a <RotatingService />
+            </span>
+            <span className="block">just got easier.</span>
+          </h1>
           <p className="text-[20px] w-3/4 leading-7 mb-8 opacity-50 font-light tracking-tight">
             Describe your wedding. Choose freely from over 10,000+ wedding
             vendors, tailored exactly to your liking
@@ -51,8 +53,8 @@ export default function Home() {
           <p className="opacity-50">6 Categories - Takes about 5 minutes</p>
         </motion.div>
       </div>
-      <HowItWorks />
       <StarVendors />
+      <HowItWorks />
       <Pricing />
     </main>
   );

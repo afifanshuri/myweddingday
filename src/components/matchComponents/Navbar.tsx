@@ -18,7 +18,7 @@ export function Navbar() {
 
   const resetData = () => {
     deleteAllPreferenceData();
-    route.push("/");
+    route.push("/weddingplan");
   };
 
   return (

@@ -2,16 +2,17 @@ import "@/css/globals.css";
 
 import { DM_Sans, Libre_Baskerville } from "next/font/google";
 
-const dmSans = DM_Sans({
+const bodyFont = DM_Sans({
   subsets: ["latin"],
-  variable: "--font-dm-sans",
+  variable: "--font-body",
   display: "swap",
 });
 
-const libre = Libre_Baskerville({
+const headingFont = Libre_Baskerville({
   subsets: ["latin"],
   weight: "400",
-  variable: "--font-libre",
+  variable: "--font-heading",
+  display: "swap",
 });
 
 export default function RootLayout({
@@ -21,7 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full antialiased">
-      <body className={`${dmSans.variable} ${libre.variable}`}>
+      <body className={`${bodyFont.variable} ${headingFont.variable}`}>
         {children}
       </body>
     </html>

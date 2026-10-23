@@ -33,9 +33,9 @@ export default function Pricing() {
     <section
       id="pricing"
       aria-labelledby="pricing-heading"
-      className="home-pricing flex min-h-[100vh] scroll-mt-24 flex-col items-center justify-center gap-4 px-6 py-24 text-center"
+      className="home-pricing flex min-h-[100vh] scroll-mt-24 flex-col items-center justify-center gap-4 px-3 py-24 text-center sm:px-4"
     >
-      <h2 id="pricing-heading" className="libre-font text-3xl sm:text-4xl">
+      <h2 id="pricing-heading" className="libre-font text-4xl leading-tight sm:text-5xl lg:text-6xl">
         Pricing
       </h2>
       <p className="max-w-lg text-foreground/60">

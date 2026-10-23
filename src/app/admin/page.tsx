@@ -11,6 +11,7 @@ import MainButton from "@/components/commonComponents/MainButton";
 import { APIGetLocationsAll } from "@/services/api/locations";
 import { APICreateVendorWithPackages } from "@/services/api/vendors";
 import "@/css/admin.css";
+import VendorImagesInput from "@/components/adminComponents/VendorImagesInput";
 
 type FieldErrors = {
   vendorName?: string;
@@ -27,6 +28,7 @@ export default function AdminPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [vendorImages, setVendorImages] = useState<File[]>([]);
   const savingRef = useRef(false);
 
   const vendorFromStore = useAdminStore((state) => state.vendor);
@@ -142,6 +144,12 @@ export default function AdminPage() {
   function handleSaveClick() {
     if (savingRef.current || saved) return;
     setSaveError(null);
+    const imageBytes = vendorImages.reduce((sum, file) => sum + file.size, 0)
+      + packageListFromStore.reduce((sum, pkg) => sum + (pkg.file?.size ?? 0), 0);
+    if (imageBytes >= 25 * 1024 * 1024) {
+      setSaveError("Keep all vendor and package uploads under 25 MB combined.");
+      return;
+    }
     const ok = validateFields();
     if (!ok) return;
     setShowConfirm(true);
@@ -163,6 +171,7 @@ export default function AdminPage() {
       packageListFromStore.forEach((pkg, index) => {
         if (pkg.file) formData.append(`file_${index}`, pkg.file);
       });
+      vendorImages.forEach((file) => formData.append("vendorImages", file));
       const data = await APICreateVendorWithPackages(formData);
       updateVendorDataToStore({ id: data.id });
       setSaved(true);
@@ -284,6 +293,7 @@ export default function AdminPage() {
               <p className="text-red-500 text-sm mt-1">{errors.contact}</p>
             ) : null}
           </div>
+          <VendorImagesInput files={vendorImages} onChange={setVendorImages} />
           <div className="flex flex-col gap-4 border-t border-(--secondary) pt-5">
             <p className="text-sm">Social Media <span className="font-normal text-foreground/50">(Optional)</span></p>
             <div className="grid grid-cols-1 gap-4">
@@ -410,6 +420,7 @@ export default function AdminPage() {
       {saved && <p role="status" className="mt-5 rounded-xl border border-(--positive-secondary) bg-(--positive)/20 p-4 text-sm text-(--positive-tertiary)">Vendor and packages saved successfully.</p>}
       {saved && <MainButton onClick={() => {
         resetDraft();
+        setVendorImages([]);
         setSaved(false);
         setErrors({});
         setSaveError(null);

@@ -1,4 +1,4 @@
-import { BasicPreferenceType } from "@/types/preferenceTypes";
+import { BasicPreferenceType, SelectedPackage } from "@/types/preferenceTypes";
 import { create } from "zustand";
 import {
   clearHiddenCriteria,
@@ -16,6 +16,9 @@ export type PreferenceStore = {
     services: number[];
   };
   preferencesList: BasicPreferenceType[];
+  selectedPackages: SelectedPackage[];
+  selectPackage: (pkg: SelectedPackage) => void;
+  removeSelectedPackage: (serviceId: number) => void;
   updatePreferenceDetails: (
     id: number,
     data: Partial<BasicPreferenceType>,
@@ -38,6 +41,16 @@ export const usePreferenceStore = create<PreferenceStore>()(
         services: [],
       },
       preferencesList: [],
+      selectedPackages: [],
+      selectPackage: (pkg) => {
+        if (!Number.isFinite(pkg.unitPrice) || pkg.unitPrice <= 0) return;
+        set((state) => state.weddingDetails.services.includes(pkg.serviceId) ? ({
+          selectedPackages: [...state.selectedPackages.filter((item) => item.serviceId !== pkg.serviceId), pkg],
+        }) : {});
+      },
+      removeSelectedPackage: (serviceId) => set((state) => ({
+        selectedPackages: state.selectedPackages.filter((pkg) => pkg.serviceId !== serviceId),
+      })),
       updateRequiredFields: (serviceId, fields) => {
         get().updatePreferenceDetails(serviceId, { requiredFields: fields });
       },
@@ -86,12 +99,16 @@ export const usePreferenceStore = create<PreferenceStore>()(
       updateWeddingDetails: (data) => {
         set((state) => ({
           weddingDetails: { ...state.weddingDetails, ...data },
+          selectedPackages: data.services
+            ? state.selectedPackages.filter((pkg) => data.services!.includes(pkg.serviceId))
+            : state.selectedPackages,
         }));
       },
 
       deleteAllPreferenceData: () => {
         set(() => ({
           preferencesList: [],
+          selectedPackages: [],
           weddingDetails: {
             coupleName: "",
             date: null,
@@ -108,6 +125,7 @@ export const usePreferenceStore = create<PreferenceStore>()(
       partialize: (state) => ({
         weddingDetails: state.weddingDetails,
         preferencesList: state.preferencesList,
+        selectedPackages: state.selectedPackages,
       }),
     },
   ),
