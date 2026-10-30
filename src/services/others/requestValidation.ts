@@ -1,5 +1,6 @@
 import { SERVICE_CRITERIA, hasCriteriaValue, isCriteriaVisible } from "@/config/serviceCriteria";
 import type { VendorMatchDTOType } from "@/types/dtoTypes";
+import { unstable_rethrow } from "next/navigation";
 
 export class RequestError extends Error {
   constructor(message: string, public status = 400) { super(message); }
@@ -178,8 +179,9 @@ export function parseJson(value: string): unknown {
 }
 
 export function errorResponse(error: unknown, message: string): Response {
-  if (error instanceof RequestError) return Response.json({ error: error.message }, { status: error.status });
+  unstable_rethrow(error);
+  if (error instanceof RequestError) return Response.json({ error: error.message }, { status: error.status, headers: { "Cache-Control": "private, no-store" } });
   // Do not log raw database errors: they can include connection details or submitted data.
   console.error(message);
-  return Response.json({ error: message }, { status: 500 });
+  return Response.json({ error: message }, { status: 500, headers: { "Cache-Control": "private, no-store" } });
 }

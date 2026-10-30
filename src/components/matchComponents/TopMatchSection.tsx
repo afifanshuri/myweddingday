@@ -1,9 +1,9 @@
 import { ServiceType } from "@/types/dataTypes";
-import { VendorAndPackagesMatchDTOType } from "@/types/dtoTypes";
+import { VendorMatchResult } from "@/types/dtoTypes";
 import VendorContainer from "./VendorContainer";
 
 export default function TopMatchSection({ matches, servicesList, onSelect }: {
-  matches: VendorAndPackagesMatchDTOType[];
+  matches: VendorMatchResult[];
   servicesList: Pick<ServiceType, "id" | "serviceName">[];
   onSelect: (vendorId: number) => void;
 }) {

@@ -2,25 +2,27 @@ import {
   getAllVendorsByServiceIdArray,
 } from "@/db/queries/vendors";
 import { VendorType } from "@/types/dataTypes";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { requireAdmin, requireSameOrigin } from "@/services/others/adminAuthService";
-import { errorResponse, object, parseJson, readBody, RequestError, validateVendor, validatePackages } from "@/services/others/requestValidation";
+import { errorResponse, object, parseJson, positiveId, readBody, RequestError, validateVendor, validatePackages } from "@/services/others/requestValidation";
 import { saveVendorSubmission } from "@/services/others/vendorCreationService";
 import { MAX_VENDOR_IMAGES } from "@/config/vendorImages";
+import { privateJson, requireVendorAccess } from "@/services/others/accountAccessService";
 
 export async function GET(request: NextRequest) {
-  let result: VendorType[] = [];
-  const serviceId = request.nextUrl.searchParams.get("serviceIds");
-  if (!serviceId || serviceId.length === 0) {
-    return Response.json([]);
-  } else if (serviceId.length === 1) {
-    result = await getAllVendorsByServiceIdArray([Number(serviceId)]);
-  } else {
-    result = await getAllVendorsByServiceIdArray(
-      serviceId.split(",").map(Number),
-    );
-  }
-  return Response.json(result);
+  try {
+    await requireVendorAccess();
+    let result: VendorType[] = [];
+    const serviceId = request.nextUrl.searchParams.get("serviceIds");
+    if (!serviceId || serviceId.length === 0) {
+      return privateJson([]);
+    } else {
+      const ids = serviceId.split(",");
+      if (ids.length > 6) throw new RequestError("Choose at most six services");
+      result = await getAllVendorsByServiceIdArray([...new Set(ids.map((id) => positiveId(Number(id))))]);
+    }
+    return privateJson(result);
+  } catch (error) { return errorResponse(error, "Unable to load vendors"); }
 }
 
 export async function POST(request: NextRequest) {
@@ -56,7 +58,7 @@ export async function POST(request: NextRequest) {
       if (key !== "vendorImages" && form.getAll(key).length !== 1) throw new RequestError("Duplicate form field");
     }
     const response = await saveVendorSubmission(vendor, packages, files, vendorFiles);
-    return NextResponse.json(response, { status: 201 });
+    return privateJson(response, 201);
   } catch (e) {
     return errorResponse(e, "Failed to save vendor and packages");
   }

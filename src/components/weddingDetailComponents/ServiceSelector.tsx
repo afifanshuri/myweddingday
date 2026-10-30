@@ -37,6 +37,7 @@ export const ServiceSelector = ({
 
   const toggleClickService = (id: number) => {
     updateWeddingDetails({
+      serviceNames: Object.fromEntries(servicesList.map((service) => [service.id, service.serviceName])),
       services: existingServicesFromStore.includes(id)
         ? existingServicesFromStore.filter((s) => s !== id)
         : [...existingServicesFromStore, id],

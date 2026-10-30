@@ -22,6 +22,14 @@ type VendorMatchDTOType = {
 type VendorAndPackagesMatchDTOType =
   Awaited<ReturnType<typeof findVendorsByPreferences>>[number];
 
+export type VendorPreviewMatch = {
+  identityLocked: true;
+  vendor: Pick<VendorAndPackagesMatchDTOType["vendor"], "id" | "serviceId" | "rating" | "imageUrls">;
+  cheapestPrice: number | null;
+};
+export type VendorDetailedMatch = VendorAndPackagesMatchDTOType & { identityLocked: false };
+export type VendorMatchResult = VendorPreviewMatch | VendorDetailedMatch;
+
 export type {
   PakcageDTOType,
   VendorMatchDTOType,

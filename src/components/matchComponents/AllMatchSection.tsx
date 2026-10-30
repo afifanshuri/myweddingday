@@ -3,7 +3,7 @@ import MainButton from "@/components/commonComponents/MainButton";
 
 
 import { ServiceType } from "@/types/dataTypes";
-import { VendorAndPackagesMatchDTOType } from "@/types/dtoTypes";
+import { VendorMatchResult } from "@/types/dtoTypes";
 import { useState } from "react";
 import VendorContainer from "./VendorContainer";
 
@@ -13,8 +13,8 @@ export default function AllMatchSection({
   servicesList,
   onSelect,
 }: {
-  matches: VendorAndPackagesMatchDTOType[];
-  topMatches: VendorAndPackagesMatchDTOType[];
+  matches: VendorMatchResult[];
+  topMatches: VendorMatchResult[];
   servicesList: Pick<ServiceType, "id" | "serviceName">[];
   onSelect: (vendorId: number) => void;
 }) {
@@ -36,7 +36,7 @@ export default function AllMatchSection({
       className="min-w-0 rounded-lg border border-(--secondary) bg-white p-4 sm:p-6"
     >
       <h2 id="all-match-heading" className="libre-font text-lg">
-        All Other Matches
+        All Vendors
       </h2>
       <p className="mt-2 text-sm font-normal" aria-live="polite">
         {visibleMatches.length}{" "}

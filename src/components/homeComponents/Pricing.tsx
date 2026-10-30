@@ -1,4 +1,6 @@
 import MainButton from "@/components/commonComponents/MainButton";
+import { ROUTES } from "@/config/routes";
+import { PLANS } from "@/config/plans";
 
 const pricingPlans = [
   {
@@ -7,23 +9,23 @@ const pricingPlans = [
     description: "A simple way to start exploring your options.",
     featured: false,
     benefits: [
-      "3 manual searches per day",
+      `${PLANS.free.manualSearchesPerDay} manual searches per day`,
       "Updated searches count toward your daily limit",
-      "A limited preview of vendor matches",
-      "One AI-powered trial search",
+      PLANS.free.vendorPreviews === null ? "Preview all matching vendors" : `Up to ${PLANS.free.vendorPreviews} vendor previews per search`,
+      `${PLANS.free.aiTrialSearches} AI-powered trial search (coming soon)`,
     ],
   },
   {
     name: "Plus ✨",
-    price: "RM20",
-    description: "One payment for a full year of wedding planning. No automatic renewal.",
+    price: `RM${PLANS.plus.priceMYR}`,
+    description: `One payment for ${PLANS.plus.durationYears} year of wedding planning. No automatic renewal.`,
     featured: true,
     benefits: [
       "Unlimited manual searches",
       "Edit and rerun your searches anytime",
-      "5 AI-powered searches per week",
-      "AI-assisted matches tailored to your budget and preferences",
-      "Full access to all vendors",
+      `${PLANS.plus.aiSearchesPerWeek} AI-powered searches per week (coming soon)`,
+      "AI-assisted matches tailored to your budget and preferences (coming soon)",
+      "Unlock vendor names, contacts and package details",
     ],
   },
 ];
@@ -63,7 +65,7 @@ export default function Pricing() {
                 {plan.price}
               </span>
               <span className="text-sm font-normal text-foreground/60">
-                {plan.featured ? "one-time · 1 year access" : "Free"}
+                {plan.featured ? `one-time · ${PLANS.plus.durationYears} year access` : "Free"}
               </span>
             </p>
             <p className="mt-4 min-h-12 text-sm font-normal leading-6 text-foreground/65">
@@ -94,8 +96,8 @@ export default function Pricing() {
           </article>
         ))}
       </div>
-      <MainButton href="/payment" className="mt-4 px-8 py-3">
-        Get 1 year of Plus — RM20 one-time
+      <MainButton href={ROUTES.payment} className="mt-4 px-8 py-3">
+        Get {PLANS.plus.durationYears} year of Plus — RM{PLANS.plus.priceMYR} one-time
       </MainButton>
     </section>
   );

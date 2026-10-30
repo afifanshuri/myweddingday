@@ -3,9 +3,10 @@
 import MainButton from "@/components/commonComponents/MainButton";
 import Image from "next/image";
 import { useState } from "react";
-import { VendorAndPackagesMatchDTOType } from "@/types/dtoTypes";
+import { VendorMatchResult } from "@/types/dtoTypes";
+import LockedVendorDetail from "@/components/commonComponents/LockedVendorDetail";
 import { SERVICE_ID } from "@/config/serviceCriteria";
-import { FaCheck, FaStar } from "react-icons/fa";
+import { FaCheck, FaLock, FaStar } from "react-icons/fa";
 import { usePreferenceStore } from "@/store/preferenceStore";
 
 const currency = new Intl.NumberFormat("en-MY", {
@@ -21,15 +22,15 @@ export default function VendorContainer({
   topPick = false,
   onSelect,
 }: {
-  match: VendorAndPackagesMatchDTOType;
+  match: VendorMatchResult;
   serviceName: string;
   topPick?: boolean;
   onSelect: (vendorId: number) => void;
 }) {
-  const prices = match.packages
+  const prices = (match.identityLocked ? [] : match.packages)
     .map((pkg) => Number(pkg.price))
     .filter((price) => Number.isFinite(price) && price >= 0);
-  const cheapestPrice = prices.length > 0 ? Math.min(...prices) : null;
+  const cheapestPrice = match.identityLocked ? match.cheapestPrice : prices.length > 0 ? Math.min(...prices) : null;
   const isSelected = usePreferenceStore((state) => state.selectedPackages.some(
     (pkg) => pkg.serviceId === match.vendor.serviceId && pkg.vendorId === match.vendor.id,
   ));
@@ -40,15 +41,8 @@ export default function VendorContainer({
   const [imageFailed, setImageFailed] = useState(false);
   const imageUrl = match.vendor.imageUrls[imageIndex];
 
-  return (
-    <MainButton
-      variant="custom"
-      size="none"
-      type="button"
-      onClick={() => onSelect(match.vendor.id)}
-      aria-label={`View packages for ${match.vendor.vendorName}${isSelected ? ", package selected for your budget" : ""}`}
-      className={`group flex h-full w-full min-w-0 flex-col items-stretch justify-start overflow-hidden rounded-lg border text-left cursor-pointer transition-colors duration-200 hover:bg-(--secondary) motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--positive-tertiary) ${isSelected ? "border-(--positive-tertiary) bg-white" : `hover:border-(--positive-secondary) ${topPick ? "border-(--positive) bg-(--background)" : "border-(--tertiary) bg-white"}`}`}
-    >
+  const content = (
+    <>
       <div className="relative flex min-h-44 flex-1 items-center justify-center bg-(--secondary)">
         {imageUrl && !imageFailed ? (
           <Image
@@ -65,7 +59,7 @@ export default function VendorContainer({
             aria-hidden="true"
             className="libre-font text-5xl text-(--fourth)"
           >
-            {match.vendor.vendorName.trim().charAt(0)}
+            {match.identityLocked ? "♡" : match.vendor.vendorName.trim().charAt(0)}
           </span>
         )}
         <div
@@ -73,20 +67,26 @@ export default function VendorContainer({
           className="absolute inset-0 bg-linear-to-t from-black/80 via-black/10 to-transparent"
         />
         <h3 className="absolute inset-x-0 bottom-0 break-words p-4 text-base font-semibold text-white">
-          {match.vendor.vendorName}
+          {match.identityLocked ? <LockedVendorDetail /> : match.vendor.vendorName}
         </h3>
+        {match.identityLocked && (
+          <span aria-hidden="true" className="absolute left-3 top-3 flex size-7 items-center justify-center rounded-full bg-black/35 text-xs text-white">
+            <FaLock />
+          </span>
+        )}
         {topPick && (
           <span className="absolute right-3 top-3 rounded-full bg-(--positive) px-2 py-1 text-xs text-(--positive-tertiary)">
             Top pick
           </span>
         )}
-        {isSelected && (
+        {!match.identityLocked && isSelected && (
           <span aria-hidden="true" className="absolute left-3 top-3 flex size-6 items-center justify-center rounded-full bg-(--background) text-xs text-(--positive-tertiary)">
             <FaCheck />
           </span>
         )}
       </div>
       <div className="flex min-h-44 flex-1 flex-col gap-3 p-4">
+        {match.identityLocked && <div className="text-xs text-foreground/50"><LockedVendorDetail contact /></div>}
         <p className="flex items-center gap-2 text-sm">
           <FaStar aria-hidden="true" className="shrink-0 text-amber-500" />
           {match.vendor.rating == null
@@ -104,14 +104,21 @@ export default function VendorContainer({
                 <span className="ml-1 text-xs font-normal">/ pax</span>
               )}
           </p>
-          <p
+          {!match.identityLocked && <p
             aria-hidden="true"
             className="mt-2 text-xs text-(--positive-tertiary) opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none [@media(hover:none)]:opacity-100 text-right"
           >
             View packages &rarr;
-          </p>
+          </p>}
         </div>
       </div>
-    </MainButton>
+    </>
   );
+  const base = "flex h-full w-full min-w-0 flex-col items-stretch justify-start overflow-hidden rounded-lg border text-left";
+  if (match.identityLocked) return <article aria-label={`${serviceName} vendor preview — details locked`} className={`${base} border-(--tertiary) bg-white`}>{content}</article>;
+  return <MainButton variant="custom" size="none" onClick={() => onSelect(match.vendor.id)}
+    aria-label={`View packages for ${match.vendor.vendorName}${isSelected ? ", package selected for your budget" : ""}`}
+    className={`${base} group cursor-pointer transition-colors duration-200 hover:bg-(--secondary) motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--positive-tertiary) ${isSelected ? "border-(--positive-tertiary) bg-white" : `hover:border-(--positive-secondary) ${topPick ? "border-(--positive) bg-(--background)" : "border-(--tertiary) bg-white"}`}`}>
+    {content}
+  </MainButton>;
 }

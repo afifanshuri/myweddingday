@@ -4,14 +4,9 @@ import MainButton from "../commonComponents/MainButton";
 import { useRouter } from "next/navigation";
 import { usePreferenceStore } from "@/store/preferenceStore";
 import { validateWeddingDetails } from "@/services/others/fieldValidationService";
+import { ROUTES, serviceCriteriaRoute } from "@/config/routes";
 
 export default function WeddingDetailsPageButtons(onSubmit: () => boolean) {
-  const deleteAllServicesFromStore = useServiceStore(
-    (state) => state.deleteAllService,
-  );
-  const deleteAllPreferenceData = usePreferenceStore(
-    (state) => state.deleteAllPreferenceData,
-  );
   const weddingDetailsFromStore = usePreferenceStore(
     (state) => state.weddingDetails,
   );
@@ -23,14 +18,12 @@ export default function WeddingDetailsPageButtons(onSubmit: () => boolean) {
   const onSubmitChoice = () => {
     validateWeddingDetails(weddingDetailsFromStore);
     if (selectedServicesFromStore.length !== 0) {
-      router.push(`/weddingplan/${selectedServicesFromStore[0]}`);
+      router.push(serviceCriteriaRoute(selectedServicesFromStore[0]));
     }
   };
 
   const onGoBack = () => {
-    deleteAllServicesFromStore();
-    deleteAllPreferenceData();
-    router.push("/");
+    router.push(ROUTES.home);
   };
   return (
     <div className="flex justify-end gap-2">

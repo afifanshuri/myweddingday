@@ -3,6 +3,8 @@
 import MainButton from "@/components/commonComponents/MainButton";
 import { usePreferenceStore } from "@/store/preferenceStore";
 import { useServiceStore } from "@/store/serviceStore";
+import { useAccountAccess } from "@/components/commonComponents/AccountAccessProvider";
+import { canViewIdentity } from "@/services/others/accessRules";
 import { VendorAndPackagesMatchDTOType } from "@/types/dtoTypes";
 import { SERVICE_ID } from "@/config/serviceCriteria";
 import {
@@ -29,6 +31,7 @@ export default function VendorPackagesView({
   onBack: () => void;
 }) {
   const vendor = match.vendor;
+  const { access, checking } = useAccountAccess();
   const selectedPackage = usePreferenceStore((state) => state.selectedPackages.find((pkg) => pkg.serviceId === vendor.serviceId));
   const selectPackage = usePreferenceStore((state) => state.selectPackage);
   const removeSelectedPackage = usePreferenceStore((state) => state.removeSelectedPackage);
@@ -41,6 +44,7 @@ export default function VendorPackagesView({
     { label: "Facebook", url: vendor.facebook?.trim(), icon: FaFacebookF },
   ].filter((social) => social.url && /^https?:\/\//i.test(social.url));
 
+  if (checking || !canViewIdentity(access)) return null;
   return (
     <section className="flex flex-col gap-6" aria-labelledby="vendor-packages-title">
       <MainButton variant="ghost" size="small"

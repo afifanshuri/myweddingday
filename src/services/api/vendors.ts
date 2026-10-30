@@ -1,5 +1,6 @@
 import { VendorType } from "@/types/dataTypes";
-import { VendorMatchDTOType, VendorAndPackagesMatchDTOType } from "@/types/dtoTypes";
+import { VendorMatchDTOType } from "@/types/dtoTypes";
+import type { ManualSearchResult } from "@/types/search";
 
 const APIGetVendorsByServiceIds = async (
   serviceId: number[],
@@ -11,17 +12,21 @@ const APIGetVendorsByServiceIds = async (
 
 const APIGetVendorsByPreferences = async (
   preferencesList: VendorMatchDTOType[],
-): Promise<VendorAndPackagesMatchDTOType[]> => {
-  console.log("in APIGetVendorsByPreferences");
+  searchId: string,
+  signal?: AbortSignal,
+): Promise<ManualSearchResult> => {
   const response = await fetch("/api/match/vendors", {
     method: "POST",
+    cache: "no-store",
+    signal,
     headers: {
       "Content-Type": "application/json",
+      "Idempotency-Key": searchId,
     },
     body: JSON.stringify(preferencesList),
   });
-  if (!response.ok) throw new Error("Unable to load vendor matches");
   const data = await response.json();
+  if (!response.ok) throw new Error(data.error ?? "Unable to load vendor matches");
   return data;
 };
 

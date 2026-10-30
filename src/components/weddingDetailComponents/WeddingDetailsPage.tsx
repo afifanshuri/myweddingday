@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { useServiceStore } from "@/store/serviceStore";
 import SearchModeSelector, { type SearchMode } from "./SearchModeSelector";
 import AISearchPanel from "./AISearchPanel";
+import { ROUTES, serviceCriteriaRoute } from "@/config/routes";
 
 export default function WeddingDetailsPage({
   latestLocations,
@@ -28,12 +29,11 @@ export default function WeddingDetailsPage({
   const [searchMode, setSearchMode] = useState<SearchMode>("manual");
 
   const addAllServices = useServiceStore((state) => state.addAllService);
+  const syncServiceNames = usePreferenceStore((state) => state.syncServiceNames);
   useEffect(() => {
     addAllServices(latestServices);
-  }, [addAllServices, latestServices]);
-  const deleteAllPreference = usePreferenceStore(
-    (state) => state.deleteAllPreferenceData,
-  );
+    syncServiceNames(latestServices);
+  }, [addAllServices, latestServices, syncServiceNames]);
   const weddingDetailsFromStore = usePreferenceStore(
     (state) => state.weddingDetails,
   );
@@ -58,13 +58,12 @@ export default function WeddingDetailsPage({
   function onSubmit() {
     const nextErrors = validateFields({ ...weddingDetailsFromStore });
     if (Object.keys(nextErrors).length === 0) {
-      router.push(`/weddingplan/${weddingDetailsFromStore.services[0]}`);
+      router.push(serviceCriteriaRoute(weddingDetailsFromStore.services[0]));
     }
   }
 
   function onGoBack() {
-    deleteAllPreference();
-    router.push("/");
+    router.push(ROUTES.home);
   }
 
   return (

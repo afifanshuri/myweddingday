@@ -1,4 +1,5 @@
 import "@/css/globals.css";
+import AccountAccessProvider from "@/components/commonComponents/AccountAccessProvider";
 
 import { DM_Sans, Libre_Baskerville } from "next/font/google";
 
@@ -23,7 +24,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <body className={`${bodyFont.variable} ${headingFont.variable}`}>
-        {children}
+        <AccountAccessProvider>{children}</AccountAccessProvider>
       </body>
     </html>
   );

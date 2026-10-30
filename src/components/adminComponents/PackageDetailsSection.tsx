@@ -166,7 +166,7 @@ export default function PackageDetailSection({
             </p>
             {fields
               .filter((field) =>
-                isCriteriaVisible(field, pkg.filters ?? {}, fields),
+                isCriteriaVisible(field, pkg.filters ?? {}, fields, "admin"),
               )
               .map((field) => (
                 <FieldRenderer

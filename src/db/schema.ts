@@ -1,10 +1,16 @@
+import { sql } from "drizzle-orm";
+import { authUsers } from "drizzle-orm/supabase";
 import {
+  check,
   integer,
   pgTable,
   varchar,
   numeric,
   timestamp,
   jsonb,
+  uuid,
+  date,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 
 export const timestamps = {
@@ -41,7 +47,7 @@ const vendorsTable = pgTable("vendorsTable", {
   filePath: varchar({ length: 255 }),
   imagePaths: varchar({ length: 255 }).array().default([]).notNull(),
   rating: numeric({ mode: "number" }),
-});
+}).enableRLS();
 
 const packagesTable = pgTable("packagesTable", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -53,6 +59,28 @@ const packagesTable = pgTable("packagesTable", {
   duration: numeric({ mode: "number" }),
   vendorId: integer().references(() => vendorsTable.id),
   filters: jsonb("filters").default("{}"),
-});
+}).enableRLS();
 
 export { servicesTable, locationTable, vendorsTable, packagesTable };
+
+// Server-only tables. Apply the permissions migration after Drizzle push.
+// No browser policies are intentionally added.
+export const manualSearchUsage = pgTable("manual_search_usage", {
+  userId: uuid("user_id").notNull().references(() => authUsers.id, { onDelete: "cascade" }),
+  day: date("day").notNull(),
+  used: integer("used").notNull().default(0),
+}, (table) => [
+  primaryKey({ columns: [table.userId, table.day] }),
+  check("manual_search_usage_used_check", sql`${table.used} >= 0`),
+]).enableRLS();
+
+export const manualSearchResults = pgTable("manual_search_results", {
+  userId: uuid("user_id").notNull().references(() => authUsers.id, { onDelete: "cascade" }),
+  searchId: uuid("search_id").notNull(),
+  fingerprint: varchar("fingerprint", { length: 64 }).notNull(),
+  matches: jsonb("matches").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  primaryKey({ columns: [table.userId, table.searchId] }),
+  check("manual_search_results_matches_check", sql`jsonb_typeof(${table.matches}) = 'array'`),
+]).enableRLS();

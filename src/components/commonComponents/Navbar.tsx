@@ -3,6 +3,7 @@
 import MainButton from "./MainButton";
 import Image from "next/image";
 import { useSyncExternalStore } from "react";
+import { ROUTES } from "@/config/routes";
 
 function subscribeToScroll(onScroll: () => void) {
   window.addEventListener("scroll", onScroll, { passive: true });
@@ -72,7 +73,7 @@ export default function Navbar() {
         <MainButton
           variant="custom"
           size="none"
-          href="/login"
+          href={ROUTES.login}
           className="rounded-sm transition hover:text-white/70 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
         >
           Login

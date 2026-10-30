@@ -1,9 +1,9 @@
 "use client";
 import { usePreferenceStore } from "@/store/preferenceStore";
-import { useServiceStore } from "@/store/serviceStore";
 import { useRouter } from "next/navigation";
 import { VscDebugRestart, VscListFlat } from "react-icons/vsc";
 import MainButton from "@/components/commonComponents/MainButton";
+import { ROUTES } from "@/config/routes";
 
 export function Navbar() {
   const coupleName = usePreferenceStore(
@@ -18,7 +18,7 @@ export function Navbar() {
 
   const resetData = () => {
     deleteAllPreferenceData();
-    route.push("/weddingplan");
+    route.push(ROUTES.weddingPlan);
   };
 
   return (

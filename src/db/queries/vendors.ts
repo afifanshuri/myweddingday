@@ -25,6 +25,8 @@ const getVendorById = async (id: number) => {
 
 const findVendorsByPreferences = async (
   preferencesList: VendorMatchDTOType[],
+  executor: Pick<typeof db, "select"> = db,
+  withImageUrls = true,
 ) => {
   console.log("in findVendorsByPreferences");
   const results = [];
@@ -83,7 +85,7 @@ const findVendorsByPreferences = async (
           sql` + `,
         )}`
       : sql<number>`0::integer`;
-    const result = await db
+    const result = await executor
       .select({
         vendor: getColumns(vendorsTable),
         package: getColumns(packagesTable),
@@ -91,8 +93,7 @@ const findVendorsByPreferences = async (
       .from(vendorsTable)
       .innerJoin(packagesTable, eq(vendorsTable.id, packagesTable.vendorId))
       .where(and(...conditions))
-      .orderBy(desc(preferenceScore), packagesTable.price)
-      .limit(5);
+      .orderBy(desc(preferenceScore), packagesTable.price);
 
     results.push(...result);
   }
@@ -110,7 +111,7 @@ const findVendorsByPreferences = async (
   );
   return Promise.all(array.map(async (match) => ({
     ...match,
-    vendor: { ...match.vendor, imageUrls: await getVendorImageUrls(match.vendor.imagePaths) },
+    vendor: { ...match.vendor, imageUrls: withImageUrls ? await getVendorImageUrls(match.vendor.imagePaths) : [] },
   })));
 };
 

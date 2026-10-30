@@ -1,5 +1,5 @@
-import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import "server-only";
+import { getAccountAccess } from "./accountAccessService";
 import { RequestError } from "./requestValidation";
 import type { User } from "@supabase/supabase-js";
 
@@ -9,12 +9,10 @@ export function assertAdminUser(user: Pick<User, "app_metadata"> | null) {
 }
 
 export async function requireAdmin() {
-  const supabase = createClient(await cookies());
-  const { data, error } = await supabase.auth.getUser();
-  if (error) throw new RequestError("Sign in to continue", 401);
-  // app_metadata is assigned by trusted server/admin tooling, never by the user.
-  assertAdminUser(data.user);
-  return data.user;
+  const access = await getAccountAccess();
+  if (!access.userId) throw new RequestError("Sign in to continue", 401);
+  if (access.role !== "admin") throw new RequestError("Admin access required", 403);
+  return { id: access.userId };
 }
 
 export function requireSameOrigin(request: Request) {

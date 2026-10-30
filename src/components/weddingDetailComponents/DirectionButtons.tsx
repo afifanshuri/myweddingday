@@ -4,9 +4,12 @@ import { usePathname } from "next/navigation";
 import MainButton from "../commonComponents/MainButton";
 import { usePreferenceStore } from "@/store/preferenceStore";
 import { useRouter } from "next/navigation";
+import { ROUTES, serviceCriteriaRoute } from "@/config/routes";
+import { useRef } from "react";
 
 export default function DirectionButtons() {
   const router = useRouter();
+  const submitted = useRef(false);
   const currentPath = usePathname();
   const serviceChoiceList = usePreferenceStore(
     (state) => state.weddingDetails.services,
@@ -15,21 +18,26 @@ export default function DirectionButtons() {
     (state) => state.currentActiveServicePage,
   );
   const changePage = (direction: string) => {
-    const mainPage = "/weddingplan";
-    const matchPage = "/match";
+    const mainPage = ROUTES.weddingPlan;
+    const matchPage = ROUTES.match;
     const currIndex = serviceChoiceList.findIndex(
       (e) => e === currentServicePlanPage,
     );
     const nextPath =
       direction === "back"
-        ? currentPath === "/weddingplan"
-          ? "/"
+        ? currentPath === ROUTES.weddingPlan
+          ? ROUTES.home
           : currIndex - 1 < 0
             ? mainPage
-            : `${mainPage}/${serviceChoiceList[currIndex - 1]}`
+            : serviceCriteriaRoute(serviceChoiceList[currIndex - 1])
         : currIndex + 1 > serviceChoiceList.length - 1
           ? matchPage
-          : `${mainPage}/${serviceChoiceList[currIndex + 1]}`;
+          : serviceCriteriaRoute(serviceChoiceList[currIndex + 1]);
+    if (nextPath === matchPage) {
+      if (submitted.current) return;
+      submitted.current = true;
+      usePreferenceStore.getState().beginManualSearch();
+    }
     router.push(nextPath);
   };
   return (

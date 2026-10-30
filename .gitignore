@@ -84,3 +84,6 @@ Functional&RequirementsSpecifications.docx
 
 #md files
 *.md
+
+# Supabase CLI local cache
+/supabase/.temp/
