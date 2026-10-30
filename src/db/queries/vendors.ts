@@ -93,7 +93,7 @@ const findVendorsByPreferences = async (
       .from(vendorsTable)
       .innerJoin(packagesTable, eq(vendorsTable.id, packagesTable.vendorId))
       .where(and(...conditions))
-      .orderBy(desc(preferenceScore), packagesTable.price);
+      .orderBy(desc(preferenceScore), packagesTable.price, vendorsTable.id, packagesTable.id);
 
     results.push(...result);
   }

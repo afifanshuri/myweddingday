@@ -4,7 +4,6 @@ import MainButton from "@/components/commonComponents/MainButton";
 
 import { ServiceType } from "@/types/dataTypes";
 import { VendorMatchResult } from "@/types/dtoTypes";
-import { useState } from "react";
 import VendorContainer from "./VendorContainer";
 
 export default function AllMatchSection({
@@ -12,22 +11,17 @@ export default function AllMatchSection({
   topMatches,
   servicesList,
   onSelect,
+  activeServiceId,
+  onServiceChange,
 }: {
   matches: VendorMatchResult[];
   topMatches: VendorMatchResult[];
   servicesList: Pick<ServiceType, "id" | "serviceName">[];
   onSelect: (vendorId: number) => void;
+  activeServiceId: number | null;
+  onServiceChange: (serviceId: number | null) => void;
 }) {
-  const [activeServiceTab, setActiveServiceTab] = useState<number | null>(null);
-  const activeServiceId = servicesList.some(
-    (service) => service.id === activeServiceTab,
-  )
-    ? activeServiceTab
-    : null;
-  const visibleMatches =
-    activeServiceId === null
-      ? matches
-      : matches.filter((match) => match.vendor.serviceId === activeServiceId);
+  const visibleMatches = matches;
   const filters = [{ id: null, serviceName: "All services" }, ...servicesList];
 
   return (
@@ -40,7 +34,7 @@ export default function AllMatchSection({
       </h2>
       <p className="mt-2 text-sm font-normal" aria-live="polite">
         {visibleMatches.length}{" "}
-        {visibleMatches.length === 1 ? "vendor" : "vendors"} found
+        {visibleMatches.length === 1 ? "vendor" : "vendors"} on this page
       </p>
       <div
         className="my-5 flex flex-wrap gap-2"
@@ -52,7 +46,7 @@ export default function AllMatchSection({
             key={service.id ?? "all"}
             type="button"
             aria-pressed={activeServiceId === service.id}
-            onClick={() => setActiveServiceTab(service.id)}
+            onClick={() => onServiceChange(service.id)}
           >
             {service.serviceName}
           </MainButton>

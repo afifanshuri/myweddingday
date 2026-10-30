@@ -6,6 +6,12 @@ export const PLANS = {
   timeZone: "Asia/Kuala_Lumpur",
 } as const;
 
+export const SEARCH = {
+  lifetimeMs: 24 * 60 * 60 * 1000,
+  pageSize: 20,
+  requestsPerMinute: { create: 10, read: 60, detail: 30 },
+} as const;
+
 export function manualSearchLimit(access: { role: string | null; isPaid: boolean }) {
   return access.role === "admin" || access.isPaid ? null : PLANS.free.manualSearchesPerDay;
 }

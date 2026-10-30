@@ -40,11 +40,15 @@ export default function BudgetSection() {
   useEffect(() => {
     if (!unlocked) return;
     const controller = new AbortController();
-    APIGetSelectedPackages(ids, controller.signal)
+    const load = () => APIGetSelectedPackages(ids, controller.signal)
       .then((packages) => {
         if (!controller.signal.aborted) setResolved({ key, packages });
       }).catch(() => { if (!controller.signal.aborted) setResolved(null); });
-    return () => { controller.abort(); setResolved(null); };
+    void load();
+    const refresh = () => { if (document.visibilityState === "visible") void load(); };
+    const interval = window.setInterval(refresh, 60000);
+    window.addEventListener("focus", refresh);
+    return () => { controller.abort(); window.clearInterval(interval); window.removeEventListener("focus", refresh); setResolved(null); };
   }, [unlocked, ids, key]);
   const packages = unlocked && resolved?.key === key ? resolved.packages : [];
   const removePackage = usePreferenceStore((state) => state.removeSelectedPackage);

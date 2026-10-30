@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { authUsers } from "drizzle-orm/supabase";
 import {
   check,
+  index,
   integer,
   pgTable,
   varchar,
@@ -18,6 +19,27 @@ export const timestamps = {
   created_at: timestamp().defaultNow().notNull(),
   deleted_at: timestamp(),
 };
+
+// Additive replacement: legacy full snapshots remain untouched for rollback.
+export const manualSearchSnapshots = pgTable("manual_search_snapshots", {
+  userId: uuid("user_id").notNull().references(() => authUsers.id, { onDelete: "cascade" }),
+  searchId: uuid("search_id").notNull(),
+  fingerprint: varchar("fingerprint", { length: 64 }).notNull(),
+  matches: jsonb("matches").$type<import("@/types/search").SnapshotMatch[]>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.userId, table.searchId] }),
+  index("manual_search_snapshots_expiry_idx").on(table.expiresAt),
+  check("manual_search_snapshots_matches_check", sql`jsonb_typeof(${table.matches}) = 'array'`),
+]).enableRLS();
+
+export const searchRequestLimits = pgTable("search_request_limits", {
+  userId: uuid("user_id").notNull().references(() => authUsers.id, { onDelete: "cascade" }),
+  action: varchar("action", { length: 16 }).notNull(),
+  windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
+  requests: integer("requests").notNull().default(1),
+}, (table) => [primaryKey({ columns: [table.userId, table.action] })]).enableRLS();
 
 const servicesTable = pgTable("servicesTable", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),

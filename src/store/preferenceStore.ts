@@ -19,7 +19,9 @@ export type PreferenceStore = {
   };
   preferencesList: BasicPreferenceType[];
   selectedPackages: SelectedPackage[];
-  manualSearch: { id: string; input: string; userId: string } | null;
+  manualSearch: { id: string; input: string; userId: string; pending?: boolean; createdAt?: number } | null;
+  manualSearchRequested: boolean;
+  completeManualSearch: (id: string) => void;
   beginManualSearch: () => void;
   getManualSearchId: (input: string, userId: string) => string;
   selectionAccess: () => boolean;
@@ -53,12 +55,15 @@ export const usePreferenceStore = create<PreferenceStore>()(
       preferencesList: [],
       selectedPackages: [],
       manualSearch: null,
-      beginManualSearch: () => set({ manualSearch: null }),
+      manualSearchRequested: false,
+      completeManualSearch: (id) => set((state) => state.manualSearch?.id === id
+        ? { manualSearch: { ...state.manualSearch, pending: false } } : {}),
+      beginManualSearch: () => set({ manualSearch: null, manualSearchRequested: true }),
       getManualSearchId: (input, userId) => {
         const previous = get().manualSearch;
         if (previous?.input === input && previous.userId === userId) return previous.id;
         const id = crypto.randomUUID();
-        set({ manualSearch: { id, input, userId } });
+        set({ manualSearch: { id, input, userId, pending: true, createdAt: Date.now() }, manualSearchRequested: false });
         return id;
       },
       selectionAccess: () => false,
@@ -146,6 +151,7 @@ export const usePreferenceStore = create<PreferenceStore>()(
       deleteAllPreferenceData: () => {
         set(() => ({
           manualSearch: null,
+          manualSearchRequested: false,
           preferencesList: [],
           selectedPackages: [],
           weddingDetails: {
@@ -175,6 +181,7 @@ export const usePreferenceStore = create<PreferenceStore>()(
         weddingDetails: state.weddingDetails,
         preferencesList: state.preferencesList,
         manualSearch: state.manualSearch,
+        manualSearchRequested: state.manualSearchRequested,
         selectedPackages: state.selectedPackages.map((pkg) => ({ ...pkg, vendorName: "", packageName: "" })),
       }),
     },
