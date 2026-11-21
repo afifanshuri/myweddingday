@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { getVendorImageUrls } from "@/services/others/vendorImageService";
+import { getVendorImageUrlsBatch } from "@/services/others/vendorImageService";
 import { packagesTable, vendorsTable } from "../schema";
 import { and, desc, eq, getColumns, lte, or, sql, type SQL } from "drizzle-orm";
 import { VendorMatchDTOType } from "@/types/dtoTypes";
@@ -13,7 +13,6 @@ const findVendorsByPreferences = async (
   executor: Pick<typeof db, "select"> = db,
   withImageUrls = true,
 ) => {
-  console.log("in findVendorsByPreferences");
   const results = [];
   for (const preference of preferencesList) {
     const requiredFields = new Set(preference.requiredFields ?? []);
@@ -94,10 +93,11 @@ const findVendorsByPreferences = async (
       }, new Map<number, { vendor: (typeof results)[0]["vendor"]; packages: (typeof results)[0]["package"][] }>())
       .values(),
   );
-  return Promise.all(array.map(async (match) => ({
+  const imageUrls = withImageUrls ? await getVendorImageUrlsBatch(array.map((match) => match.vendor.imagePaths)) : [];
+  return array.map((match, index) => ({
     ...match,
-    vendor: { ...match.vendor, imageUrls: withImageUrls ? await getVendorImageUrls(match.vendor.imagePaths) : [] },
-  })));
+    vendor: { ...match.vendor, imageUrls: imageUrls[index] ?? [] },
+  }));
 };
 
 export { findVendorsByPreferences };

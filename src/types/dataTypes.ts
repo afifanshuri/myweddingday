@@ -1,13 +1,4 @@
-type UserType = {
-  id: number;
-  createdAt: string | null;
-  email: string;
-  firstName: string;
-  lastName: string;
-  phone: string | null;
-  role: "user" | "admin";
-};
-
+import type { CriteriaValues } from "@/config/serviceCriteria";
 type WeddingDetailType = {
   locations: number[];
   date: string | null;
@@ -50,7 +41,7 @@ type PackageType = {
   details: string | null;
   vendorId: number | null;
   tags: string[];
-  filters: Record<string, any>;
+  filters: CriteriaValues;
 };
 
 type ServiceType = {
@@ -64,7 +55,6 @@ type ClassnameType = {
 };
 
 export type {
-  UserType,
   WeddingDetailType,
   WeddingDetailsFormErrors,
   VendorType,

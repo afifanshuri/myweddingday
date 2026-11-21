@@ -44,9 +44,11 @@ export default function AdminPage() {
 
   useEffect(() => {
     async function populateData() {
-      const locationsList = await APIGetLocationsAll();
-      setLocationList(locationsList);
-      await initServices();
+      // Load each list independently so one failure doesn't block the other.
+      await Promise.all([
+        APIGetLocationsAll().then(setLocationList).catch(() => setLocationList([])),
+        initServices().catch(() => {}),
+      ]);
     }
     populateData();
   }, [initServices]);

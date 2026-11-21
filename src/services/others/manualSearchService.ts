@@ -10,7 +10,7 @@ import type { VendorAndPackagesMatchDTOType, VendorMatchDTOType } from "@/types/
 import type { SearchUsage, SnapshotMatch } from "@/types/search";
 import { RequestError } from "./requestValidation";
 import { projectVendorMatches } from "./vendorResponseService";
-import { getVendorImageUrls } from "./vendorImageService";
+import { getVendorImageUrlsBatch } from "./vendorImageService";
 
 function usageFor(access: AccountAccess, used: number, resetsAt: string): SearchUsage {
   const limit = manualSearchLimit(access);
@@ -75,14 +75,13 @@ async function hydrateMatches(entries: SnapshotMatch[]) {
     .innerJoin(packagesTable, eq(packagesTable.vendorId, vendorsTable.id))
     .where(and(inArray(vendorsTable.id, entries.map((entry) => entry.vendorId)),
       inArray(packagesTable.id, entries.flatMap((entry) => entry.matchedPackageIds))));
-  const matches: VendorAndPackagesMatchDTOType[] = [];
-  for (const entry of entries) {
+  const found = entries.flatMap((entry) => {
     const current = rows.filter((row) => row.vendor.id === entry.vendorId && row.vendor.serviceId === entry.serviceId && entry.matchedPackageIds.includes(row.package.id));
-    if (!current.length) continue;
-    const vendor = current[0].vendor;
-    matches.push({ vendor: { ...vendor, imageUrls: await getVendorImageUrls(vendor.imagePaths).catch(() => []) }, packages: current.map((row) => row.package) });
-  }
-  return matches;
+    return current.length ? [{ vendor: current[0].vendor, packages: current.map((row) => row.package) }] : [];
+  });
+  // One storage request signs every photo on the page.
+  const imageUrls = await getVendorImageUrlsBatch(found.map(({ vendor }) => vendor.imagePaths)).catch(() => found.map(() => []));
+  return found.map(({ vendor, packages }, index): VendorAndPackagesMatchDTOType => ({ vendor: { ...vendor, imageUrls: imageUrls[index] }, packages }));
 }
 
 export async function readManualSearch(access: AccountAccess, searchId: string, page = 1, applyThrottle = true, serviceId: number | null = null) {

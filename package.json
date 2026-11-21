@@ -7,23 +7,17 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:submissions": "node --import tsx --test tests/submission.test.ts"
+    "test": "node --import ./tests/setup.mjs --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
-    "@deemlol/next-icons": "^0.2.7",
-    "@fortawesome/fontawesome-svg-core": "^7.3.0",
-    "@fortawesome/free-brands-svg-icons": "^7.3.0",
-    "@fortawesome/free-regular-svg-icons": "^7.3.0",
-    "@fortawesome/free-solid-svg-icons": "^7.3.0",
-    "@fortawesome/react-fontawesome": "^3.3.1",
     "@google/genai": "^2.13.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.2",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^1.0.0-rc.4",
-    "embla-carousel-react": "9.0.0-rc03",
     "embla-carousel": "9.0.0-rc03",
     "embla-carousel-auto-scroll": "9.0.0-rc03",
+    "embla-carousel-react": "9.0.0-rc03",
     "motion": "^12.42.2",
     "next": "16.2.9",
     "pg": "^8.22.0",
@@ -38,7 +32,6 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.1",
     "@types/node": "^20",
-    "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",

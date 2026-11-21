@@ -1,4 +1,4 @@
-import { SERVICE_CRITERIA, hasCriteriaValue, isCriteriaVisible } from "@/config/serviceCriteria";
+import { SERVICE_CRITERIA, hasCriteriaValue, isCriteriaVisible, type CriteriaValues } from "@/config/serviceCriteria";
 import type { VendorMatchDTOType } from "@/types/dtoTypes";
 import { unstable_rethrow } from "next/navigation";
 
@@ -56,7 +56,7 @@ function socialUrl(value: unknown): string | null {
   return url;
 }
 
-export function validateCriteria(value: unknown, id: number, audience: "admin" | "user") {
+export function validateCriteria(value: unknown, id: number, audience: "admin" | "user"): CriteriaValues {
   const values = object(value ?? {});
   const fields = SERVICE_CRITERIA[id] ?? [];
   for (const [key, actual] of Object.entries(values)) {
@@ -88,10 +88,11 @@ export function validateCriteria(value: unknown, id: number, audience: "admin" |
     }
     if (!valid) throw new RequestError(`Invalid value for ${field.label}`);
   }
+  // Every remaining value passed the type checks above.
   return Object.fromEntries(Object.entries(values).filter(([key, actual]) => {
     const field = fields.find((candidate) => candidate.key === key)!;
     return hasCriteriaValue(actual) && isCriteriaVisible(field, values, fields, audience);
-  }));
+  })) as CriteriaValues;
 }
 
 export function validateVendor(value: unknown) {
@@ -127,7 +128,6 @@ export function validatePackages(value: unknown, id: number) {
 }
 
 export function validatePreferences(value: unknown): VendorMatchDTOType[] {
-  console.log("in validatePreferences");
   if (!Array.isArray(value) || value.length > 6) throw new RequestError("Invalid preferences list");
   const seen = new Set<number>();
   return value.map((entry) => {
@@ -148,7 +148,6 @@ export function validatePreferences(value: unknown): VendorMatchDTOType[] {
 
 // Bound the stream before parsing, including requests without Content-Length.
 export async function readBody(request: Request, maxBytes: number): Promise<Response> {
-  console.log("in readbody");
   if (Number(request.headers.get("content-length")) > maxBytes) throw new RequestError("Request is too large", 413);
   const reader = request.body?.getReader();
   const chunks: Uint8Array[] = [];

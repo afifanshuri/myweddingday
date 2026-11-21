@@ -54,10 +54,10 @@ export const hasCriteriaValue = (value: unknown): boolean =>
   value !== "" &&
   (!Array.isArray(value) || value.length > 0);
 
-export const clearHiddenCriteria = (
+export const clearHiddenCriteria = <V,>(
   fields: CriteriaField[],
-  values: Record<string, unknown>,
-): Record<string, unknown> => {
+  values: Record<string, V>,
+): Record<string, V> => {
   const result = Object.fromEntries(
     Object.entries(values).filter(([key]) => {
       const field = fields.find((candidate) => candidate.key === key);
@@ -531,3 +531,7 @@ export const SERVICE_CRITERIA: Record<number, CriteriaField[]> = {
     ...SHARED_CRITERIA,
   ],
 };
+
+/** A single criterion answer: the value types validateCriteria accepts, plus empty values for cleared fields. */
+export type CriteriaValue = string | number | boolean | string[] | null | undefined;
+export type CriteriaValues = Record<string, CriteriaValue>;

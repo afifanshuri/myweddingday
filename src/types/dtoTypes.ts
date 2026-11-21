@@ -1,3 +1,4 @@
+import type { CriteriaValues } from "@/config/serviceCriteria";
 import type { findVendorsByPreferences } from "@/db/queries/vendors";
 
 type PakcageDTOType = {
@@ -7,7 +8,7 @@ type PakcageDTOType = {
   vendorId: number | null;
   filePath?: string;
   vendorName: string;
-  filters: Record<string, any>;
+  filters: CriteriaValues;
   tags: string[];
 };
 
@@ -15,7 +16,7 @@ type VendorMatchDTOType = {
   serviceId: number;
   location: number[];
   budget: number;
-  criteria: Record<string, any>;
+  criteria: CriteriaValues;
   requiredFields?: string[];
 };
 

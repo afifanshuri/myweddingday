@@ -13,20 +13,6 @@ export function createVendorImageStorage() {
   };
 }
 
-export async function getVendorImageUrls(paths: string[]) {
-  if (!paths.length) return [];
-  const [bucket, folder] = ASSET_PATH.VENDOR.split("/");
-  const safePaths = paths.filter((path) => path.startsWith(`${bucket}/${folder}/`))
-    .map((path) => path.slice(bucket.length + 1));
-  if (!safePaths.length) return [];
-  const { data, error } = await createAdminClient().storage.from(bucket).createSignedUrls(safePaths, 3600);
-  if (error) {
-    console.error("Unable to load vendor images");
-    return [];
-  }
-  return data.flatMap((image) => image.signedUrl ? [image.signedUrl] : []);
-}
-
 /** Signs images for several vendors in one storage request; returns one URL list per input, in order. */
 export async function getVendorImageUrlsBatch(pathLists: string[][]): Promise<string[][]> {
   const [bucket, folder] = ASSET_PATH.VENDOR.split("/");

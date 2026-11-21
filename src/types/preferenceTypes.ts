@@ -1,8 +1,9 @@
+import type { CriteriaValues } from "@/config/serviceCriteria";
 type BasicPreferenceType = {
   serviceId: number;
   budget: number;
   description: string;
-  criteria: Record<string, any>;
+  criteria: CriteriaValues;
   requiredFields?: string[];
 };
 

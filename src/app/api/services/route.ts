@@ -1,8 +1,10 @@
 import { getAllServices } from "@/db/queries/services";
-import { NextResponse } from "next/server";
+import { errorResponse } from "@/services/others/requestValidation";
 
 export async function GET() {
-  let result = [];
-  result = await getAllServices();
-  return NextResponse.json(result);
+  try {
+    return Response.json(await getAllServices());
+  } catch (error) {
+    return errorResponse(error, "Unable to load services");
+  }
 }
