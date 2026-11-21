@@ -84,6 +84,7 @@ Functional&RequirementsSpecifications.docx
 
 #md files
 *.md
+!migrations/README.md
 
 # Supabase CLI local cache
 /supabase/.temp/

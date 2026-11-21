@@ -45,13 +45,13 @@ const servicesTable = pgTable("servicesTable", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   createdAt: timestamp().defaultNow().notNull(),
   serviceName: varchar({ length: 255 }).notNull(),
-});
+}).enableRLS();
 
 const locationTable = pgTable("locationTable", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   createdAt: timestamp().defaultNow().notNull(),
   locationName: varchar({ length: 255 }).notNull(),
-});
+}).enableRLS();
 
 const vendorsTable = pgTable("vendorsTable", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -80,12 +80,12 @@ const packagesTable = pgTable("packagesTable", {
   details: varchar({ length: 1000 }),
   duration: numeric({ mode: "number" }),
   vendorId: integer().references(() => vendorsTable.id),
-  filters: jsonb("filters").default("{}"),
+  filters: jsonb("filters").default({}),
 }).enableRLS();
 
 export { servicesTable, locationTable, vendorsTable, packagesTable };
 
-// Server-only tables. Apply the permissions migration after Drizzle push.
+// Server-only tables. Their grants/revokes live in the baseline migration (migrations/).
 // No browser policies are intentionally added.
 export const manualSearchUsage = pgTable("manual_search_usage", {
   userId: uuid("user_id").notNull().references(() => authUsers.id, { onDelete: "cascade" }),
