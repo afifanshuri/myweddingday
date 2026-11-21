@@ -4,7 +4,9 @@ import { canViewIdentity } from "@/services/others/accessRules";
 export const ROUTES = {
   home: "/", login: "/login", dashboard: "/dashboard", weddingPlan: "/weddingplan",
   match: "/match", payment: "/payment", admin: "/admin", adminUsers: "/admin/users",
-  vendorSearch: "/vendors",
+  vendorSearch: "/vendors", forgotPassword: "/forgot-password", resetPassword: "/reset-password",
+  // Route handler (not a page) that finishes sign-in from email confirmation and password-reset links.
+  authConfirm: "/auth/confirm",
 } as const;
 
 export type AccessRequirement = "public" | "guestOnly" | "signedIn" | "paid" | "admin";
@@ -12,6 +14,7 @@ export const PAGE_ACCESS: Record<string, AccessRequirement> = {
   [ROUTES.home]: "public", [ROUTES.login]: "guestOnly", [ROUTES.match]: "public",
   [ROUTES.dashboard]: "signedIn", [ROUTES.weddingPlan]: "signedIn", [ROUTES.payment]: "signedIn",
   [ROUTES.admin]: "admin", [ROUTES.adminUsers]: "admin", [ROUTES.vendorSearch]: "paid",
+  [ROUTES.forgotPassword]: "guestOnly", [ROUTES.resetPassword]: "signedIn",
 };
 // The vendor-search query lives in ?q=, which is read by the page and never used as a redirect target.
 export const vendorSearchRoute = (query: string) => `${ROUTES.vendorSearch}?q=${encodeURIComponent(query)}`;

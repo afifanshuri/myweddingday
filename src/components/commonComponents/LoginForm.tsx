@@ -1,14 +1,18 @@
 "use client";
 import MainButton from "@/components/commonComponents/MainButton";
-
-
+import AuthCard, { authInputClass } from "@/components/authComponents/AuthCard";
 import { FormEvent, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { APICreateAuthAccount, APICreateAuthSession } from "@/services/api/auth";
 import { APIResolveLoginDestination } from "@/services/api/account";
+import { PASSWORD_RULES, loginNotice } from "@/config/auth";
+import { ROUTES } from "@/config/routes";
 
 export default function LoginForm() {
   const [isRegistering, setIsRegistering] = useState(false);
-  const [message, setMessage] = useState("");
+  // Only fixed, allow-listed notices are shown; the query value itself is never rendered.
+  const notice = loginNotice(useSearchParams().get("notice"));
+  const [message, setMessage] = useState(notice ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [routingPending, setRoutingPending] = useState(false);
 
@@ -45,69 +49,37 @@ export default function LoginForm() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-5 py-12">
-      <section className="w-full max-w-sm rounded-md border border-stone-200 bg-white p-7 shadow-sm sm:p-9">
-        <h1 className="libre-font mb-2 text-3xl text-stone-900">
-          {isRegistering ? "Create account" : "Welcome back"}
-        </h1>
-        <p className="mb-7 text-sm text-stone-600">
-          {isRegistering ? "Sign up to get started." : "Sign in to continue."}
-        </p>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <label className="block text-sm text-stone-700">
-            Email
-            <input
-              type="email"
-              name="email"
-              autoComplete="email"
-              required
-              disabled={isSubmitting || routingPending}
-              className="mt-2 block w-full rounded-sm border border-stone-300 bg-transparent px-3 py-2.5 outline-none focus:border-(--positive-tertiary)"
-            />
-          </label>
-          <label className="block text-sm text-stone-700">
+    <AuthCard title={isRegistering ? "Create account" : "Welcome back"} intro={isRegistering ? "Sign up to get started." : "Sign in to continue."}>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <label className="block text-sm text-stone-700">
+          Email
+          <input type="email" name="email" autoComplete="email" required disabled={isSubmitting || routingPending} className={authInputClass} />
+        </label>
+        <label className="block text-sm text-stone-700">
+          <span className="flex items-baseline justify-between">
             Password
-            <input
-              type="password"
-              name="password"
-              autoComplete={isRegistering ? "new-password" : "current-password"}
-              minLength={6}
-              required
-              disabled={isSubmitting || routingPending}
-              className="mt-2 block w-full rounded-sm border border-stone-300 bg-transparent px-3 py-2.5 outline-none focus:border-(--positive-tertiary)"
-            />
-          </label>
+            {!isRegistering && <MainButton href={ROUTES.forgotPassword} variant="link" size="none" className="text-xs">Forgot password?</MainButton>}
+          </span>
+          <input type="password" name="password" autoComplete={isRegistering ? "new-password" : "current-password"}
+            minLength={PASSWORD_RULES.minLength} required disabled={isSubmitting || routingPending}
+            aria-describedby={isRegistering ? "password-rules" : undefined} className={authInputClass} />
+          {isRegistering && <span id="password-rules" className="mt-1.5 block text-xs text-stone-500">{PASSWORD_RULES.hint}</span>}
+        </label>
 
-          {message && (
-            <p role="status" className="text-sm text-stone-600">
-              {message}
-            </p>
-          )}
+        {message && <p role="status" className="text-sm text-stone-600">{message}</p>}
 
-          <MainButton
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full"
-          >
-            {isSubmitting ? "Please wait..." : routingPending ? "Continue sign-in" : isRegistering ? "Create account" : "Sign in"}
-          </MainButton>
-        </form>
+        <MainButton type="submit" disabled={isSubmitting} className="w-full">
+          {isSubmitting ? "Please wait..." : routingPending ? "Continue sign-in" : isRegistering ? "Create account" : "Sign in"}
+        </MainButton>
+      </form>
 
-        <p className="mt-6 text-center text-sm text-stone-600">
-          {isRegistering ? "Already have an account?" : "New here?"}{" "}
-          <MainButton variant="link" size="none"
-            type="button"
-            disabled={isSubmitting || routingPending}
-            onClick={() => {
-              setIsRegistering(!isRegistering);
-              setMessage("");
-            }}
-          >
-            {isRegistering ? "Sign in" : "Create an account"}
-          </MainButton>
-        </p>
-      </section>
-    </main>
+      <p className="mt-6 text-center text-sm text-stone-600">
+        {isRegistering ? "Already have an account?" : "New here?"}{" "}
+        <MainButton variant="link" size="none" type="button" disabled={isSubmitting || routingPending}
+          onClick={() => { setIsRegistering(!isRegistering); setMessage(""); }}>
+          {isRegistering ? "Sign in" : "Create an account"}
+        </MainButton>
+      </p>
+    </AuthCard>
   );
 }
