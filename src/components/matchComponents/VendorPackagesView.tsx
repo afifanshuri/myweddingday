@@ -23,15 +23,28 @@ const currency = new Intl.NumberFormat("en-MY", {
   currency: "MYR",
 });
 
+const COPY = {
+  match: { back: "Back to matches", eyebrow: "Your vendor match", count: "matched", heading: "Matched Packages",
+    intro: "Compare the packages returned for your preferences.", empty: "No matched packages available for this vendor." },
+  lookup: { back: "Back to search results", eyebrow: "Vendor", count: "", heading: "Packages",
+    intro: "All packages currently offered by this vendor.", empty: "This vendor has no packages listed yet." },
+} as const;
+
 export default function VendorPackagesView({
   match,
   onBack,
+  context = "match",
 }: {
   match: VendorAndPackagesMatchDTOType;
   onBack: () => void;
+  /** "lookup" when opened from the vendor-name search rather than a saved match. */
+  context?: keyof typeof COPY;
 }) {
   const vendor = match.vendor;
+  const copy = COPY[context];
   const { access, checking } = useAccountAccess();
+  // selectPackage ignores services outside the plan; say so instead of failing silently.
+  const inPlan = usePreferenceStore((state) => state.weddingDetails.services.includes(vendor.serviceId));
   const selectedPackage = usePreferenceStore((state) => state.selectedPackages.find((pkg) => pkg.serviceId === vendor.serviceId));
   const selectPackage = usePreferenceStore((state) => state.selectPackage);
   const removeSelectedPackage = usePreferenceStore((state) => state.removeSelectedPackage);
@@ -53,7 +66,7 @@ export default function VendorPackagesView({
         className="w-fit"
       >
         <FaArrowLeft aria-hidden="true" />
-        Back to matches
+        {copy.back}
       </MainButton>
 
       <header className="overflow-hidden rounded-xl border border-(--tertiary) bg-white">
@@ -64,14 +77,14 @@ export default function VendorPackagesView({
               {vendor.vendorName.trim().charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-normal uppercase tracking-wider text-(--positive-tertiary)">Your vendor match</p>
+              <p className="text-xs font-normal uppercase tracking-wider text-(--positive-tertiary)">{copy.eyebrow}{context === "lookup" ? ` · ${serviceName}` : ""}</p>
               <h1 id="vendor-packages-title" className="libre-font mt-2 break-words text-xl sm:text-2xl">{vendor.vendorName}</h1>
               <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-normal">
                 <span className="flex items-center gap-2">
                   <FaStar aria-hidden="true" className="text-amber-500" />
                   {vendor.rating == null ? "Not rated yet" : `${Number(vendor.rating).toFixed(1)} / 5`}
                 </span>
-                <span>{packages.length} matched {packages.length === 1 ? "package" : "packages"}</span>
+                <span>{packages.length} {copy.count ? `${copy.count} ` : ""}{packages.length === 1 ? "package" : "packages"}</span>
               </div>
             </div>
           </div>
@@ -107,8 +120,9 @@ export default function VendorPackagesView({
       <div>
         <div className="mb-5 flex flex-wrap items-end justify-between gap-2">
           <div>
-            <h2 className="libre-font text-lg">Matched Packages</h2>
-            <p className="mt-2 text-sm font-normal">Compare the packages returned for your preferences.</p>
+            <h2 className="libre-font text-lg">{copy.heading}</h2>
+            <p className="mt-2 text-sm font-normal">{copy.intro}</p>
+            {!inPlan && <p className="mt-2 text-xs font-normal text-foreground/60">{serviceName} isn&apos;t in your wedding plan yet. Add it in your plan to include these packages in your budget.</p>}
           </div>
           {packages.length > 1 && <p className="text-xs font-normal text-(--positive-tertiary)">Price: low to high</p>}
         </div>
@@ -116,7 +130,7 @@ export default function VendorPackagesView({
         {packages.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-(--tertiary) bg-white px-5 py-10 text-center">
             <FaBoxOpen aria-hidden="true" className="text-2xl text-(--positive-secondary)" />
-            <p className="text-sm font-normal">No matched packages available for this vendor.</p>
+            <p className="text-sm font-normal">{copy.empty}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 items-stretch gap-5 md:grid-cols-2">
@@ -137,7 +151,7 @@ export default function VendorPackagesView({
                   </p>
                 </div>
                 <div className="border-t border-(--secondary) bg-(--background) px-5 py-4 sm:px-6">
-                  <label className="mb-4 flex cursor-pointer items-center gap-2 text-sm">
+                  {inPlan && <label className="mb-4 flex cursor-pointer items-center gap-2 text-sm">
                     <input type="radio" name={`package-${vendor.serviceId}`} className="accent-(--positive-tertiary)"
                       checked={selectedPackage?.packageId === pkg.id}
                       aria-label={`${selectedPackage?.packageId === pkg.id ? "Unselect" : "Select"} ${pkg.packageName} from ${vendor.vendorName} for my budget`}
@@ -148,7 +162,7 @@ export default function VendorPackagesView({
                         vendorId: vendor.id, vendorName: vendor.vendorName, packageId: pkg.id,
                         packageName: pkg.packageName, unitPrice: Number(pkg.price) })} />
                     {selectedPackage?.packageId === pkg.id ? "Selected for my budget" : "Select for my budget"}
-                  </label>
+                  </label>}
                   <p className="text-xs font-normal">{isCatering ? "Price per guest" : "Package price"}</p>
                   <p className="mt-1 flex flex-wrap items-baseline gap-2 text-2xl font-semibold text-(--positive-tertiary)">
                     {currency.format(pkg.price)}

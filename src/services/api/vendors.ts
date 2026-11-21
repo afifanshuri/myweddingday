@@ -1,14 +1,5 @@
-import { VendorType } from "@/types/dataTypes";
 import { VendorMatchDTOType } from "@/types/dtoTypes";
-import type { ManualSearchResult } from "@/types/search";
-
-const APIGetVendorsByServiceIds = async (
-  serviceId: number[],
-): Promise<VendorType[]> => {
-  return await fetch(`api/vendors?serviceIds=${serviceId.join(",")}`).then(
-    (response) => response.json(),
-  );
-};
+import type { ManualSearchResult, VendorLookupResult } from "@/types/search";
 
 const APIGetVendorsByPreferences = async (
   preferencesList: VendorMatchDTOType[],
@@ -30,7 +21,14 @@ const APIGetVendorsByPreferences = async (
   return data;
 };
 
-export { APIGetVendorsByServiceIds, APIGetVendorsByPreferences };
+export { APIGetVendorsByPreferences };
+
+export async function APISearchVendorsByName(query: string, signal?: AbortSignal): Promise<VendorLookupResult> {
+  const response = await fetch(`/api/vendors/search?q=${encodeURIComponent(query)}`, { cache: "no-store", signal });
+  const data = await response.json();
+  if (!response.ok) throw new SearchRequestError(data.error ?? "Unable to search vendors", response.status);
+  return data;
+}
 
 export async function APICreateVendorWithPackages(
   formData: FormData,

@@ -8,21 +8,6 @@ import {
   SERVICE_CRITERIA,
 } from "@/config/serviceCriteria";
 
-const getAllVendorsByServiceIdArray = async (serviceId: number[]) => {
-  return await db
-    .select()
-    .from(vendorsTable)
-    .where(
-      serviceId.length === 1
-        ? eq(vendorsTable.serviceId, serviceId[0])
-        : or(...serviceId.map((id) => eq(vendorsTable.serviceId, id))),
-    );
-};
-
-const getVendorById = async (id: number) => {
-  return await db.select().from(vendorsTable).where(eq(vendorsTable.id, id));
-};
-
 const findVendorsByPreferences = async (
   preferencesList: VendorMatchDTOType[],
   executor: Pick<typeof db, "select"> = db,
@@ -115,8 +100,4 @@ const findVendorsByPreferences = async (
   })));
 };
 
-export {
-  getAllVendorsByServiceIdArray,
-  getVendorById,
-  findVendorsByPreferences,
-};
+export { findVendorsByPreferences };

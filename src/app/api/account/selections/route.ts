@@ -4,11 +4,16 @@ import { eq, inArray } from "drizzle-orm";
 import { privateJson, requireVendorAccess } from "@/services/others/accountAccessService";
 import { errorResponse, positiveId, readBody, RequestError } from "@/services/others/requestValidation";
 import { requireSameOrigin } from "@/services/others/adminAuthService";
+import { throttleSearch } from "@/services/others/manualSearchService";
 
+// Returns vendor/package names for the budget panel. Paid users may select
+// packages from any vendor they can look up, so this is bounded (6 IDs) and
+// throttled per account instead of being limited to one saved search.
 export async function POST(request: Request) {
   try {
     requireSameOrigin(request);
-    await requireVendorAccess();
+    const access = await requireVendorAccess();
+    await throttleSearch(access.userId!, "selection");
     let ids: unknown;
     try { ids = await (await readBody(request, 4096)).json(); } catch (error) {
       if (error instanceof RequestError) throw error;
