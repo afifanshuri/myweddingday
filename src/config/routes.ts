@@ -3,7 +3,7 @@ import { canViewIdentity } from "@/services/others/accessRules";
 
 export const ROUTES = {
   home: "/", login: "/login", dashboard: "/dashboard", weddingPlan: "/weddingplan",
-  match: "/match", payment: "/payment", admin: "/admin", adminUsers: "/admin/users", adminNewVendor: "/admin/vendors/new",
+  match: "/match", payment: "/payment", admin: "/admin", adminUsers: "/admin/users", adminNewVendor: "/admin/vendors/new", adminLinks: "/admin/links",
   forgotPassword: "/forgot-password", resetPassword: "/reset-password",
   // Route handler (not a page) that finishes sign-in from email confirmation and password-reset links.
   authConfirm: "/auth/confirm",
@@ -13,7 +13,7 @@ export type AccessRequirement = "public" | "guestOnly" | "signedIn" | "paid" | "
 export const PAGE_ACCESS: Record<string, AccessRequirement> = {
   [ROUTES.home]: "public", [ROUTES.login]: "guestOnly", [ROUTES.match]: "public",
   [ROUTES.dashboard]: "signedIn", [ROUTES.weddingPlan]: "signedIn", [ROUTES.payment]: "signedIn",
-  [ROUTES.admin]: "admin", [ROUTES.adminUsers]: "admin", [ROUTES.adminNewVendor]: "admin",
+  [ROUTES.admin]: "admin", [ROUTES.adminUsers]: "admin", [ROUTES.adminNewVendor]: "admin", [ROUTES.adminLinks]: "admin",
   [ROUTES.forgotPassword]: "guestOnly", [ROUTES.resetPassword]: "signedIn",
 };
 export const serviceCriteriaRoute = (id: number) => `${ROUTES.weddingPlan}/${id}`;

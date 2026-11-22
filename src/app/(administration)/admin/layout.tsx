@@ -7,6 +7,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return <AdminAccessBoundary>
     <AccountNavigation>
       <MainButton href={ROUTES.admin} variant="ghost" size="small">Vendors</MainButton>
+      <MainButton href={ROUTES.adminLinks} variant="ghost" size="small">Submission links</MainButton>
       <MainButton href={ROUTES.adminUsers} variant="ghost" size="small">Users & access</MainButton>
     </AccountNavigation>
     {children}

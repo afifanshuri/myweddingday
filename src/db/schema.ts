@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { authUsers } from "drizzle-orm/supabase";
 import type { VendorStatus } from "@/config/vendorStatus";
+import type { SubmissionLinkState } from "@/config/submissionLinks";
 import {
   check,
   index,
@@ -92,6 +93,32 @@ const packagesTable = pgTable("packagesTable", {
 }).enableRLS();
 
 export { servicesTable, locationTable, vendorsTable, packagesTable };
+
+// Links an admin sends to a vendor so they can submit their own listing. Only a SHA-256 hash of the token is stored.
+export const vendorSubmissionLinks = pgTable("vendor_submission_links", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  tokenHash: varchar("token_hash", { length: 64 }).notNull().unique(),
+  label: varchar("label", { length: 255 }).notNull(),
+  vendorEmail: varchar("vendor_email", { length: 255 }),
+  createdBy: uuid("created_by").references(() => authUsers.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  state: varchar("state", { length: 10 }).$type<SubmissionLinkState>().notNull().default("open"),
+  vendorId: integer("vendor_id").references(() => vendorsTable.id, { onDelete: "set null" }),
+  fixNote: varchar("fix_note", { length: 1000 }),
+  submittedAt: timestamp("submitted_at", { withTimezone: true }),
+}, (table) => [
+  check("vendor_submission_links_state_check", sql`${table.state} in ('open', 'submitted', 'reopened', 'closed', 'cancelled')`),
+  index("vendor_submission_links_vendor_idx").on(table.vendorId),
+  index("vendor_submission_links_created_idx").on(table.createdAt),
+]).enableRLS();
+
+// Fixed-window counters for unauthenticated requests (keyed by a hash of the IP address, or by link).
+export const publicRequestLimits = pgTable("public_request_limits", {
+  key: varchar("key", { length: 100 }).primaryKey(),
+  windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
+  requests: integer("requests").notNull().default(1),
+}, (table) => [index("public_request_limits_window_idx").on(table.windowStart)]).enableRLS();
 
 // Server-only tables. Their grants/revokes live in the baseline migration (migrations/).
 // No browser policies are intentionally added.

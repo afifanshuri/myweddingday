@@ -197,3 +197,32 @@ export function errorResponse(error: unknown, message: string): Response {
   console.error(message);
   return Response.json({ error: message }, { status: 500, headers: { "Cache-Control": "private, no-store" } });
 }
+
+/** Reads a small JSON object body. */
+export async function readJsonObject(request: Request, maxBytes = 4096): Promise<Record<string, unknown>> {
+  let value: unknown;
+  try { value = await (await readBody(request, maxBytes)).json(); } catch (error) {
+    if (error instanceof RequestError) throw error;
+    throw new RequestError("Invalid JSON");
+  }
+  return object(value);
+}
+
+/** A database id taken from the URL path; anything else is a 404. */
+export function pathId(value: string, notFound = "Not found"): number {
+  if (!/^[1-9]\d{0,9}$/.test(value) || Number(value) > 2147483647) throw new RequestError(notFound, 404);
+  return Number(value);
+}
+
+/** Optional trimmed text: missing or blank becomes null. */
+export function optionalText(value: unknown, label: string, max: number): string | null {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== "string") throw new RequestError(`Invalid ${label.toLowerCase()}`);
+  const trimmed = value.trim();
+  if (trimmed.length > max) throw new RequestError(`${label} must be at most ${max} characters`);
+  return trimmed || null;
+}
+
+export function requiredText(value: unknown, label: string, max: number): string {
+  return text(value, label, max);
+}

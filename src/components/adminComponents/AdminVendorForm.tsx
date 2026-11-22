@@ -10,7 +10,8 @@ import { useServiceStore } from "@/store/serviceStore";
 import MainButton from "@/components/commonComponents/MainButton";
 import { APIGetLocationsAll } from "@/services/api/locations";
 import { APICreateVendorWithPackages } from "@/services/api/vendors";
-import { APIDeleteAdminVendor, APIGetAdminVendor, APIUpdateAdminVendor, type VendorReview } from "@/services/api/adminVendors";
+import { APIDeleteAdminVendor, APIGetAdminVendor, APIUpdateAdminVendor, type AdminVendorDetail, type VendorReview, type VendorSubmission } from "@/services/api/adminVendors";
+import { APIReadVendorSubmission, APISubmitVendorListing } from "@/services/api/vendorSubmit";
 import VendorReviewPanel from "./VendorReviewPanel";
 import "@/css/admin.css";
 import VendorImagesInput from "@/components/adminComponents/VendorImagesInput";
@@ -27,8 +28,15 @@ type FieldErrors = {
   packages?: { name?: string; price?: string; details?: string }[];
 };
 
-/** Create a vendor, or edit an existing one when `vendorId` is given. */
-export default function AdminVendorForm({ vendorId }: { vendorId?: number }) {
+/**
+ * The vendor form, used three ways:
+ * - admin, no props: create a vendor (saved as approved)
+ * - admin, `vendorId`: edit an existing vendor
+ * - vendor, `submitToken`: submit their own listing from a submission link (saved as pending), or update it when an admin
+ *   reopened it for changes. No admin controls are shown.
+ */
+export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: number; submitToken?: string }) {
+  const isSubmit = submitToken !== undefined;
   const isEdit = vendorId !== undefined;
   const router = useRouter();
   const [locationList, setLocationList] = useState<LocationType[]>([]);
@@ -38,6 +46,10 @@ export default function AdminVendorForm({ vendorId }: { vendorId?: number }) {
   const [loaded, setLoaded] = useState<{ key: string; error?: string } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [review, setReview] = useState<VendorReview | null>(null);
+  const [submission, setSubmission] = useState<VendorSubmission | null>(null);
+  // Vendor submission mode: the link's details, whether it edits a saved listing, and the confirmation once sent.
+  const [link, setLink] = useState<{ label: string; expiresAt: string; fixNote: string | null; editsSaved: boolean } | null>(null);
+  const [submitted, setSubmitted] = useState<string | null>(null);
   const [showDelete, setShowDelete] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -52,7 +64,9 @@ export default function AdminVendorForm({ vendorId }: { vendorId?: number }) {
   const updateVendorDataToStore = useAdminStore((state) => state.updateVendor);
   const resetDraft = useAdminStore((state) => state.resetDraft);
   const loadDraft = useAdminStore((state) => state.loadDraft);
-  const loadKey = `${vendorId}:${reloadKey}`;
+  const loadKey = `${vendorId ?? submitToken}:${reloadKey}`;
+  // Edits send package ids and kept images; new listings don't.
+  const editsSaved = isEdit || !!link?.editsSaved;
 
   const initServices = useServiceStore((state) => state.initServices);
   const servicesList = useServiceStore((state) => state.service);
@@ -71,25 +85,37 @@ export default function AdminVendorForm({ vendorId }: { vendorId?: number }) {
   }, [initServices]);
 
   useEffect(() => {
-    if (!isEdit) {
+    if (!isEdit && !isSubmit) {
       // Don't carry an edited vendor over into a new one.
       if (useAdminStore.getState().vendor.id !== 0) resetDraft();
       return;
     }
     const controller = new AbortController();
-    APIGetAdminVendor(vendorId, controller.signal).then((data) => {
-      if (controller.signal.aborted) return;
+    const fill = (data: Pick<AdminVendorDetail, "vendor" | "images" | "packages">) => {
       loadDraft({ ...data.vendor, createdAt: new Date(), rating: null }, data.packages.map((pkg) => ({
         name: pkg.name, price: pkg.price, details: pkg.details, filters: pkg.filters, file: null, vendorId: data.vendor.id, tags: [],
         recordId: pkg.id, imageUrl: pkg.imageUrl, hasImage: pkg.hasImage, removeImage: false,
       })));
       setExistingImages(data.images);
-      setReview(data.review);
       setVendorImages([]);
-      setLoaded({ key: loadKey });
-    }).catch((cause: Error) => { if (!controller.signal.aborted) setLoaded({ key: loadKey, error: cause.message }); });
+    };
+    const load = isSubmit
+      ? APIReadVendorSubmission(submitToken, controller.signal).then((data) => {
+        if (controller.signal.aborted) return;
+        if (data.saved) fill(data.saved);
+        else { resetDraft(); setExistingImages([]); setVendorImages([]); }
+        setLink({ label: data.label, expiresAt: data.expiresAt, fixNote: data.fixNote, editsSaved: data.saved !== null });
+      })
+      : APIGetAdminVendor(vendorId!, controller.signal).then((data) => {
+        if (controller.signal.aborted) return;
+        fill(data);
+        setReview(data.review);
+        setSubmission(data.submission);
+      });
+    load.then(() => { if (!controller.signal.aborted) setLoaded({ key: loadKey }); })
+      .catch((cause: Error) => { if (!controller.signal.aborted) setLoaded({ key: loadKey, error: cause.message }); });
     return () => controller.abort();
-  }, [isEdit, vendorId, loadKey, loadDraft, resetDraft]);
+  }, [isEdit, isSubmit, vendorId, submitToken, loadKey, loadDraft, resetDraft]);
 
   function toggleSelectLocation(id: number) {
     if (id) {
@@ -207,15 +233,22 @@ export default function AdminVendorForm({ vendorId }: { vendorId?: number }) {
       formData.append("payload", JSON.stringify({
         vendor: { vendorName, serviceId, locationId, contact, detail, instagram, facebook, tiktok },
         packages: packageListFromStore.map(({ name, price, details, filters, recordId, removeImage }) =>
-          isEdit ? { id: recordId, name, price, details, filters, removeImage: !!removeImage } : { name, price, details, filters }),
-        ...(isEdit ? { keepImagePaths: existingImages.map((image) => image.path) } : {}),
+          editsSaved ? { id: recordId, name, price, details, filters, removeImage: !!removeImage } : { name, price, details, filters }),
+        ...(editsSaved ? { keepImagePaths: existingImages.map((image) => image.path) } : {}),
       }));
       packageListFromStore.forEach((pkg, index) => {
         if (pkg.file) formData.append(`file_${index}`, pkg.file);
       });
       vendorImages.forEach((file) => formData.append("vendorImages", file));
+      if (isSubmit) {
+        const { message } = await APISubmitVendorListing(submitToken, formData);
+        setShowConfirm(false);
+        resetDraft();
+        setSubmitted(message.body);
+        return;
+      }
       if (isEdit) {
-        await APIUpdateAdminVendor(vendorId, formData);
+        await APIUpdateAdminVendor(vendorId!, formData);
         setShowConfirm(false);
         setNotice(review?.status === "approved" ? "Changes saved. Customers see them the next time their results load." : "Changes saved. Customers won't see this vendor until it's approved.");
         setReloadKey((value) => value + 1);
@@ -239,7 +272,7 @@ export default function AdminVendorForm({ vendorId }: { vendorId?: number }) {
     setIsSaving(true);
     setSaveError(null);
     try {
-      await APIDeleteAdminVendor(vendorId);
+      await APIDeleteAdminVendor(vendorId!);
       resetDraft();
       router.push(ROUTES.admin);
     } catch (e) {
@@ -249,20 +282,40 @@ export default function AdminVendorForm({ vendorId }: { vendorId?: number }) {
     }
   }
 
-  if (isEdit && loaded?.key !== loadKey) {
-    return <LoadingScreen label="Loading vendor…" />;
+  if (submitted) {
+    return <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-4 px-6 text-center">
+      <p className="libre-font text-lg text-(--positive-tertiary)">myweddingday.</p>
+      <h1 className="libre-font text-3xl text-(--positive-tertiary)">Listing submitted</h1>
+      <p role="status" className="text-sm text-foreground/70">{submitted}</p>
+      <p className="text-xs text-foreground/50">You can close this page.</p>
+    </main>;
   }
-  if (isEdit && loaded?.error) {
-    return <main className="mx-auto max-w-7xl px-4 py-8 sm:px-8">
+  if ((isEdit || isSubmit) && loaded?.key !== loadKey) {
+    return <LoadingScreen label={isSubmit ? "Opening your form…" : "Loading vendor…"} />;
+  }
+  if ((isEdit || isSubmit) && loaded?.error) {
+    return <main className={`mx-auto max-w-7xl px-4 py-8 sm:px-8 ${isSubmit ? "flex min-h-screen max-w-xl flex-col items-center justify-center gap-3 text-center" : ""}`}>
+      {isSubmit && <h1 className="libre-font text-2xl text-(--positive-tertiary)">This link can&apos;t be used</h1>}
       <p role="alert">{loaded.error}</p>
-      <MainButton className="mt-4" size="small" variant="secondary" href={ROUTES.admin}>Back to vendors</MainButton>
+      {!isSubmit && <MainButton className="mt-4" size="small" variant="secondary" href={ROUTES.admin}>Back to vendors</MainButton>}
     </main>;
   }
 
   return (
     <main className={`admin-page mx-auto max-w-7xl px-4 py-8 sm:px-8 sm:py-12`}>
-      <MainButton href={ROUTES.admin} variant="ghost" size="small" className="mb-4">← All vendors</MainButton>
-      <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+      {!isSubmit && <MainButton href={ROUTES.admin} variant="ghost" size="small" className="mb-4">← All vendors</MainButton>}
+      {isSubmit && link ? <header className="mb-8">
+        <p className="mb-3 libre-font text-lg text-(--positive-tertiary)">myweddingday.</p>
+        <h1 className="libre-font text-3xl text-(--positive-tertiary) sm:text-4xl">{link.editsSaved ? "Update your listing" : "Add your listing"}</h1>
+        <p className="mt-3 text-sm font-normal text-foreground/60">{link.editsSaved
+          ? "Your listing is saved as you sent it. Change what we asked for below, then submit it again."
+          : `Tell couples about ${link.label}: your details, photos and packages. We'll review your listing before it goes live.`}
+          {" "}This link works until {new Date(link.expiresAt).toLocaleDateString("en-MY", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kuala_Lumpur" })}.</p>
+        {link.fixNote && <div className="mt-5 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+          <p className="font-medium">Please change:</p>
+          <p className="mt-1 whitespace-pre-line">{link.fixNote}</p>
+        </div>}
+      </header> : <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="mb-3 text-xs font-semibold tracking-widest text-(--positive-tertiary) uppercase">Vendor administration</p>
           <h1 className="libre-font text-3xl text-(--positive-tertiary) sm:text-4xl">{isEdit ? "Edit vendor" : "Add a vendor"}</h1>
@@ -271,8 +324,9 @@ export default function AdminVendorForm({ vendorId }: { vendorId?: number }) {
             : "Create a vendor profile and add the packages couples can explore."}</p>
         </div>
         <span className="rounded-full border border-(--tertiary) bg-white px-4 py-2 text-xs text-(--positive-tertiary)">{saved ? "Saved" : isEdit ? `Vendor #${vendorId}` : "New vendor"}</span>
-      </header>
-      {isEdit && review && <VendorReviewPanel vendorId={vendorId} review={review} onChange={setReview} disabled={isSaving} />}
+      </header>}
+      {isEdit && review && <VendorReviewPanel vendorId={vendorId} review={review} submission={submission} onChange={setReview}
+        onSubmissionChange={setSubmission} disabled={isSaving} />}
       <fieldset disabled={isSaving || saved} className={`grid min-w-0 gap-6 lg:grid-cols-[0.9fr_1.1fr] ${isSaving || saved ? "pointer-events-none" : ""}`}>
         <section aria-labelledby="vendor-details-heading" className="flex min-w-0 flex-col gap-5 self-start rounded-3xl border border-(--tertiary) bg-white p-5 shadow-sm sm:p-7">
           <div className="flex items-center gap-3 border-b border-(--secondary) pb-5">
@@ -491,11 +545,11 @@ export default function AdminVendorForm({ vendorId }: { vendorId?: number }) {
         </section>
 
         <div className="flex flex-col gap-4 rounded-2xl border border-(--tertiary) bg-white p-5 sm:flex-row sm:items-center sm:justify-between lg:col-span-2">
-          <p className="text-sm font-normal text-foreground/60">Review the vendor details and packages before saving.</p>
+          <p className="text-sm font-normal text-foreground/60">{isSubmit ? "Check your details and packages before submitting." : "Review the vendor details and packages before saving."}</p>
           <div className="flex flex-col gap-3 sm:flex-row">
             {isEdit && <MainButton variant="danger" disabled={isSaving} className="w-full sm:w-auto" onClick={() => { setSaveError(null); setShowDelete(true); }}>Delete vendor</MainButton>}
             <MainButton disabled={isSaving || saved} className="w-full px-7 py-3 text-sm text-(--positive-tertiary) disabled:opacity-50 sm:w-auto" onClick={() => { setNotice(null); handleSaveClick(); }}>
-              {saved ? "Vendor saved" : isSaving ? "Saving..." : isEdit ? "Save changes" : "Add Vendor"}
+              {saved ? "Vendor saved" : isSaving ? (isSubmit ? "Submitting…" : "Saving...") : isSubmit ? "Submit listing" : isEdit ? "Save changes" : "Add Vendor"}
             </MainButton>
           </div>
         </div>
@@ -517,9 +571,9 @@ export default function AdminVendorForm({ vendorId }: { vendorId?: number }) {
         onClose={() => setShowConfirm(false)}
         onConfirm={() => saveVendor()}
         busy={isSaving}
-        title="Confirm Save"
+        title={isSubmit ? "Submit listing" : "Confirm Save"}
       >
-        <p>{isEdit ? review?.status === "approved" ? "Save these changes? Customers see them the next time their results load." : "Save these changes?" : "Are you sure you want to save this vendor?"}</p>
+        <p>{isSubmit ? "Submit your listing for review? You won't be able to change it after submitting unless we ask you for changes." : isEdit ? review?.status === "approved" ? "Save these changes? Customers see them the next time their results load." : "Save these changes?" : "Are you sure you want to save this vendor?"}</p>
         {saveError && <p role="alert" className="mt-2 text-red-600">{saveError}</p>}
       </CustomDialog>
       <CustomDialog open={showDelete} onClose={() => setShowDelete(false)} onConfirm={() => deleteVendor()} busy={isSaving} title="Delete vendor">
