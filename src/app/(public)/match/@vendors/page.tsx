@@ -3,7 +3,7 @@ import { usePreferenceStore } from "@/store/preferenceStore";
 import { useSelectedServices } from "@/hooks/useSelectedServices";
 import AllMatchSection from "@/components/matchComponents/AllMatchSection";
 import TopMatchSection from "@/components/matchComponents/TopMatchSection";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type SyntheticEvent } from "react";
 import { APIGetVendorsByPreferences, APIGetSavedSearch, APIGetSearchVendor, SearchRequestError } from "@/services/api/vendors";
 import type { VendorDetailedMatch } from "@/types/dtoTypes";
 import type { ManualSearchResult } from "@/types/search";
@@ -16,13 +16,15 @@ import { SEARCH } from "@/config/plans";
 
 export default function VendorSection() {
   const { access, checking, revision } = useAccountAccess();
-  const [result, setResult] = useState<{ data: ManualSearchResult | null; revision: number; updated?: boolean }>({ data: null, revision: -1 });
+  const [result, setResult] = useState<{ data: ManualSearchResult | null; revision: number }>({ data: null, revision: -1 });
   const [detail, setDetail] = useState<{ match: VendorDetailedMatch; revision: number } | null>(null);
   const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
   const [error, setError] = useState<{ message: string; expired: boolean } | null>(null);
   const [page, setPage] = useState(1);
   const [serviceFilter, setServiceFilter] = useState<number | null>(null);
   const [retry, setRetry] = useState(0);
+  const [detailRetry, setDetailRetry] = useState(0);
+  const lastImageRetry = useRef(0);
   const [busy, setBusy] = useState(true);
   const selectedServices = usePreferenceStore((state) => state.weddingDetails.services);
   const selectedLocations = usePreferenceStore((state) => state.weddingDetails.locations);
@@ -67,9 +69,7 @@ export default function VendorSection() {
           usePreferenceStore.getState().completeManualSearch(searchId);
         } else next = await APIGetSavedSearch(searchId, page, controller.signal, serviceFilter);
         if (!controller.signal.aborted) {
-          setResult((previous) => ({ data: next, revision, updated: previous.revision === revision && previous.data?.searchId === next.searchId && previous.data.page === next.page
-            ? previous.updated || JSON.stringify([previous.data.topMatches, previous.data.matches], (key, value) => key === "imageUrls" ? undefined : value) !== JSON.stringify([next.topMatches, next.matches], (key, value) => key === "imageUrls" ? undefined : value)
-            : false }));
+          setResult({ data: next, revision });
           setError(null);
           window.dispatchEvent(new Event("manual-search-complete"));
         }
@@ -82,11 +82,10 @@ export default function VendorSection() {
         }
       } finally { inFlight = false; if (!controller.signal.aborted) setBusy(false); }
     };
+    // Vendor details load once per page view (and on page/filter changes). There is no background
+    // reload: changes made while the page is open appear the next time it loads.
     void load();
-    const refresh = () => { if (document.visibilityState === "visible") void load(); };
-    const interval = window.setInterval(refresh, 60000);
-    window.addEventListener("focus", refresh);
-    return () => { controller.abort(); window.clearInterval(interval); window.removeEventListener("focus", refresh); };
+    return () => controller.abort();
   }, [preferences, selectedLocations, selectedServices, checking, revision, access.userId, retry, page, serviceFilter]);
 
   useEffect(() => {
@@ -115,18 +114,24 @@ export default function VendorSection() {
         }
       });
     void load();
-    const refresh = () => { if (document.visibilityState === "visible") void load(); };
-    const interval = window.setInterval(refresh, 60000);
-    window.addEventListener("focus", refresh);
-    return () => { controller.abort(); window.clearInterval(interval); window.removeEventListener("focus", refresh); };
-  }, [selectedVendorId, searchId, checking, revision, access.canViewVendorIdentity]);
+    return () => controller.abort();
+  }, [selectedVendorId, searchId, checking, revision, access.canViewVendorIdentity, detailRetry]);
+
+  // Photo links are signed for an hour. If one fails (usually because the page has been open that long),
+  // reload the current view once for fresh links. At most once every 5 minutes, so a missing file can't loop.
+  const onImageError = (event: SyntheticEvent) => {
+    if (!(event.target instanceof HTMLImageElement) || Date.now() - lastImageRetry.current < 5 * 60 * 1000) return;
+    lastImageRetry.current = Date.now();
+    if (selectedVendorId !== null) setDetailRetry((value) => value + 1);
+    else setRetry((value) => value + 1);
+  };
 
   const topMatches = data?.topMatches ?? [];
   const otherMatches = data?.matches ?? [];
   const topServices = servicesList.filter((service) => topMatches.some((match) => match.vendor.serviceId === service.id));
   const selectVendor = (id: number) => { setError(null); setDetail(null); setSelectedVendorId(id); };
   return (
-    <div className="flex min-w-0 flex-col gap-6 p-4 sm:p-8" aria-busy={busy}>
+    <div className="flex min-w-0 flex-col gap-6 p-4 sm:p-8" aria-busy={busy} onErrorCapture={onImageError}>
       {checking || (busy && !data) ? <MatchLoading /> : error ? (
         <div className="flex flex-col items-start gap-3">
           <p role="alert">{error.message}</p>
@@ -141,14 +146,13 @@ export default function VendorSection() {
             <p>Preview all matching vendors for free. Plus unlocks vendor names, contacts, and packages.</p>
             <MainButton href={paymentRoute()} size="small">Unlock vendor details</MainButton>
           </div>}
-          <p className="text-xs text-(--positive-tertiary)">Results saved until {new Date(data.expiresAt).toLocaleString("en-MY", { timeZone: "Asia/Kuala_Lumpur" })} (Malaysia time). Vendor details and prices stay current; ranking reflects your original search.</p>
-          {result.updated && <p role="status" className="rounded-lg border border-(--tertiary) p-3 text-sm">Vendor information has changed. The cards now show the latest available details. Plan again to update your recommendations.</p>}
+          <p className="text-xs text-(--positive-tertiary)">Results saved until {new Date(data.expiresAt).toLocaleString("en-MY", { timeZone: "Asia/Kuala_Lumpur" })} (Malaysia time). Vendor details and prices are current as of when this page loaded; ranking reflects your original search.</p>
           <TopMatchSection matches={topMatches} servicesList={topServices} onSelect={selectVendor} />
           {(data.total > 0 || serviceFilter !== null) && <AllMatchSection matches={otherMatches} topMatches={topMatches} servicesList={servicesList} onSelect={selectVendor} activeServiceId={serviceFilter} onServiceChange={(id) => { setServiceFilter(id); setPage(1); }} />}
           {data.pageCount > 1 && <nav aria-label="Vendor results pages" className="flex items-center justify-center gap-4">
-            <MainButton size="small" variant="secondary" disabled={busy || page <= 1} onClick={() => setPage((value) => value - 1)}>Previous</MainButton>
+            <MainButton size="small" variant="secondary" disabled={busy || data.page <= 1} onClick={() => setPage(data.page - 1)}>Previous</MainButton>
             <span aria-live="polite">Page {data.page} of {data.pageCount}</span>
-            <MainButton size="small" variant="secondary" disabled={busy || page >= data.pageCount} onClick={() => setPage((value) => value + 1)}>Next</MainButton>
+            <MainButton size="small" variant="secondary" disabled={busy || data.page >= data.pageCount} onClick={() => setPage(data.page + 1)}>Next</MainButton>
           </nav>}
         </> : <p>Plan your wedding to find vendors.</p>}
     </div>

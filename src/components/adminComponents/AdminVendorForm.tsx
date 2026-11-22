@@ -10,8 +10,12 @@ import { useServiceStore } from "@/store/serviceStore";
 import MainButton from "@/components/commonComponents/MainButton";
 import { APIGetLocationsAll } from "@/services/api/locations";
 import { APICreateVendorWithPackages } from "@/services/api/vendors";
+import { APIDeleteAdminVendor, APIGetAdminVendor, APIUpdateAdminVendor } from "@/services/api/adminVendors";
 import "@/css/admin.css";
 import VendorImagesInput from "@/components/adminComponents/VendorImagesInput";
+import { useRouter } from "next/navigation";
+import { ROUTES, adminVendorRoute } from "@/config/routes";
+import LoadingScreen from "@/components/commonComponents/LoadingScreen";
 
 type FieldErrors = {
   vendorName?: string;
@@ -22,8 +26,17 @@ type FieldErrors = {
   packages?: { name?: string; price?: string; details?: string }[];
 };
 
-export default function AdminPage() {
+/** Create a vendor, or edit an existing one when `vendorId` is given. */
+export default function AdminVendorForm({ vendorId }: { vendorId?: number }) {
+  const isEdit = vendorId !== undefined;
+  const router = useRouter();
   const [locationList, setLocationList] = useState<LocationType[]>([]);
+  const [existingImages, setExistingImages] = useState<{ path: string; url: string | null }[]>([]);
+  // Edit mode: which load finished (vendor id + reload count), or why it failed.
+  const [reloadKey, setReloadKey] = useState(0);
+  const [loaded, setLoaded] = useState<{ key: string; error?: string } | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [showDelete, setShowDelete] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -36,6 +49,8 @@ export default function AdminPage() {
   const addPackageToStore = useAdminStore((state) => state.addPackage);
   const updateVendorDataToStore = useAdminStore((state) => state.updateVendor);
   const resetDraft = useAdminStore((state) => state.resetDraft);
+  const loadDraft = useAdminStore((state) => state.loadDraft);
+  const loadKey = `${vendorId}:${reloadKey}`;
 
   const initServices = useServiceStore((state) => state.initServices);
   const servicesList = useServiceStore((state) => state.service);
@@ -52,6 +67,26 @@ export default function AdminPage() {
     }
     populateData();
   }, [initServices]);
+
+  useEffect(() => {
+    if (!isEdit) {
+      // Don't carry an edited vendor over into a new one.
+      if (useAdminStore.getState().vendor.id !== 0) resetDraft();
+      return;
+    }
+    const controller = new AbortController();
+    APIGetAdminVendor(vendorId, controller.signal).then((data) => {
+      if (controller.signal.aborted) return;
+      loadDraft({ ...data.vendor, createdAt: new Date(), rating: null }, data.packages.map((pkg) => ({
+        name: pkg.name, price: pkg.price, details: pkg.details, filters: pkg.filters, file: null, vendorId: data.vendor.id, tags: [],
+        recordId: pkg.id, imageUrl: pkg.imageUrl, hasImage: pkg.hasImage, removeImage: false,
+      })));
+      setExistingImages(data.images);
+      setVendorImages([]);
+      setLoaded({ key: loadKey });
+    }).catch((cause: Error) => { if (!controller.signal.aborted) setLoaded({ key: loadKey, error: cause.message }); });
+    return () => controller.abort();
+  }, [isEdit, vendorId, loadKey, loadDraft, resetDraft]);
 
   function toggleSelectLocation(id: number) {
     if (id) {
@@ -168,12 +203,21 @@ export default function AdminPage() {
       const { vendorName, serviceId, locationId, contact, detail, instagram, facebook, tiktok } = vendorFromStore;
       formData.append("payload", JSON.stringify({
         vendor: { vendorName, serviceId, locationId, contact, detail, instagram, facebook, tiktok },
-        packages: packageListFromStore.map(({ name, price, details, filters }) => ({ name, price, details, filters })),
+        packages: packageListFromStore.map(({ name, price, details, filters, recordId, removeImage }) =>
+          isEdit ? { id: recordId, name, price, details, filters, removeImage: !!removeImage } : { name, price, details, filters }),
+        ...(isEdit ? { keepImagePaths: existingImages.map((image) => image.path) } : {}),
       }));
       packageListFromStore.forEach((pkg, index) => {
         if (pkg.file) formData.append(`file_${index}`, pkg.file);
       });
       vendorImages.forEach((file) => formData.append("vendorImages", file));
+      if (isEdit) {
+        await APIUpdateAdminVendor(vendorId, formData);
+        setShowConfirm(false);
+        setNotice("Changes saved. Customers see them the next time their results load.");
+        setReloadKey((value) => value + 1);
+        return;
+      }
       const data = await APICreateVendorWithPackages(formData);
       updateVendorDataToStore({ id: data.id });
       setSaved(true);
@@ -186,15 +230,44 @@ export default function AdminPage() {
     }
   }
 
+  async function deleteVendor() {
+    if (!isEdit || savingRef.current) return;
+    savingRef.current = true;
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      await APIDeleteAdminVendor(vendorId);
+      resetDraft();
+      router.push(ROUTES.admin);
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : "Unable to delete vendor");
+      savingRef.current = false;
+      setIsSaving(false);
+    }
+  }
+
+  if (isEdit && loaded?.key !== loadKey) {
+    return <LoadingScreen label="Loading vendor…" />;
+  }
+  if (isEdit && loaded?.error) {
+    return <main className="mx-auto max-w-7xl px-4 py-8 sm:px-8">
+      <p role="alert">{loaded.error}</p>
+      <MainButton className="mt-4" size="small" variant="secondary" href={ROUTES.admin}>Back to vendors</MainButton>
+    </main>;
+  }
+
   return (
     <main className={`admin-page mx-auto max-w-7xl px-4 py-8 sm:px-8 sm:py-12`}>
+      <MainButton href={ROUTES.admin} variant="ghost" size="small" className="mb-4">← All vendors</MainButton>
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="mb-3 text-xs font-semibold tracking-widest text-(--positive-tertiary) uppercase">Vendor administration</p>
-          <h1 className="libre-font text-3xl text-(--positive-tertiary) sm:text-4xl">Add a vendor</h1>
-          <p className="mt-3 text-sm font-normal text-foreground/60">Create a vendor profile and add the packages couples can explore.</p>
+          <h1 className="libre-font text-3xl text-(--positive-tertiary) sm:text-4xl">{isEdit ? "Edit vendor" : "Add a vendor"}</h1>
+          <p className="mt-3 text-sm font-normal text-foreground/60">{isEdit
+            ? "Change the vendor's details, packages and photos. Removing a package here deletes it when you save."
+            : "Create a vendor profile and add the packages couples can explore."}</p>
         </div>
-        <span className="rounded-full border border-(--tertiary) bg-white px-4 py-2 text-xs text-(--positive-tertiary)">{saved ? "Saved" : "New vendor"}</span>
+        <span className="rounded-full border border-(--tertiary) bg-white px-4 py-2 text-xs text-(--positive-tertiary)">{saved ? "Saved" : isEdit ? `Vendor #${vendorId}` : "New vendor"}</span>
       </header>
       <fieldset disabled={isSaving || saved} className={`grid min-w-0 gap-6 lg:grid-cols-[0.9fr_1.1fr] ${isSaving || saved ? "pointer-events-none" : ""}`}>
         <section aria-labelledby="vendor-details-heading" className="flex min-w-0 flex-col gap-5 self-start rounded-3xl border border-(--tertiary) bg-white p-5 shadow-sm sm:p-7">
@@ -295,7 +368,8 @@ export default function AdminPage() {
               <p className="text-red-500 text-sm mt-1">{errors.contact}</p>
             ) : null}
           </div>
-          <VendorImagesInput files={vendorImages} onChange={setVendorImages} />
+          <VendorImagesInput files={vendorImages} onChange={setVendorImages}
+            existing={existingImages} onRemoveExisting={(path) => setExistingImages((images) => images.filter((image) => image.path !== path))} />
           <div className="flex flex-col gap-4 border-t border-(--secondary) pt-5">
             <p className="text-sm">Social Media <span className="font-normal text-foreground/50">(Optional)</span></p>
             <div className="grid grid-cols-1 gap-4">
@@ -414,12 +488,17 @@ export default function AdminPage() {
 
         <div className="flex flex-col gap-4 rounded-2xl border border-(--tertiary) bg-white p-5 sm:flex-row sm:items-center sm:justify-between lg:col-span-2">
           <p className="text-sm font-normal text-foreground/60">Review the vendor details and packages before saving.</p>
-        <MainButton disabled={isSaving || saved} className="w-full px-7 py-3 text-sm text-(--positive-tertiary) disabled:opacity-50 sm:w-auto" onClick={() => handleSaveClick()}>
-          {saved ? "Vendor saved" : isSaving ? "Saving..." : "Add Vendor"}
-        </MainButton>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            {isEdit && <MainButton variant="danger" disabled={isSaving} className="w-full sm:w-auto" onClick={() => { setSaveError(null); setShowDelete(true); }}>Delete vendor</MainButton>}
+            <MainButton disabled={isSaving || saved} className="w-full px-7 py-3 text-sm text-(--positive-tertiary) disabled:opacity-50 sm:w-auto" onClick={() => { setNotice(null); handleSaveClick(); }}>
+              {saved ? "Vendor saved" : isSaving ? "Saving..." : isEdit ? "Save changes" : "Add Vendor"}
+            </MainButton>
+          </div>
         </div>
       </fieldset>
+      {notice && <p role="status" className="mt-5 rounded-xl border border-(--positive-secondary) bg-(--positive)/20 p-4 text-sm text-(--positive-tertiary)">{notice}</p>}
       {saved && <p role="status" className="mt-5 rounded-xl border border-(--positive-secondary) bg-(--positive)/20 p-4 text-sm text-(--positive-tertiary)">Vendor and packages saved successfully.</p>}
+      {saved && vendorFromStore.id !== 0 && <MainButton className="mr-3" variant="secondary" href={adminVendorRoute(vendorFromStore.id)}>Edit this vendor</MainButton>}
       {saved && <MainButton onClick={() => {
         resetDraft();
         setVendorImages([]);
@@ -427,7 +506,7 @@ export default function AdminPage() {
         setErrors({});
         setSaveError(null);
       }}>Add another vendor</MainButton>}
-      {!showConfirm && saveError && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">{saveError}</p>}
+      {!showConfirm && !showDelete && saveError && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">{saveError}</p>}
 
       <CustomDialog
         open={showConfirm}
@@ -436,7 +515,11 @@ export default function AdminPage() {
         busy={isSaving}
         title="Confirm Save"
       >
-        <p>Are you sure you want to save this vendor?</p>
+        <p>{isEdit ? "Save these changes? Customers see them the next time their results load." : "Are you sure you want to save this vendor?"}</p>
+        {saveError && <p role="alert" className="mt-2 text-red-600">{saveError}</p>}
+      </CustomDialog>
+      <CustomDialog open={showDelete} onClose={() => setShowDelete(false)} onConfirm={() => deleteVendor()} busy={isSaving} title="Delete vendor">
+        <p className="break-words">Delete {vendorFromStore.vendorName} and all {packageListFromStore.length} of its packages and photos? This can&apos;t be undone. The vendor disappears from customers&apos; saved results.</p>
         {saveError && <p role="alert" className="mt-2 text-red-600">{saveError}</p>}
       </CustomDialog>
     </main>

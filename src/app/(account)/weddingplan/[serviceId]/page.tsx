@@ -4,6 +4,7 @@ import ServiceCriteriaPage from "@/components/weddingDetailComponents/ServiceCri
 import { requireRouteAccess } from "@/services/others/pageAccessService";
 import { serviceCriteriaRoute } from "@/config/routes";
 import { SERVICE_CRITERIA } from "@/config/serviceCriteria";
+import LoadingScreen from "@/components/commonComponents/LoadingScreen";
 
 type Props = { params: Promise<{ serviceId: string }> };
 async function CriteriaContent({ params }: Props) {
@@ -13,5 +14,5 @@ async function CriteriaContent({ params }: Props) {
   return <ServiceCriteriaPage />;
 }
 export default function CriteriaPage(props: Props) {
-  return <Suspense fallback={<p role="status" className="p-6">Checking account access…</p>}><CriteriaContent {...props} /></Suspense>;
+  return <Suspense fallback={<LoadingScreen label="Checking account access…" />}><CriteriaContent {...props} /></Suspense>;
 }

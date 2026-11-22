@@ -239,17 +239,31 @@ export default function PackageDetailSection({
             Package image
           </label>
           <p className="mb-3 text-xs font-normal text-foreground/60">
-            Upload a JPG, PNG, or WebP image.
+            Upload a JPG, PNG, or WebP image.{pkg.hasImage ? " Choosing a new image replaces the saved one." : ""}
           </p>
+          {pkg.hasImage && !pkg.file && (
+            <div className="mb-3 flex items-center gap-3">
+              {pkg.removeImage
+                ? <p className="text-xs text-foreground/70">The saved image will be removed when you save.</p>
+                : pkg.imageUrl
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={pkg.imageUrl} alt="Saved package image" className="h-16 w-24 rounded-lg object-cover" />
+                  : <p className="text-xs text-foreground/70">A saved image exists (preview unavailable).</p>}
+              <MainButton variant="ghost" size="small" type="button" className="text-xs"
+                onClick={() => updatePackageToStore(pkg.id, { removeImage: !pkg.removeImage })}>
+                {pkg.removeImage ? "Keep image" : "Remove image"}
+              </MainButton>
+            </div>
+          )}
+          {pkg.file && <p className="mb-3 text-xs text-foreground/70">New image: {pkg.file.name}</p>}
           <input
             id={`package-file-${pkg.id}`}
             type="file"
-            multiple={true}
             accept="image/jpeg,image/png,image/webp"
             className="w-full cursor-pointer rounded-xl border border-dashed border-(--fourth) bg-(--background)"
             onChange={(e) => {
               updatePackageToStore(pkg.id, {
-                file: e.target.files?.[0],
+                file: e.target.files?.[0] ?? null,
               });
             }}
           ></input>

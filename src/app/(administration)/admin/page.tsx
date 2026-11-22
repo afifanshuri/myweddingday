@@ -1,12 +1,13 @@
 import { Suspense } from "react";
-import AdminVendorForm from "@/components/adminComponents/AdminVendorForm";
+import AdminVendorList from "@/components/adminComponents/AdminVendorList";
 import { requireRouteAccess } from "@/services/others/pageAccessService";
 import { ROUTES } from "@/config/routes";
+import LoadingScreen from "@/components/commonComponents/LoadingScreen";
 
 async function AdminContent() {
   await requireRouteAccess(ROUTES.admin);
-  return <AdminVendorForm />;
+  return <AdminVendorList />;
 }
 export default function AdminPage() {
-  return <Suspense fallback={<p role="status" className="p-6">Checking admin access…</p>}><AdminContent /></Suspense>;
+  return <Suspense fallback={<LoadingScreen label="Checking admin access…" />}><AdminContent /></Suspense>;
 }

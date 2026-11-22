@@ -3,7 +3,7 @@ import { canViewIdentity } from "@/services/others/accessRules";
 
 export const ROUTES = {
   home: "/", login: "/login", dashboard: "/dashboard", weddingPlan: "/weddingplan",
-  match: "/match", payment: "/payment", admin: "/admin", adminUsers: "/admin/users",
+  match: "/match", payment: "/payment", admin: "/admin", adminUsers: "/admin/users", adminNewVendor: "/admin/vendors/new",
   forgotPassword: "/forgot-password", resetPassword: "/reset-password",
   // Route handler (not a page) that finishes sign-in from email confirmation and password-reset links.
   authConfirm: "/auth/confirm",
@@ -13,11 +13,12 @@ export type AccessRequirement = "public" | "guestOnly" | "signedIn" | "paid" | "
 export const PAGE_ACCESS: Record<string, AccessRequirement> = {
   [ROUTES.home]: "public", [ROUTES.login]: "guestOnly", [ROUTES.match]: "public",
   [ROUTES.dashboard]: "signedIn", [ROUTES.weddingPlan]: "signedIn", [ROUTES.payment]: "signedIn",
-  [ROUTES.admin]: "admin", [ROUTES.adminUsers]: "admin",
+  [ROUTES.admin]: "admin", [ROUTES.adminUsers]: "admin", [ROUTES.adminNewVendor]: "admin",
   [ROUTES.forgotPassword]: "guestOnly", [ROUTES.resetPassword]: "signedIn",
 };
 export const serviceCriteriaRoute = (id: number) => `${ROUTES.weddingPlan}/${id}`;
 export const vendorMatchRoute = (id: number) => `${ROUTES.match}/${id}`;
+export const adminVendorRoute = (id: number) => `/admin/vendors/${id}`;
 // firstTimeLogin is a navigation preference, never an authorization decision.
 export const getDefaultRoute = (access: AccountAccess, firstTimeLogin: unknown = false) =>
   access.role === "admin" ? ROUTES.admin
@@ -27,6 +28,7 @@ export function getRouteRequirement(pathname: string): AccessRequirement | null 
   if (Object.hasOwn(PAGE_ACCESS, pathname)) return PAGE_ACCESS[pathname];
   if (/^\/weddingplan\/[1-6]$/.test(pathname)) return "signedIn";
   if (/^\/match\/[1-9]\d*$/.test(pathname)) return "paid";
+  if (/^\/admin\/vendors\/[1-9]\d*$/.test(pathname)) return "admin";
   return null;
 }
 

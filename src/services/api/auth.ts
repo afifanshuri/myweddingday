@@ -25,3 +25,8 @@ export async function APIRequestPasswordReset(email: string) {
 export async function APIUpdatePassword(password: string) {
   return createClient().auth.updateUser({ password });
 }
+
+/** Ends every session for the account, including the recovery session and any other devices. */
+export async function APIEndAllAuthSessions() {
+  return createClient().auth.signOut({ scope: "global" });
+}

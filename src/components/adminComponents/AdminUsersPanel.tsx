@@ -7,6 +7,7 @@ import AccountStatus from "@/components/commonComponents/AccountStatus";
 import { useAccountAccess } from "@/components/commonComponents/AccountAccessProvider";
 import { APIGetUsersAll, APIUpdateUserAccess, type AccountUser, type AccessUpdate } from "@/services/api/account";
 import { PLANS } from "@/config/plans";
+import LoadingScreen from "@/components/commonComponents/LoadingScreen";
 
 export default function UsersPage() {
   const { access, checking, revision } = useAccountAccess();
@@ -39,7 +40,7 @@ export default function UsersPage() {
       <AccountStatus />
     </div>
     {error && <p role="alert" className="mt-5 text-sm text-red-700">{error}</p>}
-    {!visible ? <p role="status" className="py-8">{error ? "Accounts could not be loaded." : "Loading accounts…"}</p> : <>
+    {!visible ? (error ? <p role="alert" className="py-8">Accounts could not be loaded.</p> : <LoadingScreen label="Loading accounts…" backdrop={false} />) : <>
       <ul className="mt-6 divide-y divide-(--tertiary) overflow-hidden rounded-xl border border-(--tertiary) bg-white">
         {result.users.map((user) => <li key={user.userId} className="flex flex-col justify-between gap-4 p-5 lg:flex-row lg:items-center">
           <div className="min-w-0"><p className="break-all font-medium">{user.email || "No email"}{user.userId === access.userId && <span className="text-xs text-foreground/50"> (you)</span>}</p>

@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
 import { requireRouteAccess } from "@/services/others/pageAccessService";
 import { ROUTES, vendorMatchRoute } from "@/config/routes";
+import LoadingScreen from "@/components/commonComponents/LoadingScreen";
 
 type Props = { params: Promise<{ id: string }> };
 async function ProtectedVendorPage({ params }: Props) {
@@ -13,5 +14,5 @@ async function ProtectedVendorPage({ params }: Props) {
 }
 
 export default function VendorDetailPage(props: Props) {
-  return <Suspense fallback={<p role="status">Checking account access…</p>}><ProtectedVendorPage {...props} /></Suspense>;
+  return <Suspense fallback={<LoadingScreen label="Checking account access…" />}><ProtectedVendorPage {...props} /></Suspense>;
 }

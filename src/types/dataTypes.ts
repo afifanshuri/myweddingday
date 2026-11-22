@@ -42,6 +42,11 @@ type PackageType = {
   vendorId: number | null;
   tags: string[];
   filters: CriteriaValues;
+  /** Set when editing: the saved package's database id, its current image link, and whether to drop that image. */
+  recordId?: number;
+  imageUrl?: string | null;
+  hasImage?: boolean;
+  removeImage?: boolean;
 };
 
 type ServiceType = {

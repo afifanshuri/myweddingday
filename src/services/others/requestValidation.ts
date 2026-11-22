@@ -127,6 +127,16 @@ export function validatePackages(value: unknown, id: number) {
   });
 }
 
+/** Packages from the edit form: the create fields plus an optional existing id and an image-removal flag. */
+export function validatePackageEdits(value: unknown, id: number) {
+  const packages = validatePackages(value, id);
+  return packages.map((pkg, index) => {
+    const raw = object((value as unknown[])[index]);
+    if (raw.removeImage !== undefined && typeof raw.removeImage !== "boolean") throw new RequestError("Invalid image option");
+    return { ...pkg, id: raw.id === undefined || raw.id === null ? undefined : positiveId(raw.id), removeImage: raw.removeImage === true };
+  });
+}
+
 export function validatePreferences(value: unknown): VendorMatchDTOType[] {
   if (!Array.isArray(value) || value.length > 6) throw new RequestError("Invalid preferences list");
   const seen = new Set<number>();

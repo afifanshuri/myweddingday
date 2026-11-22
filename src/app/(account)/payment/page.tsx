@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { requirePageAccess } from "@/services/others/pageAccessService";
 import { ROUTES, canAccessRoute, getDefaultRoute, getSafeReturnPath } from "@/config/routes";
 import { PLANS } from "@/config/plans";
+import LoadingScreen from "@/components/commonComponents/LoadingScreen";
 
 type Props = { searchParams: Promise<{ returnTo?: string | string[] }> };
 async function PaymentContent({ searchParams }: Props) {
@@ -47,5 +48,5 @@ async function PaymentContent({ searchParams }: Props) {
 }
 
 export default function PaymentPage(props: Props) {
-  return <Suspense fallback={<p role="status" className="p-6">Checking account access…</p>}><PaymentContent {...props} /></Suspense>;
+  return <Suspense fallback={<LoadingScreen label="Checking account access…" />}><PaymentContent {...props} /></Suspense>;
 }

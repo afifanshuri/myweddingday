@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { resolveLoginDestination } from "@/services/others/loginRoutingService";
 import { ROUTES } from "@/config/routes";
+import { RECOVERY_SESSION_COOKIE } from "@/config/auth";
 
 const OTP_TYPES: EmailOtpType[] = ["signup", "invite", "magiclink", "recovery", "email_change", "email"];
 
@@ -21,17 +22,33 @@ export async function GET(request: NextRequest) {
   const type = OTP_TYPES.find((candidate) => candidate === rawType) ?? null;
   const go = (path: string) => NextResponse.redirect(new URL(path, request.url));
 
-  const supabase = createClient(await cookies());
-  let error: unknown = null;
-  if (tokenHash && type) ({ error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type }));
-  else if (code) ({ error } = await supabase.auth.exchangeCodeForSession(code));
-  else error = true;
-  if (error) return go(`${ROUTES.login}?notice=link-invalid`);
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+  const result = tokenHash && type ? await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
+    : code ? await supabase.auth.exchangeCodeForSession(code)
+    : null;
+  if (!result || result.error || !result.data.session) return go(`${ROUTES.login}?notice=link-invalid`);
 
-  if (type === "recovery") return go(ROUTES.resetPassword);
+  if (type === "recovery") {
+    const sessionId = sessionIdOf(result.data.session.access_token);
+    if (sessionId) cookieStore.set(RECOVERY_SESSION_COOKIE, sessionId, {
+      path: ROUTES.resetPassword, httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", maxAge: 60 * 60 * 24,
+    });
+    return go(ROUTES.resetPassword);
+  }
   try {
     return go((await resolveLoginDestination(true)) ?? ROUTES.login);
   } catch {
     return go(ROUTES.login);
+  }
+}
+
+/** Reads the session id from a token Supabase has just issued in this request. */
+function sessionIdOf(accessToken: string): string | null {
+  try {
+    const claims = JSON.parse(Buffer.from(accessToken.split(".")[1], "base64url").toString());
+    return typeof claims.session_id === "string" ? claims.session_id : null;
+  } catch {
+    return null;
   }
 }

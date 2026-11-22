@@ -38,8 +38,10 @@ export default function VendorContainer({
   const [imageIndex] = useState(() =>
     Math.floor(Math.random() * match.vendor.imageUrls.length),
   );
-  const [imageFailed, setImageFailed] = useState(false);
   const imageUrl = match.vendor.imageUrls[imageIndex];
+  // Remember which link failed, so a reloaded (re-signed) link is tried again.
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const imageFailed = !!imageUrl && failedUrl === imageUrl;
 
   const content = (
     <>
@@ -52,7 +54,7 @@ export default function VendorContainer({
             unoptimized
             sizes="(min-width: 1280px) 25vw, (min-width: 640px) 50vw, 100vw"
             className="object-cover"
-            onError={() => setImageFailed(true)}
+            onError={() => setFailedUrl(imageUrl)}
           />
         ) : (
           <span

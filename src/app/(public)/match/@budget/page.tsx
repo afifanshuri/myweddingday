@@ -13,6 +13,7 @@ import { SERVICE_ID } from "@/config/serviceCriteria";
 import { useSelectedServices } from "@/hooks/useSelectedServices";
 import { BsTrash } from "react-icons/bs";
 import { GiAmpleDress, GiFamilyHouse, GiForkKnifeSpoon, GiLipstick, GiPhotoCamera, GiSofa } from "react-icons/gi";
+import LoadingScreen from "@/components/commonComponents/LoadingScreen";
 
 const serviceIcons = {
   [SERVICE_ID.VENUE]: GiFamilyHouse,
@@ -37,18 +38,27 @@ export default function BudgetSection() {
   const ids = JSON.stringify(savedPackages.map((pkg) => pkg.packageId));
   const key = `${revision}:${ids}`;
   const [resolved, setResolved] = useState<{ key: string; packages: SelectedPackage[] } | null>(null);
+  const [removedCount, setRemovedCount] = useState(0);
   useEffect(() => {
     if (!unlocked) return;
     const controller = new AbortController();
     const load = () => APIGetSelectedPackages(ids, controller.signal)
       .then((packages) => {
-        if (!controller.signal.aborted) setResolved({ key, packages });
+        if (controller.signal.aborted) return;
+        // Drop selections whose package was deleted (or whose vendor moved to another service), and say so.
+        const requested: number[] = JSON.parse(ids);
+        const store = usePreferenceStore.getState();
+        const missing = store.selectedPackages.filter((saved) => requested.includes(saved.packageId)
+          && !packages.some((pkg) => pkg.packageId === saved.packageId && pkg.serviceId === saved.serviceId));
+        if (missing.length) {
+          missing.forEach((saved) => store.removeSelectedPackage(saved.serviceId));
+          setRemovedCount((count) => count + missing.length);
+        }
+        setResolved({ key, packages });
       }).catch(() => { if (!controller.signal.aborted) setResolved(null); });
+    // Loaded once per page view; prices update the next time the page loads.
     void load();
-    const refresh = () => { if (document.visibilityState === "visible") void load(); };
-    const interval = window.setInterval(refresh, 60000);
-    window.addEventListener("focus", refresh);
-    return () => { controller.abort(); window.clearInterval(interval); window.removeEventListener("focus", refresh); setResolved(null); };
+    return () => { controller.abort(); setResolved(null); };
   }, [unlocked, ids, key]);
   const packages = unlocked && resolved?.key === key ? resolved.packages : [];
   const removePackage = usePreferenceStore((state) => state.removeSelectedPackage);
@@ -59,9 +69,15 @@ export default function BudgetSection() {
     <aside aria-labelledby="budget-heading" className="p-4 sm:p-8 xl:pl-0">
       <div className="rounded-xl border border-(--tertiary) bg-white p-5">
         <h2 id="budget-heading" className="libre-font text-xl text-(--positive-tertiary)">Your wedding budget</h2>
-        {!mounted ? <p className="mt-4 text-sm">Loading your saved selections...</p> : (
+        {!mounted ? <LoadingScreen label="Loading your saved selections…" backdrop={false} /> : (
           <>
             <p className="mt-2 text-xs text-foreground/60">{unlocked ? `${selections.length} of ${details.services.length} services selected` : "Sign in with an active pass to select packages."}</p>
+            {unlocked && removedCount > 0 && (
+              <p role="status" className="mt-3 rounded-lg border border-(--tertiary) p-3 text-xs">
+                {removedCount === 1 ? "A package you selected is" : `${removedCount} packages you selected are`} no longer available, so {removedCount === 1 ? "it was" : "they were"} removed from your budget.
+                <button type="button" className="ml-2 underline" onClick={() => setRemovedCount(0)}>Dismiss</button>
+              </p>
+            )}
             <dl className="mt-5 grid grid-cols-2 gap-4">
               <div className="min-w-0">
                 <dt className="text-xs text-foreground/60">Planned budget</dt>

@@ -4,6 +4,7 @@ import { ROUTES } from "@/config/routes";
 import MainButton from "@/components/commonComponents/MainButton";
 import AccountStatus from "@/components/commonComponents/AccountStatus";
 import { FiCalendar, FiHeart, FiPieChart } from "react-icons/fi";
+import LoadingScreen from "@/components/commonComponents/LoadingScreen";
 
 async function DashboardContent() {
   await requireRouteAccess(ROUTES.dashboard);
@@ -33,7 +34,7 @@ async function DashboardContent() {
 }
 
 export default function DashboardPage() {
-  return <Suspense fallback={<p role="status" className="flex min-h-screen items-center justify-center">Loading your dashboard…</p>}>
+  return <Suspense fallback={<LoadingScreen label="Loading your dashboard…" />}>
     <DashboardContent />
   </Suspense>;
 }

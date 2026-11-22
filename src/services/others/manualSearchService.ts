@@ -68,6 +68,17 @@ async function getSnapshot(userId: string, searchId: string) {
   return { ...legacy, matches: compactMatches(legacy.matches as VendorAndPackagesMatchDTOType[]), expiresAt: new Date(legacy.createdAt.getTime() + SEARCH.lifetimeMs) };
 }
 
+/** Keeps snapshot entries whose vendor still exists in the same service with at least one matched package. */
+async function availableEntries(entries: SnapshotMatch[]) {
+  if (!entries.length) return [];
+  const rows = await db.selectDistinct({ vendorId: vendorsTable.id, serviceId: vendorsTable.serviceId, packageId: packagesTable.id })
+    .from(vendorsTable).innerJoin(packagesTable, eq(packagesTable.vendorId, vendorsTable.id))
+    .where(and(inArray(vendorsTable.id, [...new Set(entries.map((entry) => entry.vendorId))]),
+      inArray(packagesTable.id, [...new Set(entries.flatMap((entry) => entry.matchedPackageIds))])));
+  const live = new Set(rows.map((row) => `${row.vendorId}:${row.serviceId}:${row.packageId}`));
+  return entries.filter((entry) => entry.matchedPackageIds.some((packageId) => live.has(`${entry.vendorId}:${entry.serviceId}:${packageId}`)));
+}
+
 // Fetch only the requested IDs, using current vendor and matched-package values.
 async function hydrateMatches(entries: SnapshotMatch[]) {
   if (!entries.length) return [];
@@ -84,16 +95,21 @@ async function hydrateMatches(entries: SnapshotMatch[]) {
   return found.map(({ vendor, packages }, index): VendorAndPackagesMatchDTOType => ({ vendor: { ...vendor, imageUrls: imageUrls[index] }, packages }));
 }
 
-export async function readManualSearch(access: AccountAccess, searchId: string, page = 1, applyThrottle = true, serviceId: number | null = null) {
+export async function readManualSearch(access: AccountAccess, searchId: string, requestedPage = 1, applyThrottle = true, serviceId: number | null = null) {
   const userId = validateSearch(access, searchId);
-  if (!Number.isSafeInteger(page) || page < 1) throw new RequestError("Invalid results page");
+  if (!Number.isSafeInteger(requestedPage) || requestedPage < 1) throw new RequestError("Invalid results page");
   if (serviceId !== null && (!Number.isSafeInteger(serviceId) || serviceId < 1)) throw new RequestError("Invalid service filter");
   if (applyThrottle) await throttleSearch(userId, "read");
   const snapshot = await getSnapshot(userId, searchId);
-  const others = snapshot.matches.filter((match) => !match.isTopPick && (serviceId === null || match.serviceId === serviceId));
+  // Count only vendors that still exist, so totals and page numbers stay right after deletions.
+  const available = await availableEntries(snapshot.matches);
+  const inFilter = (match: SnapshotMatch) => !match.isTopPick && (serviceId === null || match.serviceId === serviceId);
+  const others = available.filter(inFilter);
   const pageCount = Math.max(1, Math.ceil(others.length / SEARCH.pageSize));
-  if (page > pageCount) throw new RequestError("Results page not found", 404);
-  const top = snapshot.matches.filter((match) => match.isTopPick);
+  // A page that never existed is an error; a page that emptied because vendors were deleted shows the last page instead.
+  if (requestedPage > Math.max(1, Math.ceil(snapshot.matches.filter(inFilter).length / SEARCH.pageSize))) throw new RequestError("Results page not found", 404);
+  const page = Math.min(requestedPage, pageCount);
+  const top = available.filter((match) => match.isTopPick);
   const entries = [...top, ...others.slice((page - 1) * SEARCH.pageSize, page * SEARCH.pageSize)];
   const current = await hydrateMatches(entries);
   const topIds = new Set(top.map((match) => match.vendorId));

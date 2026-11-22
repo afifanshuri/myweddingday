@@ -9,6 +9,7 @@ type AdminStore = {
   updatePackage: (id: number, data: Partial<PackageType>) => void;
   updateVendor: (data: Partial<VendorType>) => void;
   resetDraft: () => void;
+  loadDraft: (vendor: VendorType, packages: Omit<PackageType, "id">[]) => void;
 };
 
 const emptyVendor = (): VendorType => ({
@@ -29,6 +30,7 @@ export const useAdminStore = create<AdminStore>((set) => ({
   vendor: emptyVendor(),
   packageList: [],
   resetDraft: () => set({ vendor: emptyVendor(), packageList: [] }),
+  loadDraft: (vendor, packages) => set({ vendor, packageList: packages.map((pkg, index) => ({ ...pkg, id: index + 1 })) }),
   addPackage: () => {
     set((state) => {
       const currentId =

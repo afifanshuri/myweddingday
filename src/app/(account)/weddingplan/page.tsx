@@ -4,6 +4,7 @@ import WeddingDetailsPage from "@/components/weddingDetailComponents/WeddingDeta
 import { Suspense } from "react";
 import { requireRouteAccess } from "@/services/others/pageAccessService";
 import { ROUTES } from "@/config/routes";
+import LoadingScreen from "@/components/commonComponents/LoadingScreen";
 
 async function WeddingPlanContent() {
   await requireRouteAccess(ROUTES.weddingPlan);
@@ -22,5 +23,5 @@ async function WeddingPlanContent() {
 }
 
 export default function WeddingPlanPage() {
-  return <Suspense fallback={<p role="status" className="p-6">Checking account access…</p>}><WeddingPlanContent /></Suspense>;
+  return <Suspense fallback={<LoadingScreen label="Checking account access…" />}><WeddingPlanContent /></Suspense>;
 }

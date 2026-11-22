@@ -1,9 +1,5 @@
-import "@/css/wedding-planner-loading.css";
+import LoadingScreen from "@/components/commonComponents/LoadingScreen";
 
 export default function Loading() {
-  return (
-    <div className="planner-loading" role="status" aria-label="Loading wedding planner">
-      <span className="planner-loading-spinner" aria-hidden="true" />
-    </div>
-  );
+  return <LoadingScreen label="Loading your wedding planner…" />;
 }
