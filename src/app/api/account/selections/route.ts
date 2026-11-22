@@ -7,8 +7,8 @@ import { requireSameOrigin } from "@/services/others/adminAuthService";
 import { throttleSearch } from "@/services/others/manualSearchService";
 
 // Returns vendor/package names for the budget panel. Paid users may select
-// packages from any vendor they can look up, so this is bounded (6 IDs) and
-// throttled per account instead of being limited to one saved search.
+// packages from their match results; this is bounded (6 IDs) and
+// throttled per account, and only returns names and prices for the given IDs.
 export async function POST(request: Request) {
   try {
     requireSameOrigin(request);

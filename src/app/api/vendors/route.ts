@@ -5,8 +5,8 @@ import { saveVendorSubmission } from "@/services/others/vendorCreationService";
 import { MAX_VENDOR_IMAGES } from "@/config/vendorImages";
 import { privateJson } from "@/services/others/accountAccessService";
 
-// Vendor data is read only through /api/match/vendors and /api/vendors/search,
-// which are scoped, bounded and throttled. Do not add a bulk GET here.
+// Vendor data is read only through /api/match/vendors,
+// which is scoped to the saved search and throttled. Do not add a bulk GET here.
 export async function POST(request: NextRequest) {
   try {
     requireSameOrigin(request);

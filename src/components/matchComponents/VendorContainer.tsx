@@ -21,13 +21,11 @@ export default function VendorContainer({
   serviceName,
   topPick = false,
   onSelect,
-  priceLabel = "Matched package from",
 }: {
   match: VendorMatchResult;
   serviceName: string;
   topPick?: boolean;
   onSelect: (vendorId: number) => void;
-  priceLabel?: string;
 }) {
   const prices = (match.identityLocked ? [] : match.packages)
     .map((pkg) => Number(pkg.price))
@@ -96,7 +94,7 @@ export default function VendorContainer({
             : `${Number(match.vendor.rating).toFixed(1)} / 5`}
         </p>
         <div className="mt-auto border-t border-(--secondary) pt-3">
-          <p className="text-xs font-normal">{priceLabel}</p>
+          <p className="text-xs font-normal">Matched package from</p>
           <p className="mt-1 text-lg font-semibold text-(--positive-tertiary)">
             {cheapestPrice === null
               ? "Price unavailable"

@@ -10,12 +10,8 @@ export const SEARCH = {
   lifetimeMs: 24 * 60 * 60 * 1000,
   pageSize: 20,
   // Per-account limits. Action names are stored in search_request_limits.action (max 16 chars).
-  requestsPerMinute: { create: 10, read: 60, detail: 30, selection: 30, lookup: 20 },
+  requestsPerMinute: { create: 10, read: 60, detail: 30, selection: 30 },
 } as const;
-
-// Paid vendor-name lookup. Results are capped and unpaginated, so bulk export
-// requires many throttled queries rather than one request.
-export const VENDOR_LOOKUP = { minLength: 2, maxLength: 60, maxResults: 10 } as const;
 
 export function manualSearchLimit(access: { role: string | null; isPaid: boolean }) {
   return access.role === "admin" || access.isPaid ? null : PLANS.free.manualSearchesPerDay;

@@ -1,11 +1,4 @@
-import type { VendorDetailedMatch, VendorMatchResult } from "./dtoTypes";
-
-export type VendorLookupResult = {
-  query: string;
-  results: VendorDetailedMatch[];
-  /** True when more vendors match than the result cap; the user should refine the query. */
-  limited: boolean;
-};
+import type { VendorMatchResult } from "./dtoTypes";
 
 export type SearchUsage = {
   used: number;
