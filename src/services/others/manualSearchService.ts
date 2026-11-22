@@ -10,7 +10,7 @@ import type { VendorAndPackagesMatchDTOType, VendorMatchDTOType } from "@/types/
 import type { SearchUsage, SnapshotMatch } from "@/types/search";
 import { RequestError } from "./requestValidation";
 import { projectVendorMatches } from "./vendorResponseService";
-import { getVendorImageUrlsBatch } from "./vendorImageService";
+import { getVendorImageUrlsBatch, signAttachments } from "./vendorImageService";
 
 function usageFor(access: AccountAccess, used: number, resetsAt: string): SearchUsage {
   const limit = manualSearchLimit(access);
@@ -43,7 +43,7 @@ export async function getManualSearchUsage(access: AccountAccess) {
   return usageFor(access, row?.used ?? 0, resetsAt);
 }
 
-export function compactMatches(matches: VendorAndPackagesMatchDTOType[]): SnapshotMatch[] {
+export function compactMatches(matches: { vendor: { id: number; serviceId: number }; packages: { id: number }[] }[]): SnapshotMatch[] {
   const seen = new Set<number>();
   return matches.map((match, position) => {
     const isTopPick = !seen.has(match.vendor.serviceId);
@@ -80,7 +80,8 @@ async function availableEntries(entries: SnapshotMatch[]) {
 }
 
 // Fetch only the requested IDs, using current vendor and matched-package values.
-async function hydrateMatches(entries: SnapshotMatch[]) {
+// Attachments are signed only for users who can see package details; everyone else gets none.
+async function hydrateMatches(entries: SnapshotMatch[], withAttachments: boolean) {
   if (!entries.length) return [];
   const rows = await db.select({ vendor: vendorsTable, package: packagesTable }).from(vendorsTable)
     .innerJoin(packagesTable, eq(packagesTable.vendorId, vendorsTable.id))
@@ -92,7 +93,14 @@ async function hydrateMatches(entries: SnapshotMatch[]) {
   });
   // One storage request signs every photo on the page.
   const imageUrls = await getVendorImageUrlsBatch(found.map(({ vendor }) => vendor.imagePaths)).catch(() => found.map(() => []));
-  return found.map(({ vendor, packages }, index): VendorAndPackagesMatchDTOType => ({ vendor: { ...vendor, imageUrls: imageUrls[index] }, packages }));
+  const attachments = withAttachments
+    ? await signAttachments(found.flatMap(({ packages }) => packages.map((pkg) => pkg.attachments))).catch(() => null)
+    : null;
+  let next = 0;
+  return found.map(({ vendor, packages }, index): VendorAndPackagesMatchDTOType => ({
+    vendor: { ...vendor, imageUrls: imageUrls[index] },
+    packages: packages.map((pkg) => ({ ...pkg, attachments: attachments?.[next++] ?? [] })),
+  }));
 }
 
 export async function readManualSearch(access: AccountAccess, searchId: string, requestedPage = 1, applyThrottle = true, serviceId: number | null = null) {
@@ -111,7 +119,7 @@ export async function readManualSearch(access: AccountAccess, searchId: string, 
   const page = Math.min(requestedPage, pageCount);
   const top = available.filter((match) => match.isTopPick);
   const entries = [...top, ...others.slice((page - 1) * SEARCH.pageSize, page * SEARCH.pageSize)];
-  const current = await hydrateMatches(entries);
+  const current = await hydrateMatches(entries, access.canViewVendorIdentity);
   const topIds = new Set(top.map((match) => match.vendorId));
   // Check again after I/O, so requests spanning expiry cannot return expired results.
   if (snapshot.expiresAt.getTime() <= Date.now()) throw new RequestError("Your search results have expired. Plan again to start a new search.", 410);
@@ -128,7 +136,7 @@ export async function readManualSearchVendor(access: AccountAccess, searchId: st
   const snapshot = await getSnapshot(userId, searchId);
   const entry = snapshot.matches.find((match) => match.vendorId === vendorId);
   if (!entry) throw new RequestError("Vendor not found in this search", 404);
-  const [match] = await hydrateMatches([entry]);
+  const [match] = await hydrateMatches([entry], true);
   if (!match) throw new RequestError("This vendor or its matched packages are no longer available", 404);
   if (snapshot.expiresAt.getTime() <= Date.now()) throw new RequestError("Your search results have expired. Plan again to start a new search.", 410);
   return { ...match, identityLocked: false as const };

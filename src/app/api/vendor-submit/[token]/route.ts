@@ -1,12 +1,13 @@
 import { requireSameOrigin } from "@/services/others/adminAuthService";
 import { privateJson } from "@/services/others/accountAccessService";
-import { errorResponse, RequestError, validatePackageEdits, validatePackages, validateVendor } from "@/services/others/requestValidation";
-import { readVendorForm } from "@/services/others/vendorFormParsing";
+import { errorResponse, readJsonObject } from "@/services/others/requestValidation";
 import { clientAddressKey, limitPerHour } from "@/services/others/publicRateLimit";
-import { readSubmission, submissionKind, submitByToken } from "@/services/others/vendorSubmissionService";
+import { readSubmission, submissionLinkId, submitByToken } from "@/services/others/vendorSubmissionService";
+import { validateVendorSave } from "@/services/others/vendorSaveService";
 import { SUBMISSION_LINK } from "@/config/submissionLinks";
 
 // Public: vendors open and submit their listing from a link; the token in the path is the only credential.
+// Files are uploaded first (POST ./uploads) and referenced here by upload id.
 type Context = { params: Promise<{ token: string }> };
 
 export async function GET(request: Request, context: Context) {
@@ -21,17 +22,8 @@ export async function POST(request: Request, context: Context) {
     requireSameOrigin(request);
     const { token } = await context.params;
     await limitPerHour(`submit-ip:${clientAddressKey(request)}`, SUBMISSION_LINK.submitsPerIpPerHour);
-    // Checks the link before reading the (up to 25 MB) form.
-    const { kind, linkId } = await submissionKind(token);
-    await limitPerHour(`submit-link:${linkId}`, SUBMISSION_LINK.submitsPerLinkPerHour);
-    const { data, files, vendorFiles } = await readVendorForm(request);
-    const vendor = validateVendor(data.vendor);
-    if (kind === "new") {
-      return privateJson(await submitByToken(token, { kind, vendor, packages: validatePackages(data.packages, vendor.serviceId), files, vendorFiles }));
-    }
-    const keep = data.keepImagePaths ?? [];
-    if (!Array.isArray(keep) || keep.some((path) => typeof path !== "string")) throw new RequestError("Invalid image list");
-    return privateJson(await submitByToken(token, { kind, vendor, packages: validatePackageEdits(data.packages, vendor.serviceId),
-      files, vendorFiles, keepImagePaths: keep as string[] }));
+    await limitPerHour(`submit-link:${await submissionLinkId(token)}`, SUBMISSION_LINK.submitsPerLinkPerHour);
+    const input = validateVendorSave(await readJsonObject(request, 256 * 1024));
+    return privateJson(await submitByToken(token, input));
   } catch (error) { return errorResponse(error, "Unable to submit your listing"); }
 }

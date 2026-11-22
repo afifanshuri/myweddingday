@@ -7,6 +7,8 @@ type AdminStore = {
   addPackage: () => void;
   deletePackage: (id: number) => void;
   updatePackage: (id: number, data: Partial<PackageType>) => void;
+  /** Takes an updater, because uploads finish at different times and must apply to the latest list. */
+  updatePackageAttachments: (id: number, update: (items: PackageType["attachments"]) => PackageType["attachments"]) => void;
   updateVendor: (data: Partial<VendorType>) => void;
   resetDraft: () => void;
   loadDraft: (vendor: VendorType, packages: Omit<PackageType, "id">[]) => void;
@@ -41,8 +43,8 @@ export const useAdminStore = create<AdminStore>((set) => ({
         id: currentId,
         name: "",
         price: 0,
-        file: null,
         details: null,
+        attachments: [],
         vendorId: null,
         tags: [],
         filters: {},
@@ -67,6 +69,9 @@ export const useAdminStore = create<AdminStore>((set) => ({
       return { packageList: newPkgList };
     });
   },
+  updatePackageAttachments: (id, update) => set((state) => ({
+    packageList: state.packageList.map((p) => p.id === id ? { ...p, attachments: update(p.attachments) } : p),
+  })),
   updateVendor: (data) => {
     set((state) => {
       const newVendor = {

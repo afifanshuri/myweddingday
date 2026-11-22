@@ -14,6 +14,8 @@ import { useState } from "react";
 import { PackageType } from "@/types/dataTypes";
 import { useAdminStore } from "@/store/adminStore";
 import FieldRenderer from "../commonComponents/FieldRenderer";
+import FileUploadField from "./FileUploadField";
+import { MAX_PACKAGE_ATTACHMENTS, UPLOAD_KINDS } from "@/config/uploads";
 import {
   clearHiddenCriteria,
   isCriteriaVisible,
@@ -25,7 +27,9 @@ export default function PackageDetailSection({
   index,
   pkgError,
   onFieldChange,
+  uploadEndpoint,
 }: {
+  uploadEndpoint: string;
   pkg: PackageType;
   index: number;
   pkgError?: { name?: string; price?: string; details?: string } | null;
@@ -34,6 +38,7 @@ export default function PackageDetailSection({
   const [displayPackageForm, setDisplayPackageForm] = useState(true);
   const deletePackageFromStore = useAdminStore((state) => state.deletePackage);
   const updatePackageToStore = useAdminStore((state) => state.updatePackage);
+  const updatePackageAttachments = useAdminStore((state) => state.updatePackageAttachments);
   const vendorServiceId = useAdminStore((state) => state.vendor.serviceId);
   const [currentTag, setCurrentTag] = useState<string>("");
 
@@ -234,40 +239,11 @@ export default function PackageDetailSection({
             value={currentTag ?? ""}
           ></CustomInput>
         </div>
-        <div className="flex flex-col">
-          <label htmlFor={`package-file-${pkg.id}`} className="mb-2 text-sm">
-            Package image
-          </label>
-          <p className="mb-3 text-xs font-normal text-foreground/60">
-            Upload a JPG, PNG, or WebP image.{pkg.hasImage ? " Choosing a new image replaces the saved one." : ""}
-          </p>
-          {pkg.hasImage && !pkg.file && (
-            <div className="mb-3 flex items-center gap-3">
-              {pkg.removeImage
-                ? <p className="text-xs text-foreground/70">The saved image will be removed when you save.</p>
-                : pkg.imageUrl
-                  // eslint-disable-next-line @next/next/no-img-element
-                  ? <img src={pkg.imageUrl} alt="Saved package image" className="h-16 w-24 rounded-lg object-cover" />
-                  : <p className="text-xs text-foreground/70">A saved image exists (preview unavailable).</p>}
-              <MainButton variant="ghost" size="small" type="button" className="text-xs"
-                onClick={() => updatePackageToStore(pkg.id, { removeImage: !pkg.removeImage })}>
-                {pkg.removeImage ? "Keep image" : "Remove image"}
-              </MainButton>
-            </div>
-          )}
-          {pkg.file && <p className="mb-3 text-xs text-foreground/70">New image: {pkg.file.name}</p>}
-          <input
-            id={`package-file-${pkg.id}`}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="w-full cursor-pointer rounded-xl border border-dashed border-(--fourth) bg-(--background)"
-            onChange={(e) => {
-              updatePackageToStore(pkg.id, {
-                file: e.target.files?.[0] ?? null,
-              });
-            }}
-          ></input>
-        </div>
+        <FileUploadField
+          label="Attachments (optional)"
+          help={`Price lists, service details, menus, anything couples should see: up to ${MAX_PACKAGE_ATTACHMENTS} JPG, PNG, WebP or PDF files, ${UPLOAD_KINDS.packageFile.maxBytes / 1024 / 1024} MB each. Only couples with a Plus pass can open them.`}
+          kind="packageFile" max={MAX_PACKAGE_ATTACHMENTS} items={pkg.attachments} endpoint={uploadEndpoint}
+          onChange={(update) => updatePackageAttachments(pkg.id, update)} />
       </div>
     </div>
   );

@@ -2,15 +2,13 @@ import "server-only";
 import { createHash, randomBytes } from "node:crypto";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { packagesTable, vendorSubmissionLinks, vendorsTable } from "@/db/schema";
+import { vendorSubmissionLinks, vendorsTable } from "@/db/schema";
 import { SUBMISSION_LINK, SUBMISSION_TOKEN_PATTERN, vendorSubmitRoute, type SubmissionLinkState } from "@/config/submissionLinks";
-import { RequestError, type validatePackages, type validateVendor } from "./requestValidation";
-import { createVendorWithPackages, updateVendorWithPackages, type PackageEdit } from "./vendorSaveWorkflow";
-import { applyVendorEdit, assertCatalogueIds, currentVendorFiles, loadVendorForm, vendorEditStorage } from "./vendorAdminService";
+import { RequestError } from "./requestValidation";
+import { loadVendorForm, type Transaction } from "./vendorAdminService";
+import { saveVendorListing, type VendorSaveInput } from "./vendorSaveService";
+import { issueUpload, type validateUploadRequest } from "./uploadService";
 import { vendorMessages } from "./vendorMessages";
-
-type VendorInput = ReturnType<typeof validateVendor>;
-type PackageInput = ReturnType<typeof validatePackages>[number];
 
 const newToken = () => randomBytes(32).toString("base64url");
 export const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
@@ -112,60 +110,41 @@ export async function readSubmission(token: string) {
   return { ...base, saved: form };
 }
 
-type NewSubmission = { kind: "new"; vendor: VendorInput; packages: PackageInput[]; files: (File | null)[]; vendorFiles: File[] };
-type EditedSubmission = { kind: "edit"; vendor: VendorInput; packages: PackageEdit[]; files: (File | null)[]; vendorFiles: File[]; keepImagePaths: string[] };
-
-/** Which kind of payload this link expects: a new listing, or edits to the saved one. */
-export async function submissionKind(token: string) {
+/** A one-time upload link for a file in the vendor's form. Uploads belong to the submission link, not to any user. */
+export async function issueUploadForLink(token: string, request: ReturnType<typeof validateUploadRequest>) {
   const link = await usableLink(token);
-  return { kind: link.state === "open" ? "new" as const : "edit" as const, linkId: link.id };
+  return { linkId: link.id, upload: await issueUpload(`link:${link.id}`, request) };
+}
+
+/** Which link a request is for (checked before reading a large body). */
+export async function submissionLinkId(token: string) {
+  return (await usableLink(token)).id;
 }
 
 /**
- * Saves the vendor's submission as pending. Images are uploaded first; the link row is locked and checked again inside the
- * save transaction, so a double submit or a link cancelled meanwhile fails (and the new uploads are removed).
+ * Saves the vendor's submission as pending: a new listing for an open link, or edits to their saved listing for a reopened one.
+ * The link row is locked and checked again inside the save transaction, so a double submit or a link cancelled meanwhile fails.
+ * Uploads stay available after a failed save, so the vendor can just submit again.
  */
-export async function submitByToken(token: string, input: NewSubmission | EditedSubmission) {
-  await assertCatalogueIds(input.vendor);
+export async function submitByToken(token: string, input: VendorSaveInput) {
   const link = await usableLink(token);
-  const expected = { id: link.id, state: link.state, tokenHash: link.tokenHash };
-  const recheck = async (tx: Parameters<Parameters<typeof db.transaction>[0]>[0]) => {
+  if (link.state === "reopened" && link.vendorId === null) throw new RequestError("This submission no longer exists. Please contact us for a new link.", 410);
+  const recheck = async (tx: Transaction) => {
     const current = await usableLink(token, tx, true);
-    if (current.id !== expected.id || current.state !== expected.state || current.tokenHash !== expected.tokenHash) {
+    if (current.id !== link.id || current.state !== link.state || current.tokenHash !== link.tokenHash) {
       throw new RequestError("This link changed while you were submitting. Reload the page and try again.", 409);
     }
+    if (link.vendorId !== null) {
+      const [vendor] = await tx.select({ status: vendorsTable.status }).from(vendorsTable).where(eq(vendorsTable.id, link.vendorId));
+      if (vendor?.status !== "pending") throw new RequestError(UNUSABLE.closed, 410);
+    }
   };
-
-  if (input.kind === "new") {
-    if (link.state !== "open") throw new RequestError("Reload the page: your saved listing has been reopened for changes.", 409);
-    const storage = vendorEditStorage();
-    await createVendorWithPackages(input.vendor, input.packages, input.files, {
-      upload: storage.uploadPackage, uploadVendor: storage.uploadVendor, remove: storage.remove,
-      save: (vendor, packages) => db.transaction(async (tx) => {
-        await recheck(tx);
-        const [created] = await tx.insert(vendorsTable).values({ ...vendor, status: "pending" })
-          .returning({ id: vendorsTable.id, vendorName: vendorsTable.vendorName });
-        await tx.insert(packagesTable).values(packages.map((pkg) => ({ ...pkg, vendorId: created.id })));
-        await tx.update(vendorSubmissionLinks).set({ state: "submitted", vendorId: created.id, submittedAt: new Date() })
-          .where(eq(vendorSubmissionLinks.id, link.id));
-        return created;
-      }),
-    }, input.vendorFiles);
-  } else {
-    if (link.state !== "reopened" || link.vendorId === null) throw new RequestError("Reload the page and try again.", 409);
-    const vendorId = link.vendorId;
-    const before = await currentVendorFiles(vendorId);
-    await updateVendorWithPackages(before, input, {
-      ...vendorEditStorage(),
-      save: (vendor, packages, deletedIds) => db.transaction(async (tx) => {
-        await recheck(tx);
-        const [status] = await tx.select({ status: vendorsTable.status }).from(vendorsTable).where(eq(vendorsTable.id, vendorId));
-        if (status?.status !== "pending") throw new RequestError(UNUSABLE.closed, 410);
-        await applyVendorEdit(tx, vendorId, before, vendor, packages, deletedIds);
-        await tx.update(vendorSubmissionLinks).set({ state: "submitted", submittedAt: new Date() })
-          .where(eq(vendorSubmissionLinks.id, link.id));
-      }),
-    });
-  }
+  await saveVendorListing({
+    owner: `link:${link.id}`, vendorId: link.state === "open" ? null : link.vendorId, input, status: "pending", inTransaction: recheck,
+    afterSave: async (tx, vendorId) => {
+      await tx.update(vendorSubmissionLinks).set({ state: "submitted", vendorId, submittedAt: new Date() })
+        .where(eq(vendorSubmissionLinks.id, link.id));
+    },
+  });
   return { message: vendorMessages.received() };
 }

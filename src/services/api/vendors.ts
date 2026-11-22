@@ -23,12 +23,13 @@ const APIGetVendorsByPreferences = async (
 
 export { APIGetVendorsByPreferences };
 
-export async function APICreateVendorWithPackages(
-  formData: FormData,
-): Promise<{ id: number; vendorName: string }> {
+/** The vendor form's save body: details plus file references (saved paths or upload ids). */
+export type VendorSaveBody = { vendor: Record<string, unknown>; images: ({ path: string } | { upload: string })[];
+  packages: Record<string, unknown>[] };
+
+export async function APICreateVendorWithPackages(body: VendorSaveBody): Promise<{ id: number }> {
   const response = await fetch("/api/vendors", {
-    method: "POST",
-    body: formData,
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
   });
   const data = await response.json();
   if (!response.ok) throw new Error(data.error ?? "Unable to save vendor");

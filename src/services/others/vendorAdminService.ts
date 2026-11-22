@@ -4,13 +4,14 @@ import { locationTable, packagesTable, servicesTable, vendorSubmissionLinks, ven
 import { and, count, desc, eq, ilike, inArray, type SQL } from "drizzle-orm";
 import type { VendorStatus } from "@/config/vendorStatus";
 import { vendorMessages } from "./vendorMessages";
-import { RequestError, type validateVendor } from "./requestValidation";
-import { updateVendorWithPackages, type PackageEdit, type PackageRecord } from "./vendorSaveWorkflow";
-import { createPackageImageStorage } from "./packageImageService";
-import { createVendorImageStorage, getPackageImageUrls, getVendorImageUrlsBatch, removeStoredImages } from "./vendorImageService";
+import { RequestError, type validatePackages, type validateVendor } from "./requestValidation";
+import { getVendorImageUrlsBatch, removeStoredImagesQuietly, signAttachments } from "./vendorImageService";
+import type { CurrentFiles } from "./vendorFilesPlan";
+import type { StoredAttachment } from "@/config/uploads";
 
 export const ADMIN_VENDOR_PAGE_SIZE = 20;
 type VendorInput = ReturnType<typeof validateVendor>;
+export type PackageRecord = ReturnType<typeof validatePackages>[number] & { id?: number; attachments: StoredAttachment[] };
 export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /** Escapes LIKE wildcards so the search text is matched literally. */
@@ -42,9 +43,9 @@ export async function listAdminVendors({ query, serviceId, status, page }: { que
 }
 
 /** The vendor's stored image paths and package files, for edits. */
-export async function currentVendorFiles(id: number): Promise<FileState> {
+export async function currentVendorFiles(id: number): Promise<CurrentFiles> {
   const { vendor, packages } = await loadVendor(id);
-  return { imagePaths: vendor.imagePaths, packages: packages.map((pkg) => ({ id: pkg.id, filePath: pkg.filePath })) };
+  return { imagePaths: vendor.imagePaths, packages: packages.map((pkg) => ({ id: pkg.id, attachments: pkg.attachments })) };
 }
 
 async function loadVendor(id: number) {
@@ -57,8 +58,8 @@ async function loadVendor(id: number) {
 /** Everything the vendor form needs, with short-lived image links for previews. */
 export async function loadVendorForm(id: number) {
   const { vendor, packages } = await loadVendor(id);
-  const [vendorUrls, packageUrls] = await Promise.all([
-    getVendorImageUrlsBatch(vendor.imagePaths.map((path) => [path])), getPackageImageUrls(packages.map((pkg) => pkg.filePath)),
+  const [vendorUrls, attachmentUrls] = await Promise.all([
+    getVendorImageUrlsBatch(vendor.imagePaths.map((path) => [path])), signAttachments(packages.map((pkg) => pkg.attachments)),
   ]);
   return {
     record: vendor,
@@ -67,7 +68,9 @@ export async function loadVendorForm(id: number) {
         contact: vendor.contact, detail: vendor.detail, instagram: vendor.instagram, facebook: vendor.facebook, tiktok: vendor.tiktok },
       images: vendor.imagePaths.map((path, index) => ({ path, url: vendorUrls[index][0] ?? null })),
       packages: packages.map((pkg, index) => ({ id: pkg.id, name: pkg.packageName, price: pkg.price, details: pkg.details ?? "",
-        filters: pkg.filters ?? {}, imageUrl: packageUrls[index], hasImage: !!pkg.filePath })),
+        filters: pkg.filters ?? {},
+        // The form refers to saved files by path, so it gets the paths here (admins and the vendor's own link only).
+        attachments: pkg.attachments.map((file, i) => ({ ...file, url: attachmentUrls[index][i].url })) })),
     },
   };
 }
@@ -101,20 +104,20 @@ export async function assertCatalogueIds(vendor: VendorInput) {
 
 const sameList = <T,>(a: T[], b: T[]) => a.length === b.length && a.every((value, index) => value === b[index]);
 
-type FileState = { imagePaths: string[]; packages: { id: number; filePath: string | null }[] };
+const attachmentKey = (attachments: StoredAttachment[]) => attachments.map((file) => file.path).join("\n");
 
 /**
- * Saves an edit inside a transaction. Refuses (409) if the vendor's images or packages changed since `before` was loaded,
- * so image cleanup never deletes a file another save has just started using.
+ * Saves an edit inside a transaction. Refuses (409) if the vendor's photos, packages or attachments changed since `before`
+ * was loaded, so file cleanup never deletes a file another save has just started using.
  */
-export async function applyVendorEdit(tx: Transaction, id: number, before: FileState,
+export async function applyVendorEdit(tx: Transaction, id: number, before: CurrentFiles,
   vendor: VendorInput & { imagePaths: string[] }, packages: PackageRecord[], deletedIds: number[]) {
   const [locked] = await tx.select({ imagePaths: vendorsTable.imagePaths }).from(vendorsTable).where(eq(vendorsTable.id, id)).for("update");
   if (!locked) throw new RequestError("Vendor not found", 404);
-  const rows = await tx.select({ id: packagesTable.id, filePath: packagesTable.filePath }).from(packagesTable)
+  const rows = await tx.select({ id: packagesTable.id, attachments: packagesTable.attachments }).from(packagesTable)
     .where(eq(packagesTable.vendorId, id)).orderBy(packagesTable.id);
   if (!sameList(locked.imagePaths, before.imagePaths) || !sameList(rows.map((row) => row.id), before.packages.map((pkg) => pkg.id))
-    || !sameList(rows.map((row) => row.filePath), before.packages.map((pkg) => pkg.filePath))) {
+    || !sameList(rows.map((row) => attachmentKey(row.attachments)), before.packages.map((pkg) => attachmentKey(pkg.attachments)))) {
     throw new RequestError("This vendor was changed by someone else. Reload the page and try again.", 409);
   }
   await tx.update(vendorsTable).set(vendor).where(eq(vendorsTable.id, id));
@@ -124,27 +127,8 @@ export async function applyVendorEdit(tx: Transaction, id: number, before: FileS
     const { id: packageId, ...values } = pkg;
     await tx.update(packagesTable).set(values).where(and(eq(packagesTable.id, packageId), eq(packagesTable.vendorId, id)));
   }
-  const added = packages.filter((pkg): pkg is PackageRecord & { id: undefined } => pkg.id === undefined)
-    .map((pkg) => ({ packageName: pkg.packageName, price: pkg.price, details: pkg.details, filters: pkg.filters, filePath: pkg.filePath, vendorId: id }));
+  const added = packages.filter((pkg) => pkg.id === undefined).map(({ id: _id, ...pkg }) => ({ ...pkg, vendorId: id }));
   if (added.length) await tx.insert(packagesTable).values(added);
-}
-
-/** Storage used by vendor edits (admin and vendor submissions alike). */
-export const vendorEditStorage = () => ({
-  uploadVendor: createVendorImageStorage().upload,
-  uploadPackage: createPackageImageStorage().upload,
-  remove: removeStoredImages,
-});
-
-export async function updateAdminVendor(id: number, input: { vendor: VendorInput; packages: PackageEdit[]; files: (File | null)[];
-  keepImagePaths: string[]; vendorFiles: File[] }) {
-  await assertCatalogueIds(input.vendor);
-  const before = await currentVendorFiles(id);
-  await updateVendorWithPackages(before, input, {
-    ...vendorEditStorage(),
-    save: (vendor, packages, deletedIds) => db.transaction((tx) => applyVendorEdit(tx, id, before, vendor, packages, deletedIds)),
-  });
-  return { id };
 }
 
 /**
@@ -175,10 +159,10 @@ export async function deleteAdminVendor(id: number) {
     const [vendor] = await tx.select({ imagePaths: vendorsTable.imagePaths, filePath: vendorsTable.filePath }).from(vendorsTable)
       .where(eq(vendorsTable.id, id)).for("update");
     if (!vendor) throw new RequestError("Vendor not found", 404);
-    const packages = await tx.delete(packagesTable).where(eq(packagesTable.vendorId, id)).returning({ filePath: packagesTable.filePath });
+    const packages = await tx.delete(packagesTable).where(eq(packagesTable.vendorId, id)).returning({ attachments: packagesTable.attachments });
     await tx.delete(vendorsTable).where(eq(vendorsTable.id, id));
-    return [...vendor.imagePaths, vendor.filePath, ...packages.map((pkg) => pkg.filePath)].filter((path): path is string => !!path);
+    return [...vendor.imagePaths, vendor.filePath, ...packages.flatMap((pkg) => pkg.attachments.map((file) => file.path))]
+      .filter((path): path is string => !!path);
   });
-  try { await removeStoredImages(paths); }
-  catch { console.error("Image cleanup failed; orphaned uploads require cleanup"); }
+  await removeStoredImagesQuietly(paths);
 }

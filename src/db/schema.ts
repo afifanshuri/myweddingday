@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { authUsers } from "drizzle-orm/supabase";
 import type { VendorStatus } from "@/config/vendorStatus";
 import type { SubmissionLinkState } from "@/config/submissionLinks";
+import type { StoredAttachment, UploadKind } from "@/config/uploads";
 import {
   check,
   index,
@@ -85,12 +86,15 @@ const packagesTable = pgTable("packagesTable", {
   createdAt: timestamp().defaultNow().notNull(),
   packageName: varchar({ length: 255 }).notNull(),
   price: numeric({ mode: "number" }).notNull(),
-  filePath: varchar({ length: 255 }),
   details: varchar({ length: 1000 }),
   duration: numeric({ mode: "number" }),
   vendorId: integer().references(() => vendorsTable.id),
   filters: jsonb("filters").default({}),
-}).enableRLS();
+  // Price lists, service details, anything (images or PDFs). Plus users only.
+  attachments: jsonb("attachments").$type<StoredAttachment[]>().default([]).notNull(),
+}, (table) => [
+  check("packagesTable_attachments_check", sql`jsonb_typeof(${table.attachments}) = 'array'`),
+]).enableRLS();
 
 export { servicesTable, locationTable, vendorsTable, packagesTable };
 
@@ -140,4 +144,20 @@ export const manualSearchResults = pgTable("manual_search_results", {
 }, (table) => [
   primaryKey({ columns: [table.userId, table.searchId] }),
   check("manual_search_results_matches_check", sql`jsonb_typeof(${table.matches}) = 'array'`),
+]).enableRLS();
+
+// Files uploaded straight to Storage but not yet saved into a listing. Saving a listing claims (deletes) its rows;
+// rows older than a day are removed together with their files. `owner` is "admin:<user id>" or "link:<link id>".
+export const pendingUploads = pgTable("pending_uploads", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  owner: varchar("owner", { length: 80 }).notNull(),
+  kind: varchar("kind", { length: 20 }).$type<UploadKind>().notNull(),
+  path: varchar("path", { length: 255 }).notNull().unique(),
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  contentType: varchar("content_type", { length: 50 }).notNull(),
+  size: integer("size").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("pending_uploads_owner_idx").on(table.owner),
+  index("pending_uploads_created_idx").on(table.createdAt),
 ]).enableRLS();

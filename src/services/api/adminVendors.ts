@@ -1,6 +1,8 @@
 import type { CriteriaValues } from "@/config/serviceCriteria";
 import type { VendorStatus } from "@/config/vendorStatus";
 import type { SubmissionLinkState } from "@/config/submissionLinks";
+import type { AttachmentKind } from "@/config/uploads";
+import type { VendorSaveBody } from "./vendors";
 
 export type AdminVendorListItem = { id: number; vendorName: string; serviceId: number; serviceName: string; createdAt: string;
   locationCount: number; packageCount: number; status: VendorStatus };
@@ -18,7 +20,8 @@ export type AdminVendorDetail = {
   review: VendorReview;
   submission: VendorSubmission | null;
   images: { path: string; url: string | null }[];
-  packages: { id: number; name: string; price: number; details: string; filters: CriteriaValues; imageUrl: string | null; hasImage: boolean }[];
+  packages: { id: number; name: string; price: number; details: string; filters: CriteriaValues;
+    attachments: { path: string; name: string; kind: AttachmentKind; size: number | null; url: string | null }[] }[];
 };
 
 async function read<T>(response: Response, fallback: string): Promise<T> {
@@ -39,8 +42,9 @@ export async function APIGetAdminVendor(id: number, signal?: AbortSignal) {
   return read<AdminVendorDetail>(await fetch(`/api/admin/vendors/${id}`, { cache: "no-store", signal }), "Unable to load vendor");
 }
 
-export async function APIUpdateAdminVendor(id: number, formData: FormData) {
-  return read<{ id: number }>(await fetch(`/api/admin/vendors/${id}`, { method: "PUT", body: formData }), "Unable to update vendor");
+export async function APIUpdateAdminVendor(id: number, body: VendorSaveBody) {
+  return read<{ id: number }>(await fetch(`/api/admin/vendors/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body) }), "Unable to update vendor");
 }
 
 export async function APIDeleteAdminVendor(id: number) {

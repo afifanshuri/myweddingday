@@ -1,5 +1,6 @@
 import type { CriteriaValues } from "@/config/serviceCriteria";
 import type { findVendorsByPreferences } from "@/db/queries/vendors";
+import type { AttachmentView } from "@/config/uploads";
 
 type PakcageDTOType = {
   name: string;
@@ -20,8 +21,11 @@ type VendorMatchDTOType = {
   requiredFields?: string[];
 };
 
-type VendorAndPackagesMatchDTOType =
-  Awaited<ReturnType<typeof findVendorsByPreferences>>[number];
+type StoredMatch = Awaited<ReturnType<typeof findVendorsByPreferences>>[number];
+/** A vendor with its matched packages as sent to customers: attachments carry short-lived links, never storage paths. */
+type VendorAndPackagesMatchDTOType = Omit<StoredMatch, "packages"> & {
+  packages: (Omit<StoredMatch["packages"][number], "attachments"> & { attachments: AttachmentView[] })[];
+};
 
 export type VendorPreviewMatch = {
   identityLocked: true;

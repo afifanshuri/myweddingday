@@ -1,8 +1,8 @@
 import { requireAdmin, requireSameOrigin } from "@/services/others/adminAuthService";
 import { privateJson } from "@/services/others/accountAccessService";
-import { errorResponse, RequestError, validatePackageEdits, validateVendor } from "@/services/others/requestValidation";
-import { readVendorForm } from "@/services/others/vendorFormParsing";
-import { deleteAdminVendor, getAdminVendor, updateAdminVendor } from "@/services/others/vendorAdminService";
+import { errorResponse, readJsonObject, RequestError } from "@/services/others/requestValidation";
+import { deleteAdminVendor, getAdminVendor } from "@/services/others/vendorAdminService";
+import { saveVendorListing, validateVendorSave } from "@/services/others/vendorSaveService";
 
 type Context = { params: Promise<{ vendorId: string }> };
 
@@ -22,14 +22,10 @@ export async function GET(_request: Request, context: Context) {
 export async function PUT(request: Request, context: Context) {
   try {
     requireSameOrigin(request);
-    await requireAdmin();
+    const admin = await requireAdmin();
     const id = await vendorId(context);
-    const { data, files, vendorFiles } = await readVendorForm(request);
-    const vendor = validateVendor(data.vendor);
-    const packages = validatePackageEdits(data.packages, vendor.serviceId);
-    const keep = data.keepImagePaths ?? [];
-    if (!Array.isArray(keep) || keep.some((path) => typeof path !== "string")) throw new RequestError("Invalid image list");
-    return privateJson(await updateAdminVendor(id, { vendor, packages, files, keepImagePaths: keep as string[], vendorFiles }));
+    const input = validateVendorSave(await readJsonObject(request, 256 * 1024));
+    return privateJson(await saveVendorListing({ owner: `admin:${admin.id}`, vendorId: id, input }));
   } catch (error) { return errorResponse(error, "Unable to update vendor"); }
 }
 

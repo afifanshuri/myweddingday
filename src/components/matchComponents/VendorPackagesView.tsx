@@ -7,6 +7,7 @@ import { useAccountAccess } from "@/components/commonComponents/AccountAccessPro
 import { canViewIdentity } from "@/services/others/accessRules";
 import { VendorAndPackagesMatchDTOType } from "@/types/dtoTypes";
 import { SERVICE_ID } from "@/config/serviceCriteria";
+import PackageAttachments from "./PackageAttachments";
 import {
   FaArrowLeft,
   FaBoxOpen,
@@ -138,6 +139,7 @@ export default function VendorPackagesView({
                   <p className="whitespace-pre-wrap break-words text-sm font-normal leading-relaxed">
                     {pkg.details || "No description provided for this package."}
                   </p>
+                  <PackageAttachments attachments={pkg.attachments} packageName={pkg.packageName} />
                 </div>
                 <div className="border-t border-(--secondary) bg-(--background) px-5 py-4 sm:px-6">
                   {inPlan && <label className="mb-4 flex cursor-pointer items-center gap-2 text-sm">

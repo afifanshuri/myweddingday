@@ -1,3 +1,4 @@
+import type { UploadItem } from "@/services/api/uploads";
 import type { CriteriaValues } from "@/config/serviceCriteria";
 type WeddingDetailType = {
   locations: number[];
@@ -37,16 +38,14 @@ type PackageType = {
   id: number;
   name: string;
   price: number;
-  file: File | null;
   details: string | null;
   vendorId: number | null;
   tags: string[];
   filters: CriteriaValues;
-  /** Set when editing: the saved package's database id, its current image link, and whether to drop that image. */
+  /** Price lists, service details, anything: saved files and new uploads. */
+  attachments: UploadItem[];
+  /** Set when editing: the saved package's database id. */
   recordId?: number;
-  imageUrl?: string | null;
-  hasImage?: boolean;
-  removeImage?: boolean;
 };
 
 type ServiceType = {

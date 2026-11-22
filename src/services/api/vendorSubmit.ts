@@ -1,4 +1,5 @@
 import type { AdminVendorDetail, VendorMessage } from "./adminVendors";
+import type { VendorSaveBody } from "./vendors";
 
 /** The vendor's form: blank for a new link, or their saved listing (and the admin's note) when reopened for fixes. */
 export type VendorSubmissionForm = {
@@ -20,7 +21,8 @@ export async function APIReadVendorSubmission(token: string, signal?: AbortSigna
   return read<VendorSubmissionForm>(await fetch(`/api/vendor-submit/${encodeURIComponent(token)}`, { cache: "no-store", signal }), "Unable to open this link");
 }
 
-export async function APISubmitVendorListing(token: string, formData: FormData) {
-  return read<{ message: VendorMessage }>(await fetch(`/api/vendor-submit/${encodeURIComponent(token)}`, { method: "POST", body: formData }),
+export async function APISubmitVendorListing(token: string, body: VendorSaveBody) {
+  return read<{ message: VendorMessage }>(await fetch(`/api/vendor-submit/${encodeURIComponent(token)}`, { method: "POST",
+    headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
     "Unable to submit your listing");
 }

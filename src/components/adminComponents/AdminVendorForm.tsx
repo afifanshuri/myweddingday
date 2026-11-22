@@ -14,7 +14,10 @@ import { APIDeleteAdminVendor, APIGetAdminVendor, APIUpdateAdminVendor, type Adm
 import { APIReadVendorSubmission, APISubmitVendorListing } from "@/services/api/vendorSubmit";
 import VendorReviewPanel from "./VendorReviewPanel";
 import "@/css/admin.css";
-import VendorImagesInput from "@/components/adminComponents/VendorImagesInput";
+import FileUploadField, { uploadsBlockingSave } from "@/components/adminComponents/FileUploadField";
+import { fileRef, savedItem, type UploadItem } from "@/services/api/uploads";
+import { MAX_VENDOR_IMAGES } from "@/config/vendorImages";
+import { UPLOAD_KINDS } from "@/config/uploads";
 import { useRouter } from "next/navigation";
 import { ROUTES, adminVendorRoute } from "@/config/routes";
 import LoadingScreen from "@/components/commonComponents/LoadingScreen";
@@ -40,7 +43,8 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
   const isEdit = vendorId !== undefined;
   const router = useRouter();
   const [locationList, setLocationList] = useState<LocationType[]>([]);
-  const [existingImages, setExistingImages] = useState<{ path: string; url: string | null }[]>([]);
+  // Vendor photos: saved ones and new uploads, in display order.
+  const [images, setImages] = useState<UploadItem[]>([]);
   // Edit mode: which load finished (vendor id + reload count), or why it failed.
   const [reloadKey, setReloadKey] = useState(0);
   const [loaded, setLoaded] = useState<{ key: string; error?: string } | null>(null);
@@ -55,7 +59,6 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
-  const [vendorImages, setVendorImages] = useState<File[]>([]);
   const savingRef = useRef(false);
 
   const vendorFromStore = useAdminStore((state) => state.vendor);
@@ -65,8 +68,9 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
   const resetDraft = useAdminStore((state) => state.resetDraft);
   const loadDraft = useAdminStore((state) => state.loadDraft);
   const loadKey = `${vendorId ?? submitToken}:${reloadKey}`;
-  // Edits send package ids and kept images; new listings don't.
+  // Edits send package ids; new listings don't.
   const editsSaved = isEdit || !!link?.editsSaved;
+  const uploadEndpoint = isSubmit ? `/api/vendor-submit/${encodeURIComponent(submitToken)}/uploads` : "/api/admin/uploads";
 
   const initServices = useServiceStore((state) => state.initServices);
   const servicesList = useServiceStore((state) => state.service);
@@ -93,17 +97,16 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
     const controller = new AbortController();
     const fill = (data: Pick<AdminVendorDetail, "vendor" | "images" | "packages">) => {
       loadDraft({ ...data.vendor, createdAt: new Date(), rating: null }, data.packages.map((pkg) => ({
-        name: pkg.name, price: pkg.price, details: pkg.details, filters: pkg.filters, file: null, vendorId: data.vendor.id, tags: [],
-        recordId: pkg.id, imageUrl: pkg.imageUrl, hasImage: pkg.hasImage, removeImage: false,
+        name: pkg.name, price: pkg.price, details: pkg.details, filters: pkg.filters, vendorId: data.vendor.id, tags: [],
+        recordId: pkg.id, attachments: pkg.attachments.map(savedItem),
       })));
-      setExistingImages(data.images);
-      setVendorImages([]);
+      setImages(data.images.map((image, index) => savedItem({ path: image.path, name: `Photo ${index + 1}`, kind: "image", size: null, url: image.url })));
     };
     const load = isSubmit
       ? APIReadVendorSubmission(submitToken, controller.signal).then((data) => {
         if (controller.signal.aborted) return;
         if (data.saved) fill(data.saved);
-        else { resetDraft(); setExistingImages([]); setVendorImages([]); }
+        else { resetDraft(); setImages([]); }
         setLink({ label: data.label, expiresAt: data.expiresAt, fixNote: data.fixNote, editsSaved: data.saved !== null });
       })
       : APIGetAdminVendor(vendorId!, controller.signal).then((data) => {
@@ -210,10 +213,9 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
   function handleSaveClick() {
     if (savingRef.current || saved) return;
     setSaveError(null);
-    const imageBytes = vendorImages.reduce((sum, file) => sum + file.size, 0)
-      + packageListFromStore.reduce((sum, pkg) => sum + (pkg.file?.size ?? 0), 0);
-    if (imageBytes >= 25 * 1024 * 1024) {
-      setSaveError("Keep all vendor and package uploads under 25 MB combined.");
+    const blocked = uploadsBlockingSave([...images, ...packageListFromStore.flatMap((pkg) => pkg.attachments)]);
+    if (blocked) {
+      setSaveError(blocked);
       return;
     }
     const ok = validateFields();
@@ -227,34 +229,29 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
     setIsSaving(true);
     setSaveError(null);
     try {
-      const formData = new FormData();
-      // Send only creation fields; rating is controlled by the server.
+      // Files were uploaded already; the save sends references only. Rating is controlled by the server.
       const { vendorName, serviceId, locationId, contact, detail, instagram, facebook, tiktok } = vendorFromStore;
-      formData.append("payload", JSON.stringify({
+      const body = {
         vendor: { vendorName, serviceId, locationId, contact, detail, instagram, facebook, tiktok },
-        packages: packageListFromStore.map(({ name, price, details, filters, recordId, removeImage }) =>
-          editsSaved ? { id: recordId, name, price, details, filters, removeImage: !!removeImage } : { name, price, details, filters }),
-        ...(editsSaved ? { keepImagePaths: existingImages.map((image) => image.path) } : {}),
-      }));
-      packageListFromStore.forEach((pkg, index) => {
-        if (pkg.file) formData.append(`file_${index}`, pkg.file);
-      });
-      vendorImages.forEach((file) => formData.append("vendorImages", file));
+        images: images.map(fileRef),
+        packages: packageListFromStore.map(({ name, price, details, filters, recordId, attachments }) =>
+          ({ ...(editsSaved && recordId !== undefined ? { id: recordId } : {}), name, price, details, filters, attachments: attachments.map(fileRef) })),
+      };
       if (isSubmit) {
-        const { message } = await APISubmitVendorListing(submitToken, formData);
+        const { message } = await APISubmitVendorListing(submitToken, body);
         setShowConfirm(false);
         resetDraft();
         setSubmitted(message.body);
         return;
       }
       if (isEdit) {
-        await APIUpdateAdminVendor(vendorId!, formData);
+        await APIUpdateAdminVendor(vendorId!, body);
         setShowConfirm(false);
         setNotice(review?.status === "approved" ? "Changes saved. Customers see them the next time their results load." : "Changes saved. Customers won't see this vendor until it's approved.");
         setReloadKey((value) => value + 1);
         return;
       }
-      const data = await APICreateVendorWithPackages(formData);
+      const data = await APICreateVendorWithPackages(body);
       updateVendorDataToStore({ id: data.id });
       setSaved(true);
       setShowConfirm(false);
@@ -426,8 +423,9 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
               <p className="text-red-500 text-sm mt-1">{errors.contact}</p>
             ) : null}
           </div>
-          <VendorImagesInput files={vendorImages} onChange={setVendorImages}
-            existing={existingImages} onRemoveExisting={(path) => setExistingImages((images) => images.filter((image) => image.path !== path))} />
+          <FileUploadField label="Vendor photos (optional)" kind="vendorImage" max={MAX_VENDOR_IMAGES} items={images} onChange={setImages}
+            endpoint={uploadEndpoint}
+            help={`Up to ${MAX_VENDOR_IMAGES} JPG, PNG or WebP photos of your work, ${UPLOAD_KINDS.vendorImage.maxBytes / 1024 / 1024} MB each. They appear on result cards for everyone.`} />
           <div className="flex flex-col gap-4 border-t border-(--secondary) pt-5">
             <p className="text-sm">Social Media <span className="font-normal text-foreground/50">(Optional)</span></p>
             <div className="grid grid-cols-1 gap-4">
@@ -510,6 +508,7 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
                 pkg={p}
                 index={index}
                 pkgError={errors.packages?.[index] ?? null}
+                uploadEndpoint={uploadEndpoint}
                 onFieldChange={(field) => {
                   setErrors((prev) => {
                     if (!prev.packages) return prev;
@@ -559,7 +558,7 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
       {saved && vendorFromStore.id !== 0 && <MainButton className="mr-3" variant="secondary" href={adminVendorRoute(vendorFromStore.id)}>Edit this vendor</MainButton>}
       {saved && <MainButton onClick={() => {
         resetDraft();
-        setVendorImages([]);
+        setImages([]);
         setSaved(false);
         setErrors({});
         setSaveError(null);

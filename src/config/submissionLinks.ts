@@ -21,6 +21,9 @@ export const SUBMISSION_LINK = {
   submitsPerIpPerHour: 20,
   /** Form loads allowed per IP address, per hour. */
   viewsPerIpPerHour: 120,
+  /** File uploads allowed per link and per IP address, per hour. */
+  uploadsPerLinkPerHour: 200,
+  uploadsPerIpPerHour: 300,
 } as const;
 
 export const SUBMISSION_LINK_STATE_LABELS: Record<SubmissionLinkState, string> = {
