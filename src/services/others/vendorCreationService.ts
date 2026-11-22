@@ -11,7 +11,7 @@ type PackageInput = ReturnType<typeof validatePackages>[number];
 
 export async function saveVendorRecords(vendor: VendorInput & { imagePaths?: string[] }, packages: (PackageInput & { filePath?: string })[]) {
   return db.transaction(async (tx) => {
-    const [created] = await tx.insert(vendorsTable).values(vendor)
+    const [created] = await tx.insert(vendorsTable).values({ ...vendor, status: "approved" })
       .returning({ id: vendorsTable.id, vendorName: vendorsTable.vendorName });
     await tx.insert(packagesTable).values(packages.map((pkg) => ({ ...pkg, vendorId: created.id })));
     return created;

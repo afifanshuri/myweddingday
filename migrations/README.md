@@ -8,6 +8,7 @@ This folder is the single source of truth for the database structure. `drizzle.c
 | `20261121054151_align_production` | Renames two foreign keys to Drizzle's naming, revokes leftover browser-role privileges on `locationTable`/`servicesTable`. A no-op on databases built from the baseline |
 | `20261121060700_storage_bucket` | Creates the private `assets` Storage bucket used for vendor/package images |
 | `20261121132053_rls_catalogue_filters_default` | Enables RLS on `locationTable`/`servicesTable`, sets `packagesTable.filters` to default `{}` and converts rows that held the string `"{}"` |
+| `20261122082808_vendor_listing_status` | Adds `vendorsTable.status` (`pending`/`approved`/`rejected`, checked and indexed), `reviewNote` and `reviewedAt`. Existing vendors become `approved`; new rows default to `pending` |
 
 Production was switched to these migrations on 2026-11-21: the baseline was marked as applied (it was already there, built with `drizzle-kit push` and SQL scripts), and the other three were applied with `npx drizzle-kit migrate`. All four are recorded in `drizzle.__drizzle_migrations`.
 

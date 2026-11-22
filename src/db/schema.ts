@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { authUsers } from "drizzle-orm/supabase";
+import type { VendorStatus } from "@/config/vendorStatus";
 import {
   check,
   index,
@@ -69,7 +70,14 @@ const vendorsTable = pgTable("vendorsTable", {
   filePath: varchar({ length: 255 }),
   imagePaths: varchar({ length: 255 }).array().default([]).notNull(),
   rating: numeric({ mode: "number" }),
-}).enableRLS();
+  // Only approved vendors are shown to customers. New rows start as pending; admin-created vendors are saved as approved.
+  status: varchar({ length: 10 }).$type<VendorStatus>().default("pending").notNull(),
+  reviewNote: varchar({ length: 500 }),
+  reviewedAt: timestamp(),
+}, (table) => [
+  check("vendorsTable_status_check", sql`${table.status} in ('pending', 'approved', 'rejected')`),
+  index("vendorsTable_status_idx").on(table.status),
+]).enableRLS();
 
 const packagesTable = pgTable("packagesTable", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),

@@ -10,7 +10,8 @@ import { useServiceStore } from "@/store/serviceStore";
 import MainButton from "@/components/commonComponents/MainButton";
 import { APIGetLocationsAll } from "@/services/api/locations";
 import { APICreateVendorWithPackages } from "@/services/api/vendors";
-import { APIDeleteAdminVendor, APIGetAdminVendor, APIUpdateAdminVendor } from "@/services/api/adminVendors";
+import { APIDeleteAdminVendor, APIGetAdminVendor, APIUpdateAdminVendor, type VendorReview } from "@/services/api/adminVendors";
+import VendorReviewPanel from "./VendorReviewPanel";
 import "@/css/admin.css";
 import VendorImagesInput from "@/components/adminComponents/VendorImagesInput";
 import { useRouter } from "next/navigation";
@@ -36,6 +37,7 @@ export default function AdminVendorForm({ vendorId }: { vendorId?: number }) {
   const [reloadKey, setReloadKey] = useState(0);
   const [loaded, setLoaded] = useState<{ key: string; error?: string } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [review, setReview] = useState<VendorReview | null>(null);
   const [showDelete, setShowDelete] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -82,6 +84,7 @@ export default function AdminVendorForm({ vendorId }: { vendorId?: number }) {
         recordId: pkg.id, imageUrl: pkg.imageUrl, hasImage: pkg.hasImage, removeImage: false,
       })));
       setExistingImages(data.images);
+      setReview(data.review);
       setVendorImages([]);
       setLoaded({ key: loadKey });
     }).catch((cause: Error) => { if (!controller.signal.aborted) setLoaded({ key: loadKey, error: cause.message }); });
@@ -214,7 +217,7 @@ export default function AdminVendorForm({ vendorId }: { vendorId?: number }) {
       if (isEdit) {
         await APIUpdateAdminVendor(vendorId, formData);
         setShowConfirm(false);
-        setNotice("Changes saved. Customers see them the next time their results load.");
+        setNotice(review?.status === "approved" ? "Changes saved. Customers see them the next time their results load." : "Changes saved. Customers won't see this vendor until it's approved.");
         setReloadKey((value) => value + 1);
         return;
       }
@@ -269,6 +272,7 @@ export default function AdminVendorForm({ vendorId }: { vendorId?: number }) {
         </div>
         <span className="rounded-full border border-(--tertiary) bg-white px-4 py-2 text-xs text-(--positive-tertiary)">{saved ? "Saved" : isEdit ? `Vendor #${vendorId}` : "New vendor"}</span>
       </header>
+      {isEdit && review && <VendorReviewPanel vendorId={vendorId} review={review} onChange={setReview} disabled={isSaving} />}
       <fieldset disabled={isSaving || saved} className={`grid min-w-0 gap-6 lg:grid-cols-[0.9fr_1.1fr] ${isSaving || saved ? "pointer-events-none" : ""}`}>
         <section aria-labelledby="vendor-details-heading" className="flex min-w-0 flex-col gap-5 self-start rounded-3xl border border-(--tertiary) bg-white p-5 shadow-sm sm:p-7">
           <div className="flex items-center gap-3 border-b border-(--secondary) pb-5">
@@ -515,7 +519,7 @@ export default function AdminVendorForm({ vendorId }: { vendorId?: number }) {
         busy={isSaving}
         title="Confirm Save"
       >
-        <p>{isEdit ? "Save these changes? Customers see them the next time their results load." : "Are you sure you want to save this vendor?"}</p>
+        <p>{isEdit ? review?.status === "approved" ? "Save these changes? Customers see them the next time their results load." : "Save these changes?" : "Are you sure you want to save this vendor?"}</p>
         {saveError && <p role="alert" className="mt-2 text-red-600">{saveError}</p>}
       </CustomDialog>
       <CustomDialog open={showDelete} onClose={() => setShowDelete(false)} onConfirm={() => deleteVendor()} busy={isSaving} title="Delete vendor">

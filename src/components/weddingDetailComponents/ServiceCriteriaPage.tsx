@@ -1,7 +1,6 @@
 "use client";
 import { useServiceStore } from "@/store/serviceStore";
 import { usePreferenceStore } from "@/store/preferenceStore";
-import { useParams } from "next/navigation";
 import { useEffect } from "react";
 import { ProgressBar } from "@/components/commonComponents/ProgressBar";
 import AIBudgetInput from "@/components/weddingDetailComponents/BudgetSliderInput";
@@ -15,9 +14,9 @@ import {
   SERVICE_CRITERIA,
 } from "@/config/serviceCriteria";
 
-export default function ServicePage() {
-  const params = useParams();
-  const currentServiceId = Number(params.serviceId);
+// The service comes from the server page as a prop, not useParams(): Next.js keeps visited pages mounted
+// (hidden) after navigating away, and useParams() would then return the new URL's params (no serviceId).
+export default function ServicePage({ serviceId: currentServiceId }: { serviceId: number }) {
   const changeCurrentActivePage = useServiceStore(
     (state) => state.changeCurrentActiveServicePage,
   );

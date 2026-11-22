@@ -11,7 +11,7 @@ async function CriteriaContent({ params }: Props) {
   const { serviceId } = await params;
   if (!/^[1-6]$/.test(serviceId) || !Object.hasOwn(SERVICE_CRITERIA, Number(serviceId))) notFound();
   await requireRouteAccess(serviceCriteriaRoute(Number(serviceId)));
-  return <ServiceCriteriaPage />;
+  return <ServiceCriteriaPage serviceId={Number(serviceId)} />;
 }
 export default function CriteriaPage(props: Props) {
   return <Suspense fallback={<LoadingScreen label="Checking account access…" />}><CriteriaContent {...props} /></Suspense>;

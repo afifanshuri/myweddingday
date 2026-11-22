@@ -68,12 +68,12 @@ async function getSnapshot(userId: string, searchId: string) {
   return { ...legacy, matches: compactMatches(legacy.matches as VendorAndPackagesMatchDTOType[]), expiresAt: new Date(legacy.createdAt.getTime() + SEARCH.lifetimeMs) };
 }
 
-/** Keeps snapshot entries whose vendor still exists in the same service with at least one matched package. */
+/** Keeps snapshot entries whose vendor still exists, is approved, and is in the same service with at least one matched package. */
 async function availableEntries(entries: SnapshotMatch[]) {
   if (!entries.length) return [];
   const rows = await db.selectDistinct({ vendorId: vendorsTable.id, serviceId: vendorsTable.serviceId, packageId: packagesTable.id })
     .from(vendorsTable).innerJoin(packagesTable, eq(packagesTable.vendorId, vendorsTable.id))
-    .where(and(inArray(vendorsTable.id, [...new Set(entries.map((entry) => entry.vendorId))]),
+    .where(and(eq(vendorsTable.status, "approved"), inArray(vendorsTable.id, [...new Set(entries.map((entry) => entry.vendorId))]),
       inArray(packagesTable.id, [...new Set(entries.flatMap((entry) => entry.matchedPackageIds))])));
   const live = new Set(rows.map((row) => `${row.vendorId}:${row.serviceId}:${row.packageId}`));
   return entries.filter((entry) => entry.matchedPackageIds.some((packageId) => live.has(`${entry.vendorId}:${entry.serviceId}:${packageId}`)));
@@ -84,7 +84,7 @@ async function hydrateMatches(entries: SnapshotMatch[]) {
   if (!entries.length) return [];
   const rows = await db.select({ vendor: vendorsTable, package: packagesTable }).from(vendorsTable)
     .innerJoin(packagesTable, eq(packagesTable.vendorId, vendorsTable.id))
-    .where(and(inArray(vendorsTable.id, entries.map((entry) => entry.vendorId)),
+    .where(and(eq(vendorsTable.status, "approved"), inArray(vendorsTable.id, entries.map((entry) => entry.vendorId)),
       inArray(packagesTable.id, entries.flatMap((entry) => entry.matchedPackageIds))));
   const found = entries.flatMap((entry) => {
     const current = rows.filter((row) => row.vendor.id === entry.vendorId && row.vendor.serviceId === entry.serviceId && entry.matchedPackageIds.includes(row.package.id));

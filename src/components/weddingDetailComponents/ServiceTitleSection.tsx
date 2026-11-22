@@ -32,7 +32,7 @@ export default function ServiceTitleSection({
       case SERVICE_ID.CLOTHING:
         return <GiAmpleDress className="text-[50px]" />;
       default:
-        throw new Error(`Unknown service id: ${id}`);
+        return null;
     }
   };
 

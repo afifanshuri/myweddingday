@@ -2,6 +2,7 @@ import { requireAdmin } from "@/services/others/adminAuthService";
 import { privateJson } from "@/services/others/accountAccessService";
 import { errorResponse, RequestError } from "@/services/others/requestValidation";
 import { listAdminVendors } from "@/services/others/vendorAdminService";
+import { isVendorStatus } from "@/config/vendorStatus";
 
 export async function GET(request: Request) {
   try {
@@ -14,6 +15,8 @@ export async function GET(request: Request) {
     const rawService = params.get("serviceId");
     const serviceId = rawService === null || rawService === "" ? null : Number(rawService);
     if (serviceId !== null && (!Number.isInteger(serviceId) || serviceId < 1)) throw new RequestError("Invalid service filter");
-    return privateJson(await listAdminVendors({ query, serviceId, page }));
+    const rawStatus = params.get("status") ?? "";
+    if (rawStatus !== "" && !isVendorStatus(rawStatus)) throw new RequestError("Invalid status filter");
+    return privateJson(await listAdminVendors({ query, serviceId, status: rawStatus === "" ? null : rawStatus, page }));
   } catch (error) { return errorResponse(error, "Unable to list vendors"); }
 }

@@ -2,7 +2,11 @@ import type { VendorAndPackagesMatchDTOType, VendorMatchResult } from "@/types/d
 import { PLANS } from "@/config/plans";
 
 export function projectVendorMatch(match: VendorAndPackagesMatchDTOType, unlocked: boolean): VendorMatchResult {
-  if (unlocked) return { ...match, identityLocked: false };
+  if (unlocked) {
+    // Review fields are for admins only; customers only ever see approved vendors.
+    const { status: _status, reviewNote: _reviewNote, reviewedAt: _reviewedAt, ...vendor } = match.vendor;
+    return { ...match, vendor, identityLocked: false } as VendorMatchResult;
+  }
   const prices = match.packages.map((pkg) => Number(pkg.price)).filter((price) => Number.isFinite(price) && price >= 0);
   return {
     identityLocked: true,

@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { packagesTable, vendorsTable, servicesTable } from "@/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { privateJson, requireVendorAccess } from "@/services/others/accountAccessService";
 import { errorResponse, positiveId, readBody, RequestError } from "@/services/others/requestValidation";
 import { requireSameOrigin } from "@/services/others/adminAuthService";
@@ -8,7 +8,8 @@ import { throttleSearch } from "@/services/others/manualSearchService";
 
 // Returns vendor/package names for the budget panel. Paid users may select
 // packages from their match results; this is bounded (6 IDs) and
-// throttled per account, and only returns names and prices for the given IDs.
+// throttled per account, and only returns names and prices for the given IDs
+// from approved vendors (the budget panel drops the rest).
 export async function POST(request: Request) {
   try {
     requireSameOrigin(request);
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
       vendorId: vendorsTable.id, vendorName: vendorsTable.vendorName, packageId: packagesTable.id,
       packageName: packagesTable.packageName, unitPrice: packagesTable.price })
       .from(packagesTable).innerJoin(vendorsTable, eq(packagesTable.vendorId, vendorsTable.id))
-      .innerJoin(servicesTable, eq(vendorsTable.serviceId, servicesTable.id)).where(inArray(packagesTable.id, packageIds));
+      .innerJoin(servicesTable, eq(vendorsTable.serviceId, servicesTable.id)).where(and(inArray(packagesTable.id, packageIds), eq(vendorsTable.status, "approved")));
     return privateJson(records);
   } catch (error) { return errorResponse(error, "Unable to load selected packages"); }
 }

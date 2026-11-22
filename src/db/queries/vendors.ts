@@ -20,6 +20,7 @@ const findVendorsByPreferences = async (
     const conditions = [
       and(
         eq(vendorsTable.serviceId, preference.serviceId),
+        eq(vendorsTable.status, "approved"),
         lte(packagesTable.price, preference.budget),
         sql`${vendorsTable.locationId} && ARRAY[${sql.join(preference.location, sql`, `)}]::integer[]`,
       ),

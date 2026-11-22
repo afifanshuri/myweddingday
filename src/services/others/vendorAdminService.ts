@@ -2,6 +2,7 @@ import "server-only";
 import { db } from "@/db";
 import { locationTable, packagesTable, servicesTable, vendorsTable } from "@/db/schema";
 import { and, count, desc, eq, ilike, inArray, type SQL } from "drizzle-orm";
+import type { VendorStatus } from "@/config/vendorStatus";
 import { RequestError, type validateVendor } from "./requestValidation";
 import { updateVendorWithPackages, type PackageEdit, type PackageRecord } from "./vendorSaveWorkflow";
 import { createPackageImageStorage } from "./packageImageService";
@@ -13,15 +14,19 @@ type VendorInput = ReturnType<typeof validateVendor>;
 /** Escapes LIKE wildcards so the search text is matched literally. */
 export const likePattern = (query: string) => `%${query.replace(/[\\%_]/g, (char) => "\\" + char)}%`;
 
-/** Admin list: newest first, optional name search (case-insensitive, literal) and service filter. */
-export async function listAdminVendors({ query, serviceId, page }: { query: string; serviceId: number | null; page: number }) {
+/** Admin list: newest first, optional name search (case-insensitive, literal), service and status filters. */
+export async function listAdminVendors({ query, serviceId, status, page }: { query: string; serviceId: number | null; status: VendorStatus | null; page: number }) {
   const conditions: SQL[] = [];
+  if (status !== null) conditions.push(eq(vendorsTable.status, status));
   if (query) conditions.push(ilike(vendorsTable.vendorName, likePattern(query)));
   if (serviceId !== null) conditions.push(eq(vendorsTable.serviceId, serviceId));
   const where = conditions.length ? and(...conditions) : undefined;
-  const [{ total }] = await db.select({ total: count() }).from(vendorsTable).where(where);
+  const [[{ total }], [{ pending }]] = await Promise.all([
+    db.select({ total: count() }).from(vendorsTable).where(where),
+    db.select({ pending: count() }).from(vendorsTable).where(eq(vendorsTable.status, "pending")),
+  ]);
   const rows = await db.select({ id: vendorsTable.id, vendorName: vendorsTable.vendorName, serviceId: vendorsTable.serviceId,
-    serviceName: servicesTable.serviceName, createdAt: vendorsTable.createdAt, locations: vendorsTable.locationId })
+    serviceName: servicesTable.serviceName, createdAt: vendorsTable.createdAt, locations: vendorsTable.locationId, status: vendorsTable.status })
     .from(vendorsTable).innerJoin(servicesTable, eq(servicesTable.id, vendorsTable.serviceId))
     .where(where).orderBy(desc(vendorsTable.createdAt), desc(vendorsTable.id))
     .limit(ADMIN_VENDOR_PAGE_SIZE).offset((page - 1) * ADMIN_VENDOR_PAGE_SIZE);
@@ -30,7 +35,7 @@ export async function listAdminVendors({ query, serviceId, page }: { query: stri
   return {
     vendors: rows.map(({ locations, ...row }) => ({ ...row, locationCount: locations.length,
       packageCount: packageCounts.find((item) => item.vendorId === row.id)?.packages ?? 0 })),
-    page, total, pageCount: Math.max(1, Math.ceil(total / ADMIN_VENDOR_PAGE_SIZE)),
+    page, total, pendingCount: pending, pageCount: Math.max(1, Math.ceil(total / ADMIN_VENDOR_PAGE_SIZE)),
   };
 }
 
@@ -50,6 +55,7 @@ export async function getAdminVendor(id: number) {
   return {
     vendor: { id: vendor.id, vendorName: vendor.vendorName, serviceId: vendor.serviceId, locationId: vendor.locationId,
       contact: vendor.contact, detail: vendor.detail, instagram: vendor.instagram, facebook: vendor.facebook, tiktok: vendor.tiktok },
+    review: { status: vendor.status, note: vendor.reviewNote, reviewedAt: vendor.reviewedAt },
     images: vendor.imagePaths.map((path, index) => ({ path, url: vendorUrls[index][0] ?? null })),
     packages: packages.map((pkg, index) => ({ id: pkg.id, name: pkg.packageName, price: pkg.price, details: pkg.details ?? "",
       filters: pkg.filters ?? {}, imageUrl: packageUrls[index], hasImage: !!pkg.filePath })),
@@ -99,6 +105,16 @@ export async function updateAdminVendor(id: number, input: { vendor: VendorInput
     }),
   });
   return { id };
+}
+
+/** Approves or rejects a listing. The note is kept only for rejections (it explains why). */
+export async function reviewAdminVendor(id: number, status: Exclude<VendorStatus, "pending">, note: string | null) {
+  const [row] = await db.update(vendorsTable)
+    .set({ status, reviewNote: status === "rejected" ? note : null, reviewedAt: new Date() })
+    .where(eq(vendorsTable.id, id))
+    .returning({ status: vendorsTable.status, note: vendorsTable.reviewNote, reviewedAt: vendorsTable.reviewedAt });
+  if (!row) throw new RequestError("Vendor not found", 404);
+  return row;
 }
 
 /** Deletes the vendor and its packages, then their stored images (best effort, after the rows are gone). */
