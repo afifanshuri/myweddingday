@@ -3,13 +3,12 @@
 import { BsBookmark } from "react-icons/bs";
 import { usePreferenceStore } from "@/store/preferenceStore";
 import { useServiceStore } from "@/store/serviceStore";
-import { dismissShortlistNotice, loadShortlistDetails, useShortlistDetails } from "@/store/shortlistDetails";
+import { closeShortlistVendor, dismissShortlistNotice, loadShortlistDetails, openShortlistVendor, useShortlistDetails, useShortlistPanel } from "@/store/shortlistDetails";
 import { useAccountAccess } from "@/components/commonComponents/AccountAccessProvider";
 import MainButton from "@/components/commonComponents/MainButton";
 import type { VendorDetailedMatch } from "@/types/dtoTypes";
 import VendorContainer from "./VendorContainer";
 import VendorPackagesView from "./VendorPackagesView";
-import { useHistoryParam } from "@/hooks/useHistoryParam";
 
 /**
  * The vendors the user is keeping in view, grouped by service, with current details (a shortlist outlives any search).
@@ -24,12 +23,12 @@ export default function ShortlistSection({ owner }: { owner: string }) {
   const catalogue = useServiceStore((state) => state.service);
   const { owner: loadedFor, vendors, loading, failed, removed } = useShortlistDetails();
   const known = loadedFor === owner ? vendors : null;
-  // The open vendor is kept in the address (?shortlisted=), so the browser Back button returns to the shortlist.
-  const [openId, openVendor, closeVendor] = useHistoryParam("shortlisted");
+  // The vendor open inside the panel (in memory; browser Back returns to the list).
+  const openId = useShortlistPanel((state) => state.vendorId);
 
   const open = openId !== null ? known?.get(openId)?.match : undefined;
   if (open && !open.identityLocked) {
-    return <VendorPackagesView match={open as VendorDetailedMatch} onBack={closeVendor} backLabel="Back to shortlist" fromShortlist />;
+    return <VendorPackagesView match={open as VendorDetailedMatch} onBack={closeShortlistVendor} backLabel="Back to shortlist" fromShortlist />;
   }
 
   const nameOf = (id: number) => catalogue.find((service) => service.id === id)?.serviceName ?? planNames[id] ?? `Service ${id}`;
@@ -69,7 +68,7 @@ export default function ShortlistSection({ owner }: { owner: string }) {
             </h3>
             <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
               {matches.map((match) => <VendorContainer key={match.vendor.id} match={match} serviceName={nameOf(serviceId)}
-                priceLabel="Packages from" onSelect={openVendor} />)}
+                priceLabel="Packages from" onSelect={openShortlistVendor} />)}
             </div>
           </section>;
         })}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { FiGrid, FiSettings } from "react-icons/fi";
 import { BsBookmark } from "react-icons/bs";
 import { useAccountAccess } from "./AccountAccessProvider";
@@ -42,7 +42,7 @@ export default function AccountNavigation({ children, tone = "default" }: { chil
       <LogoutButton />
     </div>
   </nav>
-  {/* The panel reads the address (?shortlist=1), so it waits for it in its own boundary. */}
-  {customer && <Suspense fallback={null}><ShortlistPanel /></Suspense>}
+  {/* The shortlist panel (opened from the button above); its open state is kept in memory, not in the address. */}
+  {customer && <ShortlistPanel />}
   </>;
 }

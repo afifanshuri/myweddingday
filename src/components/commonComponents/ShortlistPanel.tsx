@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { FiX } from "react-icons/fi";
 import { useAccountAccess } from "./AccountAccessProvider";
@@ -9,53 +9,38 @@ import MainButton from "./MainButton";
 import ShortlistSection from "@/components/matchComponents/ShortlistSection";
 import { usePreferenceStore } from "@/store/preferenceStore";
 import { useServiceStore } from "@/store/serviceStore";
-import { loadShortlistDetails, registerShortlistPanel } from "@/store/shortlistDetails";
+import { closeShortlistPanel, loadShortlistDetails, onShortlistHistory, resetShortlistPanel, useShortlistPanel } from "@/store/shortlistDetails";
 import { WEDDING_PLAN } from "@/config/weddingPlan";
 
 /**
  * The shortlist, sliding in from the right over any signed-in page (opened from the top bar or the dashboard).
- * It's kept in the address (?shortlist=1), so the browser Back button closes it; an open vendor inside adds
- * ?shortlisted=ID on top. Shortlisted vendors' details are loaded in the background as soon as a page opens,
- * so the panel shows them at once.
+ * Its open state lives in memory (useShortlistPanel), never in the address, so it only opens when the user opens it;
+ * browser Back still closes it (see shortlistDetails.ts). Shortlisted vendors' details are loaded in the background as
+ * soon as a page opens, so the panel shows them at once.
  */
 export default function ShortlistPanel() {
   const { access, checking, revision } = useAccountAccess();
-  const isOpen = useSearchParams().get("shortlist") === "1";
+  const isOpen = useShortlistPanel((state) => state.open);
+  const pathname = usePathname();
   const shortlist = usePreferenceStore((state) => state.shortlist);
   const ids = shortlist.map((entry) => entry.vendorId);
   const idsKey = JSON.stringify(ids);
   const owner = access.userId ? `${access.userId}:${revision}` : null;
   const reduceMotion = useReducedMotion();
-  const openedHere = useRef(false);
   const closeButton = useRef<HTMLButtonElement>(null);
   const catalogueLoaded = useServiceStore((state) => state.isLoaded);
   const initServices = useServiceStore((state) => state.initServices);
 
-  const open = useCallback(() => {
-    const url = new URL(window.location.href);
-    url.searchParams.set("shortlist", "1");
-    window.history.pushState(null, "", url);
-    openedHere.current = true;
-  }, []);
-  // Closes the panel (and any vendor open inside it): back through the entries it added, or, if the page was
-  // loaded with the panel already open, by removing it from the address.
-  const close = useCallback(() => {
-    const url = new URL(window.location.href);
-    const vendorOpen = url.searchParams.has("shortlisted");
-    if (openedHere.current) {
-      openedHere.current = false;
-      window.history.go(vendorOpen ? -2 : -1);
-      return;
-    }
-    url.searchParams.delete("shortlist");
-    url.searchParams.delete("shortlisted");
-    window.history.replaceState(null, "", url);
-  }, []);
+  const close = closeShortlistPanel;
 
+  // Browser Back (or Forward) closes what sits above the history entry reached; it never opens the panel.
   useEffect(() => {
-    registerShortlistPanel(open);
-    return () => registerShortlistPanel(null);
-  }, [open]);
+    const onPop = (event: PopStateEvent) => onShortlistHistory(event.state);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+  // Moving to another page closes it.
+  useEffect(() => resetShortlistPanel, [pathname]);
 
   // Preload: shortly after a page opens (so its own content loads first), and whenever the shortlist changes or the
   // panel opens, load details that are missing or stale. Fresh ones are reused, so this is usually no request at all.
@@ -82,8 +67,6 @@ export default function ShortlistPanel() {
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = overflow;
-      // Closed (by the panel or the browser's Back button): the entry it added is gone, and focus returns.
-      openedHere.current = false;
       previous?.focus();
     };
   }, [isOpen, close]);

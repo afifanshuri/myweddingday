@@ -1,13 +1,10 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
-import { useAccountAccess } from "@/components/commonComponents/AccountAccessProvider";
-import type { SelectedPackage } from "@/types/preferenceTypes";
-import { APIGetSelectedPackages } from "@/services/api/account";
+import { useState, useSyncExternalStore } from "react";
+import { useBudget } from "@/hooks/useBudget";
 import { ROUTES } from "@/config/routes";
 import MainButton from "@/components/commonComponents/MainButton";
 import { usePreferenceStore } from "@/store/preferenceStore";
-import { getBudgetSummary } from "@/services/others/budgetService";
 import { SERVICE_ID } from "@/config/serviceCriteria";
 import { useSelectedServices } from "@/hooks/useSelectedServices";
 import { BsTrash } from "react-icons/bs";
@@ -32,48 +29,12 @@ export default function BudgetSection() {
     return next;
   });
   const details = usePreferenceStore((state) => state.weddingDetails);
-  const preferences = usePreferenceStore((state) => state.preferencesList);
-  const savedPackages = usePreferenceStore((state) => state.selectedPackages);
-  const { access, checking, revision } = useAccountAccess();
-  // Every signed-in account has a budget: Plus for any vendor, free accounts for the vendors their free search unlocked.
-  const unlocked = !checking && !!access.userId;
-  const ids = JSON.stringify(savedPackages.map((pkg) => pkg.packageId));
-  const key = `${revision}:${ids}`;
-  const [resolved, setResolved] = useState<{ key: string; packages: SelectedPackage[]; locked: number[] } | null>(null);
-  const [removedCount, setRemovedCount] = useState(0);
-  useEffect(() => {
-    if (!unlocked) return;
-    const controller = new AbortController();
-    const load = () => APIGetSelectedPackages(ids, controller.signal)
-      .then(({ packages, locked }) => {
-        if (controller.signal.aborted) return;
-        // Drop selections whose package was deleted (or whose vendor moved to another service), and say so.
-        // Locked ones (no longer visible to this account, e.g. after Plus ends) stay in the plan, just not shown.
-        const requested: number[] = JSON.parse(ids);
-        const store = usePreferenceStore.getState();
-        const missing = store.selectedPackages.filter((saved) => requested.includes(saved.packageId) && !locked.includes(saved.packageId)
-          && !packages.some((pkg) => pkg.packageId === saved.packageId && pkg.serviceId === saved.serviceId));
-        if (missing.length) {
-          missing.forEach((saved) => store.removeSelectedPackage(saved.serviceId));
-          setRemovedCount((count) => count + missing.length);
-        }
-        setResolved({ key, packages, locked });
-      }).catch(() => { if (!controller.signal.aborted) setResolved(null); });
-    // Loaded once per page view; prices update the next time the page loads.
-    void load();
-    // The last answer is kept while the next one loads (see below), so totals don't drop to zero in between.
-    return () => controller.abort();
-  }, [unlocked, ids, key]);
-  // Until the server confirms the current choices, show what's already known: confirmed packages from the last answer,
-  // and newly chosen ones at the price shown when they were chosen.
-  const packages = !unlocked ? [] : resolved?.key === key ? resolved.packages
-    : savedPackages.filter((saved) => !resolved?.locked.includes(saved.packageId))
-      .map((saved) => resolved?.packages.find((pkg) => pkg.packageId === saved.packageId && pkg.serviceId === saved.serviceId) ?? saved);
+  // Loading, totals and the "no longer available" count are shared with the dashboard (useBudget).
+  const { signedIn: unlocked, selections, plannedSen, selectedSen, remainingSen, removedCount, dismissRemoved } = useBudget();
   const removePackage = usePreferenceStore((state) => state.removeSelectedPackage);
   const clearSelectedPackages = usePreferenceStore((state) => state.clearSelectedPackages);
   const [confirmingReset, setConfirmingReset] = useState(false);
   const services = useSelectedServices();
-  const { selections, plannedSen, selectedSen, remainingSen } = getBudgetSummary(details.services, preferences, packages, details.pax);
   const reduceMotion = useReducedMotion();
 
   return (
@@ -110,7 +71,7 @@ export default function BudgetSection() {
             {unlocked && removedCount > 0 && (
               <p role="status" className="mt-3 rounded-lg border border-(--tertiary) p-3 text-xs">
                 {removedCount === 1 ? "A package you selected is" : `${removedCount} packages you selected are`} no longer available, so {removedCount === 1 ? "it was" : "they were"} removed from your budget.
-                <button type="button" className="ml-2 underline" onClick={() => setRemovedCount(0)}>Dismiss</button>
+                <button type="button" className="ml-2 underline" onClick={dismissRemoved}>Dismiss</button>
               </p>
             )}
             <dl className="mt-5 grid grid-cols-2 gap-4">

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
+import { useBudget } from "@/hooks/useBudget";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useAccountAccess } from "./AccountAccessProvider";
 import { AnimatedMoney, BudgetBar, money } from "./BudgetMotion";
@@ -10,13 +11,10 @@ import { openShortlistPanel } from "@/store/shortlistDetails";
 import { usePreferenceStore } from "@/store/preferenceStore";
 import { usePlanStatus } from "@/store/planSync";
 import { useFreeSearchUsed } from "@/store/searchUsage";
-import { APIGetSelectedPackages } from "@/services/api/account";
 import { canViewIdentity } from "@/services/others/accessRules";
-import { getBudgetSummary } from "@/services/others/budgetService";
 import { ROUTES, paymentRoute } from "@/config/routes";
 import { SEARCH } from "@/config/plans";
 import { planHasContent } from "@/config/weddingPlan";
-import type { SelectedPackage } from "@/types/preferenceTypes";
 
 type Named = { id: number; name: string };
 const DAY = 24 * 60 * 60 * 1000;
@@ -52,15 +50,13 @@ function WeddingCard({ children }: { children: ReactNode }) {
 
 /** The signed-in user's saved plan: the wedding, their chosen vendors and the budget. */
 export default function DashboardPlan({ locations, services }: { locations: Named[]; services: Named[] }) {
-  const { access, checking, revision } = useAccountAccess();
+  const { access, checking } = useAccountAccess();
   // Any signed-in account has a budget (free accounts for the vendors their free search unlocked); Plus sees every match.
   const unlocked = !checking && !!access.userId;
   const plus = !checking && canViewIdentity(access);
   // A free account that has used its one search can't change its plan or search again without Plus.
   const freeSearchUsed = useFreeSearchUsed(access, checking);
   const details = usePreferenceStore((state) => state.weddingDetails);
-  const preferences = usePreferenceStore((state) => state.preferencesList);
-  const selected = usePreferenceStore((state) => state.selectedPackages);
   const search = usePreferenceStore((state) => state.manualSearch);
   const shortlist = usePreferenceStore((state) => state.shortlist);
   const hasPlan = usePreferenceStore((state) => planHasContent(state));
@@ -68,18 +64,8 @@ export default function DashboardPlan({ locations, services }: { locations: Name
   const now = useSyncExternalStore(subscribeMinute, currentMinute, () => 0);
   const reduceMotion = useReducedMotion();
 
-  const ids = JSON.stringify(selected.map((pkg) => pkg.packageId));
-  const key = `${revision}:${ids}`;
-  const [named, setNamed] = useState<{ key: string; packages: SelectedPackage[] } | null>(null);
-  useEffect(() => {
-    if (!unlocked || ids === "[]") return;
-    const controller = new AbortController();
-    APIGetSelectedPackages(ids, controller.signal)
-      .then(({ packages }) => { if (!controller.signal.aborted) setNamed({ key, packages }); })
-      .catch(() => undefined);
-    return () => controller.abort();
-  }, [unlocked, ids, key]);
-  const packages = unlocked && named?.key === key ? named.packages : [];
+  // Loading, totals and the "no longer available" count are shared with the results page's budget panel.
+  const { selections, plannedSen, selectedSen, remainingSen, removedCount, dismissRemoved } = useBudget();
 
   if (!hasPlan) {
     return <WeddingCard>
@@ -93,7 +79,6 @@ export default function DashboardPlan({ locations, services }: { locations: Name
   const places = details.locations.flatMap((id) => locations.find((location) => location.id === id)?.name ?? []);
   const where = [places.length ? `In ${list(places)}` : "", details.pax > 0 ? `${places.length ? "for" : "For"} ${details.pax.toLocaleString("en-MY")} guests` : ""]
     .filter(Boolean).join(", ");
-  const { selections, plannedSen, selectedSen, remainingSen } = getBudgetSummary(details.services, preferences, packages, details.pax);
   const resultsUntil = search?.createdAt ? search.createdAt + SEARCH.lifetimeMs : null;
   const resultsReady = !!resultsUntil && now > 0 && resultsUntil > now;
   const chosen = selections.length;
@@ -132,6 +117,10 @@ export default function DashboardPlan({ locations, services }: { locations: Name
           <h2 id="dashboard-vendors" className="libre-font text-2xl text-(--positive-tertiary)">Your vendors</h2>
           {details.services.length > 0 && <p className="text-sm text-foreground/60">{unlocked ? `${chosen} of ${details.services.length} chosen` : `${details.services.length} services`}</p>}
         </div>
+        {removedCount > 0 && <p role="status" className="mt-4 rounded-xl border border-(--tertiary) px-4 py-3 text-sm leading-6">
+          {removedCount === 1 ? "A package you chose is" : `${removedCount} packages you chose are`} no longer available, so {removedCount === 1 ? "it was" : "they were"} removed from your budget.
+          <button type="button" className="ml-2 underline" onClick={dismissRemoved}>Dismiss</button>
+        </p>}
         {!plus && details.services.length > 0 && <p className="mt-4 rounded-xl bg-(--secondary) px-4 py-3 text-sm leading-6">
           Your free search shows one vendor per service in full, and you can choose their packages. Plus unlocks every match. <Link href={paymentRoute(ROUTES.dashboard)} className="font-medium text-(--positive-tertiary) underline underline-offset-4">Get Plus</Link>
         </p>}
