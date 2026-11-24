@@ -29,23 +29,35 @@ try {
  await request(null,url,{expected:401});
  await request(free,'/api/match/vendors',{method:'POST',body:prefs,id,origin:'https://example.invalid',expected:403});
  const results=await Promise.all(Array.from({length:3},()=>request(free,'/api/match/vendors',{method:'POST',body:prefs,id})));
- assert.ok(results.every(r=>r.usage.used===1));
- const initial=results[0];assert.ok(initial.topMatches.length>0);
- const visible=[...initial.topMatches,...initial.matches];
+ assert.ok(results.every(r=>r.usage.used===1&&r.usage.remaining===0));
+ const initial=results[0];assert.equal(initial.topMatches.length,1);
+ // Free: the top pick is a locked preview; the list has only the one vendor the free search unlocked, in full.
+ const visible=initial.topMatches;
  assert.ok(visible.every(m=>m.identityLocked&&!('vendorName' in m.vendor)&&!('packages' in m)));
+ assert.ok(initial.matches.length<=1&&initial.matches.every(m=>!m.identityLocked&&m.vendor.vendorName));
+ const unlocked=initial.matches[0];
  assert.equal((await request(free,url)).usage.used,1);
+ // One free search, ever.
+ await request(free,'/api/match/vendors',{method:'POST',body:prefs,id:randomUUID(),expected:403});
  const [before]=await db`select expires_at from public.manual_search_snapshots where user_id=${free.id} and search_id=${id}`;
  await request(free,url);const [after]=await db`select expires_at from public.manual_search_snapshots where user_id=${free.id} and search_id=${id}`;assert.equal(+before.expires_at,+after.expires_at);
  await request(other,url,{expected:410});
  await request(free,`${url}&page=0`,{expected:400});
  await request(free,`${url}&page=99999`,{expected:404});
+ // The top pick's details are refused; the unlocked vendor's are given.
  await request(free,`${url}&vendorId=${visible[0].vendor.id}`,{expected:403});
+ if(unlocked) assert.ok((await request(free,`${url}&vendorId=${unlocked.vendor.id}`)).packages.length);
  await admin.auth.admin.updateUserById(free.id,{app_metadata:{role:'user',lifecycle_test:run,paid_until:'2099-01-01T00:00:00Z'}});
+ // Upgrading unlocks the same search in full.
  const paid=await request(free,url);assert.ok([...paid.matches,...paid.topMatches].every(m=>!m.identityLocked&&m.vendor.vendorName));
+ assert.equal(paid.lockedCount,0);assert.ok(paid.matches.length>=initial.matches.length);
  const detail=await request(free,`${url}&vendorId=${visible[0].vendor.id}`);assert.ok(detail.packages.length);
  await admin.auth.admin.updateUserById(free.id,{app_metadata:{role:'user',lifecycle_test:run,paid_until:null}});
  await request(free,`${url}&vendorId=${visible[0].vendor.id}`,{expected:403});
- const revoked=await request(free,url);assert.ok([...revoked.matches,...revoked.topMatches].every(m=>!('packages' in m)&&!('vendorName' in m.vendor)));
+ // After Plus ends: locked again, except the vendor the free search unlocked (kept permanently).
+ const revoked=await request(free,url);
+ assert.ok(revoked.topMatches.every(m=>!('packages' in m)&&!('vendorName' in m.vendor)));
+ assert.deepEqual(revoked.matches.map(m=>m.vendor.id),initial.matches.map(m=>m.vendor.id));
  const adminResult=await request(operator,'/api/match/vendors',{method:'POST',body:prefs,id:randomUUID()});assert.equal(adminResult.usage.limit,null);
  await db`update public.manual_search_snapshots set expires_at=now()-interval '1 second' where user_id=${free.id} and search_id=${id}`;
  await request(free,url,{expected:410});
@@ -54,7 +66,7 @@ try {
  const marker=randomUUID();
  for(let i=0;i<10;i++) await request(other,'/api/match/vendors',{method:'POST',body:prefs,id:marker});
  const throttled=await request(other,'/api/match/vendors',{method:'POST',body:prefs,id:marker,expected:429});assert.match(throttled.error,/Too many requests/);
- console.log('PASS HTTP: guest/CSRF denial, concurrent retries, private locked JSON, GET without quota/expiry extension, ownership, pagination validation, fresh paid/admin access and revocation, detail guards, expiry, and database-backed throttling.');
+ console.log('PASS HTTP: guest/CSRF denial, concurrent retries, one free search, locked top pick and unlocked vendor, GET without quota/expiry extension, ownership, pagination validation, upgrade unlocks the same search, revocation keeps the unlocked vendor, detail guards, expiry, and database-backed throttling.');
 } finally {
  for(const id of users) {const {data}=await admin.auth.admin.getUserById(id);if(data.user?.app_metadata.lifecycle_test===run) assert.ifError((await admin.auth.admin.deleteUser(id)).error);}
  await db.end();

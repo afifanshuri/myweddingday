@@ -60,11 +60,34 @@ async function request(path, account, method = "GET", body, expected = 200) {
   assert.equal(response.status, expected, `${method} ${path}: expected ${expected}, got ${response.status}`);
   assert.match(response.headers.get("cache-control") ?? "", /no-store/);
   const data = await response.json();
-  return path === "/api/match/vendors" && response.ok ? [...data.topMatches, ...data.matches] : data;
+  // Search results: every vendor, plus the top picks and the list apart (free accounts see them differently).
+  return path === "/api/match/vendors" && response.ok
+    ? Object.assign([...data.topMatches, ...data.matches], { top: data.topMatches, list: data.matches, lockedCount: data.lockedCount })
+    : data;
 }
 const preferences = [{ serviceId: 3, budget: 1000000, location: [1], criteria: {} }];
-// Paid-only endpoint used to check access grants, expiry and revocation.
+// The budget route: full package details for Plus and admins; a free account only gets packages from vendors its free
+// search unlocked, and the rest come back in `locked`. Used to check access grants, expiry and revocation.
 const paidPath = "/api/account/selections";
+let lockedPackageId;
+async function selectionHidden(account) {
+  const result = await request(paidPath, account, "POST", [lockedPackageId]);
+  assert.deepEqual(result.packages, [], "A free account must not get a locked vendor's package");
+  assert.deepEqual(result.locked, [lockedPackageId]);
+}
+async function selectionShown(account) {
+  const result = await request(paidPath, account, "POST", [lockedPackageId]);
+  assert.deepEqual(result.packages.map((pkg) => pkg.packageId), [lockedPackageId]);
+}
+// Free accounts: top picks are locked previews; the list holds only the vendors their free search unlocked, in full.
+function freeView(result) {
+  locked(result.top);
+  for (const match of result.list) {
+    assert.equal(match.identityLocked, false);
+    assert.equal(typeof match.vendor.vendorName, "string");
+  }
+  assert.ok(result.list.length <= 6, "At most one unlocked vendor per service");
+}
 // Bulk vendor reads were removed; they must stay gone for every account type.
 const removedPaths = [["/api/vendors?serviceIds=1,2,3,4,5,6", 405], ["/api/vendors/1", 404], ["/api/services/3", 404], ["/api/packages", 404], ["/api/vendors/search?q=de", 404]];
 async function removed(account) {
@@ -169,12 +192,17 @@ try {
   console.log("Routing: protected pages, role defaults, ignored login next links, payment Back links, 404s and session refresh verified");
   const locations = await (await fetch(`${base}/api/locations`)).json();
   const allPreferences = [1, 2, 3, 4, 5, 6].map((serviceId) => ({ serviceId, budget: 1e9, location: locations.map((item) => item.id), criteria: {} }));
+  // The target's one free search.
   const freeResults = await request("/api/match/vendors", target, "POST", allPreferences);
-  locked(freeResults);
+  freeView(freeResults);
   const adminResults = await request("/api/match/vendors", actor, "POST", allPreferences);
-  assert.equal(freeResults.length, adminResults.length);
+  assert.deepEqual(freeResults.top.map((match) => match.vendor.id), adminResults.top.map((match) => match.vendor.id), "Same top picks, locked for free");
   assert.ok(adminResults.length >= freeResults.length);
-  console.log(`Result limits: ${freeResults.length} free previews; ${adminResults.length} admin matches`);
+  // A package from a top pick: never unlocked for a free account.
+  lockedPackageId = adminResults.top[0].packages[0].id;
+  // A second free search is refused.
+  await request("/api/match/vendors", target, "POST", preferences, 403);
+  console.log(`Result limits: free sees ${freeResults.top.length} locked top picks and ${freeResults.list.length} unlocked vendors (${freeResults.lockedCount} more counted only); admin sees ${adminResults.length}`);
   async function metadata(update) {
     const { error } = await admin.auth.admin.updateUserById(target.id, { app_metadata: { ...original, ...update } });
     if (error) throw error;
@@ -188,14 +216,15 @@ try {
     await metadata(scenario);
     const access = await request("/api/account/access", target);
     assert.equal(access.canViewVendorIdentity, false);
-    await request("/api/account/selections", target, "POST", [1], 403);
+    await selectionHidden(target);
     await request("/api/admin/users", target, "GET", undefined, 403);
-    locked(await request("/api/match/vendors", target, "POST", preferences));
+    // Reading the free search again (same ID): still locked top picks and only unlocked vendors.
+    freeView(await request("/api/match/vendors", target, "POST", allPreferences));
   }
   // A genuine signed session with forged user-editable metadata still has no access.
   const forged = await target.auth.auth.updateUser({ data: { role: "admin", paid_until: "2099-01-01T00:00:00Z" } });
   assert.equal(forged.error, null);
-  await request(paidPath, target, "POST", [1], 403);
+  await selectionHidden(target);
   console.log("Free, expired, malformed and forged metadata: protected data denied");
   for (const scenario of [{ role: "user", paid_until: "2099-01-01T00:00:00Z" }, { role: "admin", paid_until: null }]) {
     await metadata(scenario);
@@ -203,7 +232,7 @@ try {
     await removed(target);
     const matches = await request("/api/match/vendors", target, "POST", preferences);
     assert.ok(matches.every((match) => !match.identityLocked && typeof match.vendor.vendorName === "string" && match.packages.length));
-    assert.ok((await request("/api/account/selections", target, "POST", [1])).length);
+    await selectionShown(target);
   }
   console.log("Paid and admin: full matching data and selected-package resolution verified");
   await metadata({ role: "user", paid_until: null });
@@ -215,11 +244,11 @@ try {
   assert.equal(granted.isPaid, true);
   const days = (Date.parse(granted.paidUntil) - Date.now()) / 86400000;
   assert.ok(days > 364 && days < 367);
-  await request(paidPath, target, "POST", [1]);
+  await selectionShown(target);
   await request(userPath, actor, "PATCH", { action: "revokePass" });
   // Keep the same JWT: getUser must observe revoked metadata without a token refresh.
-  await request(paidPath, target, "POST", [1], 403);
-  locked(await request("/api/match/vendors", target, "POST", preferences));
+  await selectionHidden(target);
+  freeView(await request("/api/match/vendors", target, "POST", preferences));
   await request(userPath, actor, "PATCH", { action: "setRole", role: "admin" });
   assert.equal((await request("/api/account/access", target)).role, "admin");
   await request(userPath, actor, "PATCH", { action: "setRole", role: "user" });
