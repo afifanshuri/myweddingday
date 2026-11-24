@@ -3,7 +3,9 @@ import { usePreferenceStore } from "@/store/preferenceStore";
 import { useSelectedServices } from "@/hooks/useSelectedServices";
 import AllMatchSection from "@/components/matchComponents/AllMatchSection";
 import TopMatchSection from "@/components/matchComponents/TopMatchSection";
-import { useEffect, useRef, useState, type SyntheticEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from "react";
+import { APIGetShortlist } from "@/services/api/account";
+import { registerVendorOpener } from "@/store/vendorView";
 import { APIGetVendorsByPreferences, APIGetSavedSearch, APIGetSearchVendor, SearchRequestError } from "@/services/api/vendors";
 import type { VendorDetailedMatch } from "@/types/dtoTypes";
 import type { ManualSearchResult } from "@/types/search";
@@ -13,19 +15,29 @@ import { useAccountAccess } from "@/components/commonComponents/AccountAccessPro
 import MainButton from "@/components/commonComponents/MainButton";
 import { ROUTES, paymentRoute } from "@/config/routes";
 import { SEARCH } from "@/config/plans";
+import { useHistoryParam } from "@/hooks/useHistoryParam";
+import { useFreeSearchUsed } from "@/store/searchUsage";
+
+// How long a loaded results page is shown without checking the server again.
+const PAGE_CACHE_FRESH_MS = 2 * 60 * 1000;
 
 export default function VendorSection() {
   const { access, checking, revision } = useAccountAccess();
-  const [result, setResult] = useState<{ data: ManualSearchResult | null; revision: number }>({ data: null, revision: -1 });
-  const [detail, setDetail] = useState<{ match: VendorDetailedMatch; revision: number } | null>(null);
-  const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
-  const [error, setError] = useState<{ message: string; expired: boolean } | null>(null);
+  const [result, setResult] = useState<{ data: ManualSearchResult | null; revision: number; filter?: number | null }>({ data: null, revision: -1 });
+  const [detail, setDetail] = useState<{ match: VendorDetailedMatch; revision: number; all?: boolean } | null>(null);
+  // The open vendor is kept in the address (?vendor=), so the browser Back button returns to the results.
+  const [selectedVendorId, openVendor, closeVendor] = useHistoryParam("vendor");
+  const [error, setError] = useState<{ message: string; expired: boolean; upgrade?: boolean } | null>(null);
   const [page, setPage] = useState(1);
   const [serviceFilter, setServiceFilter] = useState<number | null>(null);
   const [retry, setRetry] = useState(0);
   const [detailRetry, setDetailRetry] = useState(0);
   const lastImageRetry = useRef(0);
+  // Result pages loaded while this page is open (see the loading effect), and the last "Try again" seen.
+  const pageCache = useRef(new Map<string, { data: ManualSearchResult; at: number }>());
+  const seenRetry = useRef(0);
   const [busy, setBusy] = useState(true);
+  const freeSearchUsed = useFreeSearchUsed(access, checking);
   const selectedServices = usePreferenceStore((state) => state.weddingDetails.services);
   const selectedLocations = usePreferenceStore((state) => state.weddingDetails.locations);
   const preferences = usePreferenceStore((state) => state.preferencesList);
@@ -60,6 +72,17 @@ export default function VendorSection() {
         // including after cleanup, so a refresh can never silently consume allowance.
         let next: ManualSearchResult;
         const saved = usePreferenceStore.getState().manualSearch;
+        // Pages already loaded show at once. A fresh one (under 2 minutes old) is used as is; an older one is
+        // shown while the current version loads in the background. "Try again" always goes to the server.
+        const cacheKey = `${revision}:${searchId}:${serviceFilter ?? "all"}:${page}`;
+        const bypass = retry !== seenRetry.current;
+        seenRetry.current = retry;
+        const hit = saved?.pending || bypass ? undefined : pageCache.current.get(cacheKey);
+        if (hit) {
+          setResult({ data: hit.data, revision, filter: serviceFilter });
+          setError(null);
+          if (Date.now() - hit.at < PAGE_CACHE_FRESH_MS) return;
+        }
         if (saved?.pending && saved.createdAt && Date.now() - saved.createdAt >= SEARCH.lifetimeMs) {
           usePreferenceStore.getState().completeManualSearch(searchId);
           throw new SearchRequestError("Your search results have expired. Your planning preferences are saved. Plan again to start a new search.", 410);
@@ -69,21 +92,24 @@ export default function VendorSection() {
           usePreferenceStore.getState().completeManualSearch(searchId);
         } else next = await APIGetSavedSearch(searchId, page, controller.signal, serviceFilter);
         if (!controller.signal.aborted) {
-          setResult({ data: next, revision });
+          const filter = saved?.pending ? null : serviceFilter;
+          pageCache.current.set(`${revision}:${searchId}:${filter ?? "all"}:${saved?.pending ? 1 : page}`, { data: next, at: Date.now() });
+          setResult({ data: next, revision, filter });
           setError(null);
           window.dispatchEvent(new Event("manual-search-complete"));
         }
       } catch (cause) {
         if (!controller.signal.aborted) {
           const expired = cause instanceof SearchRequestError && cause.status === 410;
-          if (expired) { setResult({ data: null, revision }); setDetail(null); }
-          setError({ message: cause instanceof Error ? cause.message : "Unable to load your matches.", expired });
+          const upgrade = cause instanceof SearchRequestError && cause.status === 403;
+          if (expired) { pageCache.current.clear(); setResult({ data: null, revision }); setDetail(null); }
+          setError({ message: cause instanceof Error ? cause.message : "Unable to load your matches.", expired, upgrade });
           window.dispatchEvent(new Event("manual-search-complete"));
         }
       } finally { inFlight = false; if (!controller.signal.aborted) setBusy(false); }
     };
-    // Vendor details load once per page view (and on page/filter changes). There is no background
-    // reload: changes made while the page is open appear the next time it loads.
+    // Each page/filter loads once, then comes from pageCache (refreshed when over 2 minutes old). Cached pages are
+    // keyed by access revision and search, so upgrading, signing out or a new search never reuses them.
     void load();
     return () => controller.abort();
   }, [preferences, selectedLocations, selectedServices, checking, revision, access.userId, retry, page, serviceFilter]);
@@ -94,28 +120,51 @@ export default function VendorSection() {
       setError({ message: "Your search results have expired. Your planning preferences are saved. Plan again to start a new search.", expired: true });
       setResult({ data: null, revision });
       setDetail(null);
-      setSelectedVendorId(null);
+      closeVendor();
     };
     const remaining = Date.parse(data.expiresAt) - Date.now();
     if (remaining <= 0) { expire(); return; }
     const timer = window.setTimeout(expire, remaining);
     return () => window.clearTimeout(timer);
-  }, [data, revision]);
+  }, [data, revision, closeVendor]);
 
   useEffect(() => {
-    if (checking || !access.canViewVendorIdentity || selectedVendorId === null || !searchId) return;
+    // Plus can open any vendor; a free account only those its free search unlocked (the server checks).
+    if (checking || !access.userId || selectedVendorId === null) return;
+    // Wait for the search to load, unless there isn't one (expired or never run).
+    if (!searchId && busy) return;
     const controller = new AbortController();
-    const load = () => APIGetSearchVendor(searchId, selectedVendorId, controller.signal)
-      .then((match) => { if (!controller.signal.aborted) setDetail({ match, revision }); })
-      .catch((cause) => {
-        if (!controller.signal.aborted) {
-          setDetail(null); setSelectedVendorId(null);
-          setError({ message: cause instanceof Error ? cause.message : "Unable to load vendor details.", expired: cause instanceof SearchRequestError && cause.status === 410 });
+    // A vendor outside this search (e.g. budgeted from the shortlist, or the search expired) opens with all its
+    // packages, through the same route as the shortlist.
+    const allPackages = async () => {
+      const { vendors } = await APIGetShortlist([selectedVendorId], controller.signal);
+      const match = vendors[0];
+      if (!match) throw new SearchRequestError("This vendor is no longer available.", 404);
+      if (match.identityLocked) throw new SearchRequestError("Get Plus to see this vendor's details", 403);
+      return match as VendorDetailedMatch;
+    };
+    const load = async () => {
+      try {
+        let next: { match: VendorDetailedMatch; all: boolean };
+        try {
+          if (!searchId) throw new SearchRequestError("No current search", 410);
+          next = { match: await APIGetSearchVendor(searchId, selectedVendorId, controller.signal), all: false };
+        } catch (cause) {
+          if (!(cause instanceof SearchRequestError) || (cause.status !== 404 && cause.status !== 410)) throw cause;
+          next = { match: await allPackages(), all: true };
         }
-      });
+        if (!controller.signal.aborted) setDetail({ ...next, revision });
+      } catch (cause) {
+        if (!controller.signal.aborted) {
+          setDetail(null); closeVendor();
+          setError({ message: cause instanceof Error ? cause.message : "Unable to load vendor details.",
+            expired: false, upgrade: cause instanceof SearchRequestError && cause.status === 403 });
+        }
+      }
+    };
     void load();
     return () => controller.abort();
-  }, [selectedVendorId, searchId, checking, revision, access.canViewVendorIdentity, detailRetry]);
+  }, [selectedVendorId, searchId, busy, checking, revision, access.userId, detailRetry, closeVendor]);
 
   // Photo links are signed for an hour. If one fails (usually because the page has been open that long),
   // reload the current view once for fresh links. At most once every 5 minutes, so a missing file can't loop.
@@ -126,29 +175,39 @@ export default function VendorSection() {
     else setRetry((value) => value + 1);
   };
 
+  // Top picks always show every service. The service filter applies only to the list below, at once
+  // (before the filtered page arrives from the server).
   const topMatches = data?.topMatches ?? [];
-  const otherMatches = data?.matches ?? [];
+  const otherMatches = (data?.matches ?? []).filter((match) => serviceFilter === null || match.vendor.serviceId === serviceFilter);
   const topServices = servicesList.filter((service) => topMatches.some((match) => match.vendor.serviceId === service.id));
-  const selectVendor = (id: number) => { setError(null); setDetail(null); setSelectedVendorId(id); };
+  const selectVendor = useCallback((id: number) => { setError(null); setDetail(null); openVendor(id); }, [openVendor]);
+  // Lets the budget panel open a vendor's page here.
+  useEffect(() => {
+    registerVendorOpener(selectVendor);
+    return () => registerVendorOpener(null);
+  }, [selectVendor]);
   return (
     <div className="flex min-w-0 flex-col gap-6 p-4 sm:p-8" aria-busy={busy} onErrorCapture={onImageError}>
-      {checking || (busy && !data) ? <MatchLoading /> : error ? (
+      {checking ? <MatchLoading />
+        : selectedVendorId !== null && !error ? (
+          selectedMatch ? <VendorPackagesView match={selectedMatch} fromShortlist={detail?.all}
+            onBack={() => { setDetail(null); closeVendor(); }} /> : <MatchLoading />
+        ) : busy && !data ? <MatchLoading /> : error ? (
         <div className="flex flex-col items-start gap-3">
           <p role="alert">{error.message}</p>
-          <MainButton size="small" href={ROUTES.weddingPlan}>Plan again</MainButton>
-          {!error.expired && <MainButton size="small" variant="secondary" onClick={() => { setError(null); setRetry((value) => value + 1); }}>Try again</MainButton>}
+          {error.upgrade || freeSearchUsed
+            ? <MainButton size="small" href={paymentRoute()}>{freeSearchUsed ? "Get Plus to search again" : "Get Plus"}</MainButton>
+            : <MainButton size="small" href={ROUTES.weddingPlan}>Plan again</MainButton>}
+          {!error.expired && !error.upgrade && <MainButton size="small" variant="secondary" onClick={() => { setError(null); setRetry((value) => value + 1); }}>Try again</MainButton>}
         </div>
       ) : selectedServices.length === 0 ? <p>Select your services in the wedding plan to see vendor matches.</p>
-        : selectedVendorId !== null && access.canViewVendorIdentity ? (
-          selectedMatch ? <VendorPackagesView match={selectedMatch} onBack={() => { setDetail(null); setSelectedVendorId(null); }} /> : <MatchLoading />
-        ) : data ? <>
+        : data ? <>
           {!access.canViewVendorIdentity && <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-(--tertiary) bg-white p-4 text-sm">
-            <p>Preview all matching vendors for free. Plus unlocks vendor names, contacts, and packages.</p>
-            <MainButton href={paymentRoute()} size="small">Unlock vendor details</MainButton>
+            <p>Your free search shows your top picks as previews, and one vendor per service in full: open it, shortlist it or add its package to your budget. Plus unlocks every match.</p>
+            <MainButton href={paymentRoute()} size="small">Get Plus</MainButton>
           </div>}
-          <p className="text-xs text-(--positive-tertiary)">Results saved until {new Date(data.expiresAt).toLocaleString("en-MY", { timeZone: "Asia/Kuala_Lumpur" })} (Malaysia time). Vendor details and prices are current as of when this page loaded; ranking reflects your original search.</p>
           <TopMatchSection matches={topMatches} servicesList={topServices} onSelect={selectVendor} />
-          {(data.total > 0 || serviceFilter !== null) && <AllMatchSection matches={otherMatches} topMatches={topMatches} servicesList={servicesList} onSelect={selectVendor} activeServiceId={serviceFilter} onServiceChange={(id) => { setServiceFilter(id); setPage(1); }} />}
+          {(data.total > 0 || data.lockedCount > 0 || serviceFilter !== null) && <AllMatchSection matches={otherMatches} lockedCount={data.lockedCount} topMatches={topMatches} servicesList={servicesList} onSelect={selectVendor} activeServiceId={serviceFilter} loading={result.filter !== serviceFilter} onServiceChange={(id) => { setServiceFilter(id); setPage(1); }} />}
           {data.pageCount > 1 && <nav aria-label="Vendor results pages" className="flex items-center justify-center gap-4">
             <MainButton size="small" variant="secondary" disabled={busy || data.page <= 1} onClick={() => setPage(data.page - 1)}>Previous</MainButton>
             <span aria-live="polite">Page {data.page} of {data.pageCount}</span>

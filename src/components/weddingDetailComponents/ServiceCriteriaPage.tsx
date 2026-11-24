@@ -1,7 +1,9 @@
 "use client";
 import { useServiceStore } from "@/store/serviceStore";
 import { usePreferenceStore } from "@/store/preferenceStore";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { VscDebugRestart } from "react-icons/vsc";
+import MainButton from "@/components/commonComponents/MainButton";
 import { ProgressBar } from "@/components/commonComponents/ProgressBar";
 import AIBudgetInput from "@/components/weddingDetailComponents/BudgetSliderInput";
 import ServiceTitleSection from "@/components/weddingDetailComponents/ServiceTitleSection";
@@ -58,6 +60,9 @@ export default function ServicePage({ serviceId: currentServiceId }: { serviceId
   useEffect(() => {
     changeCurrentActivePage(currentServiceId);
   }, [currentServiceId, changeCurrentActivePage]);
+  const [confirmingReset, setConfirmingReset] = useState(false);
+  // Remounts the budget input after a reset, so its slider range starts afresh too.
+  const [resets, setResets] = useState(0);
 
   return (
     <div>
@@ -71,7 +76,7 @@ export default function ServicePage({ serviceId: currentServiceId }: { serviceId
       </div>
 
       <AIBudgetInput
-        key={currentServiceId}
+        key={`${currentServiceId}:${resets}`}
         className="mb-10"
         service={currentService}
         budget={
@@ -131,6 +136,21 @@ export default function ServicePage({ serviceId: currentServiceId }: { serviceId
               </div>
             </section>
           ))}
+        {/* Clears this service's budget, criteria and must-haves only, after a confirmation. */}
+        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-(--tertiary) pt-6 text-sm">
+          {confirmingReset ? <>
+            <p role="alert" className="mr-auto">Clear all {currentService.serviceName} preferences? Your budget, criteria and must-haves for this service will be removed.</p>
+            <MainButton variant="secondary" size="small" onClick={() => setConfirmingReset(false)}>Cancel</MainButton>
+            <MainButton variant="danger" size="small" onClick={() => {
+              updatePreferenceDetails(currentServiceId, { budget: 0, description: "", criteria: {}, requiredFields: [] });
+              setConfirmingReset(false);
+              setResets((count) => count + 1);
+            }}>Clear {currentService.serviceName}</MainButton>
+          </> : <MainButton variant="ghost" size="small" onClick={() => setConfirmingReset(true)}>
+            <VscDebugRestart aria-hidden="true" />
+            Reset this service
+          </MainButton>}
+        </div>
         <DirectionButtons />
       </div>
     </div>

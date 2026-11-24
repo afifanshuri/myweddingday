@@ -19,13 +19,6 @@ export const getAccountAccess = cache(async function getAccountAccess() {
   return getAccessForUser(await getVerifiedAccountUser());
 });
 
-export async function requireVendorAccess() {
-  const access = await getAccountAccess();
-  if (!access.userId) throw new RequestError("Sign in to view vendor details", 401);
-  if (!access.canViewVendorIdentity) throw new RequestError("An active Plus pass is required", 403);
-  return access;
-}
-
 export function privateJson(data: unknown, status = 200) {
   return Response.json(data, { status, headers: { "Cache-Control": "private, no-store", Vary: "Cookie, Authorization" } });
 }

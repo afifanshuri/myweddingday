@@ -1,4 +1,5 @@
 "use client";
+import { WEDDING_PLAN } from "@/config/weddingPlan";
 import { usePreferenceStore } from "@/store/preferenceStore";
 import CustomInput from "@/components/commonComponents/CustomInput";
 import MainButton from "@/components/commonComponents/MainButton";
@@ -82,6 +83,7 @@ export default function WeddingDetailsPage({
               id="wedding-couple"
               value={weddingDetailsFromStore.coupleName}
               type="text"
+              maxLength={WEDDING_PLAN.coupleNameMax}
               placeholder="e.g. Amira & Syafiq"
               className="w-full"
               onChange={(e) => {

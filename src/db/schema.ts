@@ -3,6 +3,7 @@ import { authUsers } from "drizzle-orm/supabase";
 import type { VendorStatus } from "@/config/vendorStatus";
 import type { SubmissionLinkState } from "@/config/submissionLinks";
 import type { StoredAttachment, UploadKind } from "@/config/uploads";
+import type { SavedPlan } from "@/config/weddingPlan";
 import {
   check,
   index,
@@ -13,7 +14,6 @@ import {
   timestamp,
   jsonb,
   uuid,
-  date,
   primaryKey,
 } from "drizzle-orm/pg-core";
 
@@ -23,7 +23,7 @@ export const timestamps = {
   deleted_at: timestamp(),
 };
 
-// Additive replacement: legacy full snapshots remain untouched for rollback.
+// Saved searches: ranked vendor and package IDs only (details are read fresh on each request), kept 24 hours.
 export const manualSearchSnapshots = pgTable("manual_search_snapshots", {
   userId: uuid("user_id").notNull().references(() => authUsers.id, { onDelete: "cascade" }),
   searchId: uuid("search_id").notNull(),
@@ -79,6 +79,7 @@ const vendorsTable = pgTable("vendorsTable", {
 }, (table) => [
   check("vendorsTable_status_check", sql`${table.status} in ('pending', 'approved', 'rejected')`),
   index("vendorsTable_status_idx").on(table.status),
+  index("vendorsTable_serviceId_idx").on(table.serviceId),
 ]).enableRLS();
 
 const packagesTable = pgTable("packagesTable", {
@@ -88,12 +89,13 @@ const packagesTable = pgTable("packagesTable", {
   price: numeric({ mode: "number" }).notNull(),
   details: varchar({ length: 1000 }),
   duration: numeric({ mode: "number" }),
-  vendorId: integer().references(() => vendorsTable.id),
+  vendorId: integer().notNull().references(() => vendorsTable.id, { onDelete: "cascade" }),
   filters: jsonb("filters").default({}),
   // Price lists, service details, anything (images or PDFs). Plus users only.
   attachments: jsonb("attachments").$type<StoredAttachment[]>().default([]).notNull(),
 }, (table) => [
   check("packagesTable_attachments_check", sql`jsonb_typeof(${table.attachments}) = 'array'`),
+  index("packagesTable_vendorId_idx").on(table.vendorId),
 ]).enableRLS();
 
 export { servicesTable, locationTable, vendorsTable, packagesTable };
@@ -124,26 +126,25 @@ export const publicRequestLimits = pgTable("public_request_limits", {
   requests: integer("requests").notNull().default(1),
 }, (table) => [index("public_request_limits_window_idx").on(table.windowStart)]).enableRLS();
 
-// Server-only tables. Their grants/revokes live in the baseline migration (migrations/).
-// No browser policies are intentionally added.
-export const manualSearchUsage = pgTable("manual_search_usage", {
-  userId: uuid("user_id").notNull().references(() => authUsers.id, { onDelete: "cascade" }),
-  day: date("day").notNull(),
-  used: integer("used").notNull().default(0),
-}, (table) => [
-  primaryKey({ columns: [table.userId, table.day] }),
-  check("manual_search_usage_used_check", sql`${table.used} >= 0`),
-]).enableRLS();
+// Server-only tables: browser roles have no access (grants are revoked in migrations/), and no
+// browser policies are intentionally added.
 
-export const manualSearchResults = pgTable("manual_search_results", {
-  userId: uuid("user_id").notNull().references(() => authUsers.id, { onDelete: "cascade" }),
+// A free account's one search: at most one row per user (the primary key enforces it).
+export const freeSearches = pgTable("free_searches", {
+  userId: uuid("user_id").primaryKey().references(() => authUsers.id, { onDelete: "cascade" }),
   searchId: uuid("search_id").notNull(),
-  fingerprint: varchar("fingerprint", { length: 64 }).notNull(),
-  matches: jsonb("matches").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  usedAt: timestamp("used_at", { withTimezone: true }).notNull().defaultNow(),
+}).enableRLS();
+
+// Vendors a free account may see in full: one per service from its free search. Kept permanently, so its
+// shortlist and budget keep working after the search expires. Removed with the user or the vendor.
+export const unlockedVendors = pgTable("unlocked_vendors", {
+  userId: uuid("user_id").notNull().references(() => authUsers.id, { onDelete: "cascade" }),
+  vendorId: integer("vendor_id").notNull().references(() => vendorsTable.id, { onDelete: "cascade" }),
+  unlockedAt: timestamp("unlocked_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
-  primaryKey({ columns: [table.userId, table.searchId] }),
-  check("manual_search_results_matches_check", sql`jsonb_typeof(${table.matches}) = 'array'`),
+  primaryKey({ columns: [table.userId, table.vendorId] }),
+  index("unlocked_vendors_vendor_idx").on(table.vendorId),
 ]).enableRLS();
 
 // Files uploaded straight to Storage but not yet saved into a listing. Saving a listing claims (deletes) its rows;
@@ -161,3 +162,12 @@ export const pendingUploads = pgTable("pending_uploads", {
   index("pending_uploads_owner_idx").on(table.owner),
   index("pending_uploads_created_idx").on(table.createdAt),
 ]).enableRLS();
+
+// One saved wedding plan per account (wedding details, preferences, selected packages, the recent search).
+// Only the server reads and writes it; `revision` stops an older copy from overwriting a newer one.
+export const weddingPlans = pgTable("wedding_plans", {
+  userId: uuid("user_id").primaryKey().references(() => authUsers.id, { onDelete: "cascade" }),
+  plan: jsonb("plan").$type<SavedPlan>().notNull(),
+  revision: integer("revision").notNull().default(1),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [check("wedding_plans_plan_check", sql`jsonb_typeof(${table.plan}) = 'object'`)]).enableRLS();

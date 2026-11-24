@@ -18,6 +18,43 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/*
+ * Pointer cursor for everything clickable, in one place. Tailwind's reset gives buttons the default arrow, so this
+ * restores the pointer for buttons, links, button-like roles, form toggles and labels that toggle them.
+ * Disabled controls show "not allowed" instead. In the base layer, so a utility class (e.g. cursor-default) still wins.
+ */
+@layer base {
+  button,
+  [role="button"],
+  [role="tab"],
+  [role="link"],
+  [role="menuitem"],
+  [role="option"],
+  [role="switch"],
+  [role="checkbox"],
+  [role="radio"],
+  a[href],
+  summary,
+  select,
+  label:has(input[type="checkbox"], input[type="radio"], input[type="file"]),
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="range"],
+  input[type="color"],
+  input[type="file"],
+  input[type="submit"],
+  input[type="button"],
+  input[type="reset"] {
+    cursor: pointer;
+  }
+
+  :disabled,
+  [aria-disabled="true"],
+  label:has(input:disabled) {
+    cursor: not-allowed;
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --foreground: #2b2027;
@@ -65,4 +102,26 @@ input {
 .libre-font {
   font-family: var(--font-heading), Georgia, serif;
   letter-spacing: -0.05em;
+}
+
+/* Loading screen: the knot logo's two loops draw in, hold, then unwind. */
+.knot-trace {
+  stroke-dasharray: 100;
+  animation: knot-trace 2.6s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+.knot-trace-delayed {
+  animation-delay: 0.25s;
+}
+
+@keyframes knot-trace {
+  0% { stroke-dashoffset: 100; }
+  45%, 55% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -100; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .knot-trace {
+    animation-duration: 6s;
+  }
 }

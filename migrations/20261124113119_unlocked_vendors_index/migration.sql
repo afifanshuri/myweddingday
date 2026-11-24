@@ -1,0 +1,1 @@
+CREATE INDEX "unlocked_vendors_vendor_idx" ON "unlocked_vendors" ("vendor_id");

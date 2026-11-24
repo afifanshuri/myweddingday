@@ -1,5 +1,6 @@
 import "@/css/globals.css";
 import AccountAccessProvider from "@/components/commonComponents/AccountAccessProvider";
+import PlanSync from "@/components/commonComponents/PlanSync";
 
 import { DM_Sans, Libre_Baskerville } from "next/font/google";
 
@@ -24,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <body className={`${bodyFont.variable} ${headingFont.variable}`}>
-        <AccountAccessProvider>{children}</AccountAccessProvider>
+        <AccountAccessProvider>{children}<PlanSync /></AccountAccessProvider>
       </body>
     </html>
   );

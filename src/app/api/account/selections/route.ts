@@ -1,20 +1,21 @@
 import { db } from "@/db";
 import { packagesTable, vendorsTable, servicesTable } from "@/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
-import { privateJson, requireVendorAccess } from "@/services/others/accountAccessService";
+import { getAccountAccess, privateJson } from "@/services/others/accountAccessService";
 import { errorResponse, positiveId, readBody, RequestError } from "@/services/others/requestValidation";
 import { requireSameOrigin } from "@/services/others/adminAuthService";
 import { throttleSearch } from "@/services/others/manualSearchService";
+import { unlockedVendorIds } from "@/services/others/unlockService";
 
-// Returns vendor/package names for the budget panel. Paid users may select
-// packages from their match results; this is bounded (6 IDs) and
-// throttled per account, and only returns names and prices for the given IDs
-// from approved vendors (the budget panel drops the rest).
+// Names and prices for the packages in the user's budget (at most 6 IDs, throttled per account), from approved vendors.
+// Plus sees any of them. A free account sees those from vendors its free search unlocked; the others are listed in
+// `locked` (not missing), so the browser keeps them in the plan without showing them.
 export async function POST(request: Request) {
   try {
     requireSameOrigin(request);
-    const access = await requireVendorAccess();
-    await throttleSearch(access.userId!, "selection");
+    const access = await getAccountAccess();
+    if (!access.userId) throw new RequestError("Sign in to see your budget", 401);
+    await throttleSearch(access.userId, "selection");
     let ids: unknown;
     try { ids = await (await readBody(request, 4096)).json(); } catch (error) {
       if (error instanceof RequestError) throw error;
@@ -22,12 +23,17 @@ export async function POST(request: Request) {
     }
     if (!Array.isArray(ids) || ids.length > 6) throw new RequestError("Invalid selection list");
     const packageIds = [...new Set(ids.map(positiveId))];
-    if (!packageIds.length) return privateJson([]);
+    if (!packageIds.length) return privateJson({ packages: [], locked: [] });
     const records = await db.select({ serviceId: vendorsTable.serviceId, serviceName: servicesTable.serviceName,
       vendorId: vendorsTable.id, vendorName: vendorsTable.vendorName, packageId: packagesTable.id,
       packageName: packagesTable.packageName, unitPrice: packagesTable.price })
       .from(packagesTable).innerJoin(vendorsTable, eq(packagesTable.vendorId, vendorsTable.id))
       .innerJoin(servicesTable, eq(vendorsTable.serviceId, servicesTable.id)).where(and(inArray(packagesTable.id, packageIds), eq(vendorsTable.status, "approved")));
-    return privateJson(records);
+    if (access.canViewVendorIdentity) return privateJson({ packages: records, locked: [] });
+    const unlocked = await unlockedVendorIds(access.userId, records.map((record) => record.vendorId));
+    return privateJson({
+      packages: records.filter((record) => unlocked.has(record.vendorId)),
+      locked: records.filter((record) => !unlocked.has(record.vendorId)).map((record) => record.packageId),
+    });
   } catch (error) { return errorResponse(error, "Unable to load selected packages"); }
 }

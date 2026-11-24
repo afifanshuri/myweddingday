@@ -8,14 +8,11 @@ import RotatingService from "@/components/homeComponents/RotatingService";
 import { motion } from "motion/react";
 import Image from "next/image";
 import { useEffect } from "react";
-import { usePreferenceStore } from "@/store/preferenceStore";
 import { useServiceStore } from "@/store/serviceStore";
 import { ROUTES } from "@/config/routes";
 
 export default function LandingPage() {
   useEffect(() => {
-    usePreferenceStore.getState().deleteAllPreferenceData();
-    usePreferenceStore.persist.clearStorage();
     useServiceStore.getState().deleteAllService();
   }, []);
 

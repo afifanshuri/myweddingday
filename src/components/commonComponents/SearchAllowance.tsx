@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { useAccountAccess } from "./AccountAccessProvider";
 import { APIGetSearchUsage } from "@/services/api/searchUsage";
+import Link from "next/link";
 import { PLANS } from "@/config/plans";
+import { paymentRoute } from "@/config/routes";
+import { useSearchUsage } from "@/store/searchUsage";
 import type { SearchUsage } from "@/types/search";
 
 export default function SearchAllowance() {
@@ -18,7 +21,10 @@ export default function SearchAllowance() {
       const current = ++generation;
       try {
         const next = await APIGetSearchUsage(controller.signal);
-        if (!controller.signal.aborted && current === generation) { setUsage(next); setError(false); }
+        if (!controller.signal.aborted && current === generation) {
+          setUsage(next); setError(false);
+          useSearchUsage.setState({ userId: access.userId, usage: next });
+        }
       } catch { if (!controller.signal.aborted && current === generation) setError(true); }
     }
     const onFocus = () => { if (document.visibilityState === "visible") void refresh(); };
@@ -34,10 +40,11 @@ export default function SearchAllowance() {
   }, [access.userId, checking, revision]);
 
   if (checking || !access.userId) return null;
-  if (access.role === "admin" || access.isPaid) return <p className="text-xs text-foreground/60">Unlimited manual searches</p>;
+  if (access.role === "admin" || access.isPaid) return <p className="text-xs text-foreground/60">Unlimited searches</p>;
   return <p role="status" className="text-xs text-foreground/60">
     {error ? "Search allowance unavailable. It will be checked when you search."
-      : usage ? `${usage.remaining} of ${PLANS.free.manualSearchesPerDay} searches left today · Resets at midnight (Malaysia)`
-        : "Checking search allowance…"}
+      : !usage ? "Checking search allowance…"
+        : usage.remaining ? `${PLANS.free.manualSearches} free search available`
+          : <>Free search used · <Link href={paymentRoute()} className="font-medium text-(--positive-tertiary) underline underline-offset-2">Get Plus</Link> to search again</>}
   </p>;
 }

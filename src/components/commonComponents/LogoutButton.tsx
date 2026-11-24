@@ -5,6 +5,7 @@ import MainButton from "@/components/commonComponents/MainButton";
 import { APIDeleteAuthSession } from "@/services/api/auth";
 import { FiLogOut } from "react-icons/fi";
 import { ROUTES } from "@/config/routes";
+import { clearLocalPlan, flushPlan } from "@/store/planSync";
 
 export default function LogoutButton() {
   const [busy, setBusy] = useState(false);
@@ -15,8 +16,11 @@ export default function LogoutButton() {
     setBusy(true);
     setError("");
     try {
+      // Save any unsaved plan changes first; the account keeps the plan, so this browser's copy is then removed.
+      await flushPlan().catch(() => undefined);
       const { error } = await APIDeleteAuthSession();
       if (error) throw error;
+      clearLocalPlan();
       // A full navigation also discards cached admin views.
       window.location.replace(ROUTES.home);
     } catch {

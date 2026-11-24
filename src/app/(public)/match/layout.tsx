@@ -1,4 +1,6 @@
 import AccountNavigation from "@/components/commonComponents/AccountNavigation";
+import PlanGate from "@/components/commonComponents/PlanGate";
+import MatchGuestGate from "@/components/matchComponents/MatchGuestGate";
 
 export default function MatchLayout({
   children,
@@ -11,12 +13,16 @@ export default function MatchLayout({
 }>) {
   return (
     <div className="flex min-h-screen flex-col">
-      <AccountNavigation />
-      {children}
-      <div className="flex flex-col xl:flex-row">
-        <div className="w-full min-w-0 flex-1">{vendors}</div>
-        <div className="w-full min-w-0 xl:sticky xl:top-6 xl:w-80 xl:shrink-0 xl:self-start">{budget}</div>
-      </div>
+      <AccountNavigation tone="header" />
+      <MatchGuestGate>
+        <PlanGate>
+          {children}
+          <div className="flex flex-col xl:flex-row">
+            <div className="w-full min-w-0 flex-1">{vendors}</div>
+            <div className="w-full min-w-0 xl:sticky xl:top-6 xl:w-80 xl:shrink-0 xl:self-start">{budget}</div>
+          </div>
+        </PlanGate>
+      </MatchGuestGate>
     </div>
   );
 }

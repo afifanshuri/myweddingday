@@ -3,7 +3,6 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { GUEST_ACCESS, type AccountAccess } from "@/types/accountAccess";
-import { canViewIdentity } from "@/services/others/accessRules";
 import { usePreferenceStore } from "@/store/preferenceStore";
 import { APIGetAccountAccess } from "@/services/api/account";
 
@@ -68,8 +67,10 @@ export default function AccountAccessProvider({ children }: { children: ReactNod
     window.addEventListener("pageshow", onFocus);
     window.addEventListener("pagehide", onPageHide);
     document.addEventListener("visibilitychange", onFocus);
-    // Store actions consult this current value; stale UI cannot add a package after expiry.
-    usePreferenceStore.getState().setSelectionAccess(() => canViewIdentity(accessRef.current));
+    // Store actions consult this current value; stale UI cannot add a package after sign-out. Any signed-in account
+    // may choose packages (free accounts can only open the vendors their free search unlocked; the server shows a
+    // free account's budget only for those).
+    usePreferenceStore.getState().setSelectionAccess(() => !!accessRef.current.userId);
     return () => {
       alive = false; generation++; controller?.abort(); clearTimeout(expiryTimer); clearInterval(interval);
       subscription.data.subscription.unsubscribe();

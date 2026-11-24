@@ -230,10 +230,10 @@ export const SERVICE_CRITERIA: Record<number, CriteriaField[]> = {
       quantityField(
         "seated_capacity",
         "Kapasiti Duduk Serentak (Pax)",
-        "hours",
+        "pax",
       ),
     ),
-    basicField(quantityField("rent_hours", "Tempoh Sewaan (Jam)", "pax")),
+    basicField(quantityField("rent_hours", "Tempoh Sewaan (Jam)", "hours")),
     basicField(booleanField("decor_available", "Dekorasi Disediakan")),
     basicField(booleanField("is_all_in_package", "Pakej All-Inclusive")),
     booleanField("provides_khemah", "Khemah Disediakan"),

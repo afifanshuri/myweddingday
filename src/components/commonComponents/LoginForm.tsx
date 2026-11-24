@@ -9,9 +9,11 @@ import { PASSWORD_RULES, loginNotice } from "@/config/auth";
 import { ROUTES } from "@/config/routes";
 
 export default function LoginForm() {
-  const [isRegistering, setIsRegistering] = useState(false);
+  const params = useSearchParams();
+  // ?mode=signup opens the sign-up form (from "Create a free account" links).
+  const [isRegistering, setIsRegistering] = useState(params.get("mode") === "signup");
   // Only fixed, allow-listed notices are shown; the query value itself is never rendered.
-  const notice = loginNotice(useSearchParams().get("notice"));
+  const notice = loginNotice(params.get("notice"));
   const [message, setMessage] = useState(notice ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [routingPending, setRoutingPending] = useState(false);

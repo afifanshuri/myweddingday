@@ -1,0 +1,3 @@
+ALTER TABLE "packagesTable" ALTER COLUMN "vendorId" SET NOT NULL;--> statement-breakpoint
+CREATE INDEX "packagesTable_vendorId_idx" ON "packagesTable" ("vendorId");--> statement-breakpoint
+ALTER TABLE "packagesTable" DROP CONSTRAINT "packagesTable_vendorId_vendorsTable_id_fkey", ADD CONSTRAINT "packagesTable_vendorId_vendorsTable_id_fkey" FOREIGN KEY ("vendorId") REFERENCES "vendorsTable"("id") ON DELETE CASCADE;
