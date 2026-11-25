@@ -163,10 +163,11 @@ export default function VendorPackagesView({ match, onBack, backLabel, fromShort
     {/* The price sheet. */}
     <div>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 className="libre-font text-xl text-(--positive-tertiary)">{fromShortlist ? t.vendor.packagesAll(packages.length) : t.vendor.packagesFit(packages.length)}</h2>
+        <h2 className="libre-font text-xl text-(--positive-tertiary)">{t.vendor.packagesAvailable}</h2>
         {packages.length > 1 && <p className="text-xs text-foreground/60">{t.vendor.lowestFirst}</p>}
       </div>
-      <p className="mt-1 text-sm text-foreground/60">{inPlan ? t.vendor.chooseHint : t.vendor.notInPlan(shownService)}</p>
+      {/* Without the service in the plan there are no Choose buttons, so say why. */}
+      {!inPlan && <p className="mt-1 text-sm text-foreground/60">{t.vendor.notInPlan(shownService)}</p>}
 
       {packages.length === 0
         ? <div className="mt-5 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-(--tertiary) px-5 py-10 text-center text-sm">
