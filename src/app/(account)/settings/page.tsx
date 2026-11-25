@@ -1,31 +1,31 @@
 import { Suspense } from "react";
+import { FiKey, FiUser } from "react-icons/fi";
 import { requireRouteAccess } from "@/services/others/pageAccessService";
 import { getVerifiedAccountUser } from "@/services/others/accountAccessService";
 import { ROUTES } from "@/config/routes";
-import AccountStatus from "@/components/commonComponents/AccountStatus";
 import ChangePasswordForm from "@/components/authComponents/ChangePasswordForm";
 import LoadingScreen from "@/components/commonComponents/LoadingScreen";
+import { DataSettings, DeleteAccountSettings, PlanSettings, SessionSettings, SettingsCard } from "@/components/commonComponents/SettingsSections";
+
+// Signed-in only, so there is no signed-out shell to validate as an instant navigation (see the account layout).
+export const instant = false;
 
 async function SettingsContent() {
   await requireRouteAccess(ROUTES.settings);
   const user = await getVerifiedAccountUser();
+  const since = user?.created_at ? new Date(user.created_at).toLocaleDateString("en-MY", { month: "long", year: "numeric" }) : null;
 
-  return <main className="mx-auto min-h-screen max-w-3xl px-5 py-10 sm:px-8 sm:py-16">
-    <header className="border-b border-(--tertiary) pb-6">
-      <p className="text-xs uppercase tracking-widest text-(--positive-tertiary)">myweddingday</p>
-      <h1 className="libre-font mt-3 text-3xl text-(--positive-tertiary) sm:text-4xl">Settings</h1>
-    </header>
-    <section aria-labelledby="settings-account" className="mt-8 rounded-xl border border-(--tertiary) bg-white p-6">
-      <h2 id="settings-account" className="text-base font-semibold text-(--positive-tertiary)">Account</h2>
-      <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
-        <dt className="text-foreground/60">Email</dt><dd className="break-all">{user?.email ?? "Unknown"}</dd>
-        <dt className="text-foreground/60">Plan</dt><dd><AccountStatus /></dd>
-      </dl>
-    </section>
-    <section aria-labelledby="settings-password" className="mt-6 rounded-xl border border-(--tertiary) bg-white p-6">
-      <h2 id="settings-password" className="text-base font-semibold text-(--positive-tertiary)">Change password</h2>
-      <ChangePasswordForm />
-    </section>
+  return <main className="mx-auto min-h-screen max-w-3xl space-y-5 px-4 py-6 sm:px-8 sm:py-10">
+    <h1 className="libre-font pb-2 text-2xl text-(--positive-tertiary) sm:text-3xl">Settings</h1>
+    <SettingsCard title="Account" icon={<FiUser aria-hidden="true" />}>
+      <p className="break-all text-base font-medium text-(--positive-tertiary)">{user?.email ?? "Unknown"}</p>
+      {since && <p className="mt-0.5 text-sm text-foreground/60">Member since {since}</p>}
+    </SettingsCard>
+    <PlanSettings />
+    <SettingsCard title="Password" icon={<FiKey aria-hidden="true" />}><ChangePasswordForm /></SettingsCard>
+    <SessionSettings />
+    <DataSettings />
+    <DeleteAccountSettings />
   </main>;
 }
 

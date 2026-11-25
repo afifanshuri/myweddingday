@@ -30,7 +30,7 @@ export default function ChangePasswordForm() {
     } finally { setBusy(false); }
   }
 
-  return <form onSubmit={handleSubmit} className="mt-4 max-w-sm space-y-5">
+  return <form onSubmit={handleSubmit} className="max-w-sm space-y-5">
     <p className="text-xs text-foreground/60">{PASSWORD_RULES.hint}</p>
     <label className="block text-sm text-stone-700">
       Current password

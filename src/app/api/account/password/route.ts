@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { createClient as createStatelessClient } from "@supabase/supabase-js";
+import { verifyCurrentPassword } from "@/services/others/passwordCheck";
 import { getVerifiedAccountUser, privateJson } from "@/services/others/accountAccessService";
 import { requireSameOrigin } from "@/services/others/adminAuthService";
 import { throttleSearch } from "@/services/others/manualSearchService";
@@ -22,16 +22,7 @@ export async function POST(request: Request) {
     if (typeof newPassword !== "string" || newPassword.length < PASSWORD_RULES.minLength || newPassword.length > 200) {
       throw new RequestError(`Choose a new password. ${PASSWORD_RULES.hint}`);
     }
-
-    // Check the current password with a separate client that keeps no session, then end the session that check created.
-    const checker = createStatelessClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-      { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
-    const { data: check, error: checkError } = await checker.auth.signInWithPassword({ email: user.email, password: currentPassword });
-    if (checkError || check.user?.id !== user.id) {
-      if (checkError?.status === 429) throw new RequestError("Too many attempts. Please wait and try again.", 429, 60);
-      throw new RequestError("Your current password is incorrect", 400);
-    }
-    await checker.auth.signOut({ scope: "local" }).catch(() => undefined);
+    await verifyCurrentPassword(user, currentPassword);
 
     const { error } = await createClient(await cookies()).auth.updateUser({ password: newPassword });
     if (error) {

@@ -27,3 +27,11 @@ export async function APIChangePassword(currentPassword: string, newPassword: st
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error ?? "Unable to update your password");
 }
+
+/** Permanently deletes the signed-in account (after the server checks the password and the typed confirmation). */
+export async function APIDeleteAccount(password: string, confirmation: string) {
+  const response = await fetch("/api/account/delete", { method: "POST", cache: "no-store",
+    headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password, confirmation }) });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error ?? "Unable to delete your account");
+}

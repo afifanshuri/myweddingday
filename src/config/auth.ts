@@ -17,3 +17,6 @@ export type LoginNotice = keyof typeof LOGIN_NOTICES;
 
 export const loginNotice = (value: unknown): string | null =>
   typeof value === "string" && Object.hasOwn(LOGIN_NOTICES, value) ? LOGIN_NOTICES[value as LoginNotice] : null;
+
+/** What a user types to confirm deleting their account (Settings). */
+export const DELETE_ACCOUNT_CONFIRMATION = "DELETE";
