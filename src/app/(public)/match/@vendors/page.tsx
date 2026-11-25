@@ -196,7 +196,7 @@ export default function VendorSection() {
             onBack={() => { setDetail(null); closeVendor(); }} /> : <MatchLoading />
         ) : busy && !data ? <MatchLoading /> : error ? (
         <div className="flex flex-col items-start gap-3">
-          <p role="alert">{t.results.errors[error.message] ?? error.message}</p>
+          <p role="alert">{t.errors[error.message] ?? error.message}</p>
           {error.upgrade || freeSearchUsed
             ? <MainButton size="small" href={paymentRoute()}>{freeSearchUsed ? t.results.getPlusToSearch : t.common.getPlus}</MainButton>
             : <MainButton size="small" href={ROUTES.weddingPlan}>{t.results.planAgain}</MainButton>}
