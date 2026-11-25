@@ -297,7 +297,7 @@ const en = {
     removeFromBudget: "Remove from budget",
     showMore: "Show more",
     showLess: "Show less",
-    morePhotos: (count: number) => `+${count} photos`,
+    morePhotos: (count: number) => `+${count} ${count === 1 ? "photo" : "photos"}`,
     openPhotos: (name: string, count: number) => `Open ${count === 1 ? "the photo" : `all ${count} photos`} of ${name}`,
     photoOf: (index: number, count: number) => `Photo ${index} of ${count}`,
     previousPhoto: "Previous photo",

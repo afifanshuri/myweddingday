@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { FiArrowLeft, FiCheck, FiPhone, FiStar } from "react-icons/fi";
@@ -18,10 +18,43 @@ import PackageAttachments from "./PackageAttachments";
 import ShortlistButton from "./ShortlistButton";
 import PhotoViewer from "./PhotoViewer";
 
-const currency = new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR", minimumFractionDigits: 0, maximumFractionDigits: 2 });
-// Package details longer than this start folded to a few lines.
-const LONG_DETAILS = 220;
+// Whole ringgit without cents (RM 1,800); otherwise always two decimals (RM 25.50).
+const currency = { format: (value: number) => new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR",
+  minimumFractionDigits: Number.isInteger(value) ? 0 : 2, maximumFractionDigits: 2 }).format(value) };
+/** Malaysian numbers grouped for reading: 012-3456 7890 (11 digits) or 012-345 6789 (10). Anything else as entered. */
+const readablePhone = (value: string) => {
+  const digits = value.replace(/\D/g, "");
+  if (/^0\d{10}$/.test(digits)) return `${digits.slice(0, 3)}-${digits.slice(3, 7)} ${digits.slice(7)}`;
+  if (/^0\d{9}$/.test(digits)) return `${digits.slice(0, 3)}-${digits.slice(3, 6)} ${digits.slice(6)}`;
+  return value;
+};
 const pill = "inline-flex min-h-9 items-center gap-2 rounded-full px-3.5 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--positive-tertiary)";
+
+/** A package's details, folded to three lines with Show more only when that actually hides some of the text. */
+function PackageDetails({ text, chosen }: { text: string; chosen: boolean }) {
+  const t = useT();
+  const paragraph = useRef<HTMLParagraphElement>(null);
+  const [open, setOpen] = useState(false);
+  const [clipped, setClipped] = useState(false);
+  useEffect(() => {
+    const element = paragraph.current;
+    if (!element) return;
+    const measure = () => setClipped(element.scrollHeight > element.clientHeight + 1);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [text]);
+  return <>
+    <p ref={paragraph} className={`mt-1.5 max-w-[60ch] whitespace-pre-wrap wrap-break-word text-sm leading-6 ${chosen ? "text-white/85" : "text-foreground/75"} ${open ? "" : "line-clamp-3"}`}>
+      {text}
+    </p>
+    {(clipped || open) && <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}
+      className={`mt-1 text-sm underline underline-offset-4 ${chosen ? "text-white" : "text-(--positive-tertiary)"}`}>
+      {open ? t.vendor.showLess : t.vendor.showMore}
+    </button>}
+  </>;
+}
 
 /**
  * A vendor's page, read like their price sheet: photos, who they are and how to reach them, then their packages as
@@ -59,7 +92,6 @@ export default function VendorPackagesView({ match, onBack, backLabel, fromShort
   const [failed, setFailed] = useState<string[]>([]);
   const photos = vendor.imageUrls.filter((url) => !failed.includes(url));
   const [viewing, setViewing] = useState<number | null>(null);
-  const [expanded, setExpanded] = useState<number[]>([]);
   const phone = vendor.contact?.trim();
   const socials = [
     { label: "Instagram", url: vendor.instagram?.trim(), icon: FaInstagram },
@@ -115,9 +147,9 @@ export default function VendorPackagesView({ match, onBack, backLabel, fromShort
       </p>
       {vendor.detail && <p className="mt-4 max-w-[62ch] whitespace-pre-wrap wrap-break-word leading-7 text-foreground/80">{vendor.detail}</p>}
       {(phone || socials.length > 0) && <nav aria-label={t.vendor.socialAria(vendor.vendorName)} className="mt-5 flex flex-wrap gap-2">
-        {phone && <a href={`tel:${phone.replace(/[^\d+]/g, "")}`} aria-label={t.vendor.call(phone)}
+        {phone && <a href={`tel:${phone.replace(/[^\d+]/g, "")}`} aria-label={t.vendor.call(readablePhone(phone))}
           className={`${pill} bg-(--positive-tertiary) text-white hover:bg-(--positive-tertiary)/90`}>
-          <FiPhone aria-hidden="true" />{phone}
+          <FiPhone aria-hidden="true" />{readablePhone(phone)}
         </a>}
         {socials.map(({ label, url, icon: Icon }) => <a key={label} href={url!} target="_blank" rel="noopener noreferrer"
           aria-label={t.vendor.socialLinkAria(vendor.vendorName, label)}
@@ -144,8 +176,6 @@ export default function VendorPackagesView({ match, onBack, backLabel, fromShort
         : <ul className="mt-4 flex flex-col gap-3">
           {packages.map((pkg) => {
             const chosen = selectedPackage?.packageId === pkg.id;
-            const long = (pkg.details?.length ?? 0) > LONG_DETAILS;
-            const open = expanded.includes(pkg.id);
             return <motion.li key={pkg.id} layout={reduceMotion ? false : "position"}
               className={`relative isolate rounded-2xl border p-5 transition-colors sm:p-6 ${chosen ? "border-(--positive-tertiary) text-white" : "border-(--tertiary) bg-white"}`}>
               {/* The chosen row fills in plum; the fill fades rather than jumps. */}
@@ -163,14 +193,7 @@ export default function VendorPackagesView({ match, onBack, backLabel, fromShort
                     {currency.format(pkg.price)}{isCatering && <span className="ml-1 font-sans text-xs">{t.vendor.perPax}</span>}
                   </p>
                 </div>
-                <p className={`mt-1.5 max-w-[60ch] whitespace-pre-wrap wrap-break-word text-sm leading-6 ${chosen ? "text-white/85" : "text-foreground/75"} ${long && !open ? "line-clamp-3" : ""}`}>
-                  {pkg.details || t.vendor.noDescription}
-                </p>
-                {long && <button type="button" aria-expanded={open}
-                  onClick={() => setExpanded((list) => open ? list.filter((id) => id !== pkg.id) : [...list, pkg.id])}
-                  className={`mt-1 text-sm underline underline-offset-4 ${chosen ? "text-white" : "text-(--positive-tertiary)"}`}>
-                  {open ? t.vendor.showLess : t.vendor.showMore}
-                </button>}
+                <PackageDetails text={pkg.details || t.vendor.noDescription} chosen={chosen} />
                 <PackageAttachments attachments={pkg.attachments} packageName={pkg.packageName} />
                 {inPlan && <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                   {chosen && <p className="text-sm text-white/85">{t.vendor.inYourBudget}</p>}
