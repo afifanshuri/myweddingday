@@ -85,8 +85,10 @@ export default function VendorPackagesView({ match, onBack, backLabel, fromShort
       <ShortlistButton vendorId={vendor.id} serviceId={vendor.serviceId} vendorLabel={vendor.vendorName} variant="labelled" />
     </div>
 
+    {/* The vendor, as one card: photos on top, then who they are and how to reach them. */}
+    <div className="overflow-hidden rounded-3xl border border-(--tertiary) bg-white">
     {/* Photos first: couples choose on looks. On phones only the first shows, with a count of the rest. */}
-    {shownPhotos.length > 0 && <div className={`grid gap-1.5 overflow-hidden rounded-2xl ${mosaic}`}>
+    {shownPhotos.length > 0 && <div className={`grid gap-1.5 ${mosaic}`}>
       {shownPhotos.map((url, index) => {
         const last = index === shownPhotos.length - 1;
         return <button key={url} type="button" onClick={() => setViewing(index)}
@@ -104,8 +106,7 @@ export default function VendorPackagesView({ match, onBack, backLabel, fromShort
       })}
     </div>}
 
-    {/* Who they are and how to reach them. */}
-    <header>
+    <header className="p-5 sm:p-7">
       <p className="text-sm text-foreground/60">{t.vendor.serviceIn(shownService, places.join(", "))}</p>
       <h1 id="vendor-packages-title" className="libre-font mt-1 wrap-break-word text-3xl leading-tight text-(--positive-tertiary)">{vendor.vendorName}</h1>
       <p className="mt-2 flex items-center gap-1.5 text-sm text-(--positive-tertiary)">
@@ -125,6 +126,7 @@ export default function VendorPackagesView({ match, onBack, backLabel, fromShort
         </a>)}
       </nav>}
     </header>
+    </div>
 
     {/* The price sheet. */}
     <div>
@@ -139,14 +141,13 @@ export default function VendorPackagesView({ match, onBack, backLabel, fromShort
           <BsBoxSeam aria-hidden="true" className="text-2xl text-(--positive-secondary)" />
           <p>{fromShortlist ? t.vendor.noPackages : t.vendor.noMatchedPackages}</p>
         </div>
-        : <ul className="mt-4">
-          {packages.map((pkg, index) => {
+        : <ul className="mt-4 flex flex-col gap-3">
+          {packages.map((pkg) => {
             const chosen = selectedPackage?.packageId === pkg.id;
             const long = (pkg.details?.length ?? 0) > LONG_DETAILS;
             const open = expanded.includes(pkg.id);
-            const previousChosen = index > 0 && selectedPackage?.packageId === packages[index - 1].id;
             return <motion.li key={pkg.id} layout={reduceMotion ? false : "position"}
-              className={`relative isolate ${chosen ? "-mx-4 rounded-2xl px-4 py-5 text-white sm:-mx-5 sm:px-5" : `py-5 ${index > 0 && !previousChosen ? "border-t border-(--tertiary)" : ""}`}`}>
+              className={`relative isolate rounded-2xl border p-5 transition-colors sm:p-6 ${chosen ? "border-(--positive-tertiary) text-white" : "border-(--tertiary) bg-white"}`}>
               {/* The chosen row fills in plum; the fill fades rather than jumps. */}
               <AnimatePresence initial={false}>
                 {chosen && <motion.span key="fill" aria-hidden="true" className="absolute inset-0 -z-10 rounded-2xl bg-(--positive-tertiary)"
