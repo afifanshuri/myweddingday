@@ -6,6 +6,9 @@ import { requireRouteAccess } from "@/services/others/pageAccessService";
 import { ROUTES } from "@/config/routes";
 import LoadingScreen from "@/components/commonComponents/LoadingScreen";
 
+// Signed-in only, so there is no signed-out shell to validate as an instant navigation (see the account layout).
+export const instant = false;
+
 async function WeddingPlanContent() {
   await requireRouteAccess(ROUTES.weddingPlan);
   const [locations, services] = await Promise.all([

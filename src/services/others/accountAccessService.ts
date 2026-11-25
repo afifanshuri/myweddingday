@@ -1,5 +1,6 @@
 import "server-only";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { getAccessForUser } from "./accessRules";
 import { RequestError } from "./requestValidation";
@@ -7,6 +8,9 @@ import { cache } from "react";
 
 // React cache deduplicates only within a server render; access is never shared between users.
 export const getVerifiedAccountUser = cache(async function getVerifiedAccountUser() {
+  // Access is checked fresh for every request (Supabase, then the plan's expiry against the current time), never
+  // prerendered into the shared App Shell that Partial Prefetching builds from session data.
+  await connection();
   const supabase = createClient(await cookies());
   const { data, error } = await supabase.auth.getUser();
   if (error && error.name !== "AuthSessionMissingError" && error.status !== 401 && error.status !== 403) {

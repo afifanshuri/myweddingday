@@ -5,6 +5,9 @@ import { ROUTES, canAccessRoute, getDefaultRoute, getSafeReturnPath } from "@/co
 import { PLANS } from "@/config/plans";
 import LoadingScreen from "@/components/commonComponents/LoadingScreen";
 
+// Signed-in only, so there is no signed-out shell to validate as an instant navigation (see the account layout).
+export const instant = false;
+
 type Props = { searchParams: Promise<{ returnTo?: string | string[] }> };
 async function PaymentContent({ searchParams }: Props) {
   const { returnTo } = await searchParams;

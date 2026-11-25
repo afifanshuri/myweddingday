@@ -6,6 +6,9 @@ import { serviceCriteriaRoute } from "@/config/routes";
 import { SERVICE_CRITERIA } from "@/config/serviceCriteria";
 import LoadingScreen from "@/components/commonComponents/LoadingScreen";
 
+// Signed-in only, so there is no signed-out shell to validate as an instant navigation (see the account layout).
+export const instant = false;
+
 type Props = { params: Promise<{ serviceId: string }> };
 async function CriteriaContent({ params }: Props) {
   const { serviceId } = await params;

@@ -35,7 +35,7 @@ const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   // Other sites see only the origin, never the path (submission links carry their token in the path).
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), usb=(), interest-cohort=()" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), usb=()" },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
   // HTTPS only, once deployed (not on localhost).
   ...(dev ? [] : [{ key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" }]),
@@ -47,8 +47,14 @@ const nextConfig: NextConfig = {
   },
   reactCompiler: true,
   cacheComponents: true,
+  // Links prefetch each route's shared App Shell. No link forces a full prefetch, so nothing needed migrating.
+  partialPrefetching: true,
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
+  },
+  // Old vendor links: a vendor now opens inside the results page, which checks access itself.
+  async redirects() {
+    return [{ source: "/match/:id([1-9]\\d{0,9})", destination: "/match?vendor=:id", permanent: false }];
   },
 };
 
