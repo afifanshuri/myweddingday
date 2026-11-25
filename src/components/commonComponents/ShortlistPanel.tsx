@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/i18n";
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
@@ -27,6 +28,7 @@ export default function ShortlistPanel() {
   const idsKey = JSON.stringify(ids);
   const owner = access.userId ? `${access.userId}:${revision}` : null;
   const reduceMotion = useReducedMotion();
+  const t = useT();
   const closeButton = useRef<HTMLButtonElement>(null);
   const catalogueLoaded = useServiceStore((state) => state.isLoaded);
   const initServices = useServiceStore((state) => state.initServices);
@@ -82,10 +84,10 @@ export default function ShortlistPanel() {
         exit={reduceMotion ? { opacity: 0 } : { x: "100%" }} transition={{ type: "spring", stiffness: 380, damping: 40 }}>
         <div className="flex items-center justify-between gap-3 border-b border-(--tertiary) px-5 py-4">
           <div>
-            <h2 id="shortlist-panel-title" className="libre-font text-2xl text-(--positive-tertiary)">Shortlist</h2>
-            <p className="text-xs text-foreground/60">{shortlist.length} of {WEDDING_PLAN.maxShortlist}</p>
+            <h2 id="shortlist-panel-title" className="libre-font text-2xl text-(--positive-tertiary)">{t.shortlist.title}</h2>
+            <p className="text-xs text-foreground/60">{t.shortlist.count(shortlist.length, WEDDING_PLAN.maxShortlist)}</p>
           </div>
-          <MainButton ref={closeButton} variant="ghost" size="icon" onClick={close} aria-label="Close shortlist" title="Close">
+          <MainButton ref={closeButton} variant="ghost" size="icon" onClick={close} aria-label={t.shortlist.close} title={t.shortlist.closeTitle}>
             <FiX aria-hidden="true" />
           </MainButton>
         </div>

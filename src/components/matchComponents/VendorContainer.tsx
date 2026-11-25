@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/i18n";
 
 import MainButton from "@/components/commonComponents/MainButton";
 import Image from "next/image";
@@ -23,7 +24,7 @@ export default function VendorContainer({
   serviceName,
   topPick = false,
   onSelect,
-  priceLabel = "Matched package from",
+  priceLabel,
 }: {
   match: VendorMatchResult;
   serviceName: string;
@@ -39,6 +40,7 @@ export default function VendorContainer({
     (pkg) => pkg.serviceId === match.vendor.serviceId && pkg.vendorId === match.vendor.id,
   ));
   const reduceMotion = useReducedMotion();
+  const t = useT();
   // Select once per card mount, so hovering or re-rendering does not change the photo.
   const [imageIndex] = useState(() =>
     Math.floor(Math.random() * match.vendor.imageUrls.length),
@@ -86,12 +88,12 @@ export default function VendorContainer({
           {!match.identityLocked && isSelected && (
             <span className="flex items-center gap-1.5 rounded-full bg-(--positive-tertiary) px-2 py-1 text-[0.7rem] font-medium text-white sm:px-2.5 sm:text-xs">
               <FaCheck aria-hidden="true" />
-              In budget
+              {t.vendor.inBudget}
             </span>
           )}
           {topPick && (
             <span className="rounded-full bg-(--positive) px-2 py-1 text-[0.7rem] text-(--positive-tertiary) sm:text-xs">
-              Top pick
+              {t.vendor.topPick}
             </span>
           )}
         </div>
@@ -101,25 +103,25 @@ export default function VendorContainer({
         <p className="flex items-center gap-1.5 text-xs sm:gap-2 sm:text-sm">
           <FaStar aria-hidden="true" className="shrink-0 text-amber-500" />
           {match.vendor.rating == null
-            ? "Not rated yet"
-            : `${Number(match.vendor.rating).toFixed(1)} / 5`}
+            ? t.vendor.notRated
+            : t.vendor.rating(Number(match.vendor.rating).toFixed(1))}
         </p>
         <div className="mt-auto border-t border-(--secondary) pt-2 sm:pt-3">
-          <p className="text-xs font-normal">{priceLabel}</p>
+          <p className="text-xs font-normal">{priceLabel ?? t.vendor.matchedFrom}</p>
           <p className="mt-1 text-base font-semibold text-(--positive-tertiary) sm:text-lg">
             {cheapestPrice === null
-              ? "Price unavailable"
+              ? t.vendor.priceUnavailable
               : currency.format(cheapestPrice)}
             {cheapestPrice !== null &&
               match.vendor.serviceId === SERVICE_ID.CATERING && (
-                <span className="ml-1 text-xs font-normal">/ pax</span>
+                <span className="ml-1 text-xs font-normal">{t.vendor.perPax}</span>
               )}
           </p>
           {!match.identityLocked && <p
             aria-hidden="true"
             className="mt-2 text-xs text-(--positive-tertiary) opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none [@media(hover:none)]:opacity-100 text-right"
           >
-            View packages &rarr;
+            {t.vendor.viewPackages}
           </p>}
         </div>
       </div>
@@ -129,10 +131,10 @@ export default function VendorContainer({
   // The bookmark is a sibling of the card (not inside the card's button), so each stays a separate control.
   const shortlist = <div className="absolute right-2 top-2 z-10 sm:right-3 sm:top-3">
     <ShortlistButton vendorId={match.vendor.id} serviceId={match.vendor.serviceId}
-      vendorLabel={match.identityLocked ? `this ${serviceName.toLowerCase()} vendor` : match.vendor.vendorName} />
+      vendorLabel={match.identityLocked ? t.vendor.lockedLabel(serviceName) : match.vendor.vendorName} />
   </div>;
   if (match.identityLocked) return <div className="relative h-full">
-    <article aria-label={`${serviceName} vendor preview, details locked`} className={`${base} border-(--tertiary) bg-white`}>{content}</article>
+    <article aria-label={t.vendor.lockedPreview(serviceName)} className={`${base} border-(--tertiary) bg-white`}>{content}</article>
     {shortlist}
   </div>;
   return <div className="relative isolate h-full">
@@ -146,7 +148,7 @@ export default function VendorContainer({
         transition={reduceMotion ? { duration: 0 } : { opacity: { duration: 3.2, repeat: Infinity, ease: "easeInOut" }, scale: { duration: 0.4 } }} />}
     </AnimatePresence>
     <MainButton variant="custom" size="none" onClick={() => onSelect(match.vendor.id)}
-    aria-label={`View packages for ${match.vendor.vendorName}${isSelected ? ", package selected for your budget" : ""}`}
+    aria-label={t.vendor.viewPackagesAria(match.vendor.vendorName, isSelected)}
     className={`${base} group cursor-pointer transition-colors duration-200 hover:bg-(--secondary) motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--positive-tertiary) ${isSelected ? "border-(--positive-tertiary) bg-white" : `hover:border-(--positive-secondary) ${topPick ? "border-(--positive) bg-(--background)" : "border-(--tertiary) bg-white"}`}`}>
     {content}
   </MainButton>{shortlist}</div>;

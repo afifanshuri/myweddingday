@@ -1,4 +1,5 @@
 "use client";
+import { serviceName, useT } from "@/i18n";
 
 import { BsBookmark } from "react-icons/bs";
 import { usePreferenceStore } from "@/store/preferenceStore";
@@ -25,13 +26,14 @@ export default function ShortlistSection({ owner }: { owner: string }) {
   const known = loadedFor === owner ? vendors : null;
   // The vendor open inside the panel (in memory; browser Back returns to the list).
   const openId = useShortlistPanel((state) => state.vendorId);
+  const t = useT();
 
   const open = openId !== null ? known?.get(openId)?.match : undefined;
   if (open && !open.identityLocked) {
-    return <VendorPackagesView match={open as VendorDetailedMatch} onBack={closeShortlistVendor} backLabel="Back to shortlist" fromShortlist />;
+    return <VendorPackagesView match={open as VendorDetailedMatch} onBack={closeShortlistVendor} backLabel={t.vendor.backToShortlist} fromShortlist />;
   }
 
-  const nameOf = (id: number) => catalogue.find((service) => service.id === id)?.serviceName ?? planNames[id] ?? `Service ${id}`;
+  const nameOf = (id: number) => serviceName(t, id, catalogue.find((service) => service.id === id)?.serviceName ?? planNames[id]);
   // Services in the plan first, in plan order, then any others still on the shortlist.
   const groups = [...new Set([...planServices, ...shortlist.map((entry) => entry.serviceId)])]
     .map((serviceId) => ({ serviceId, entries: shortlist.filter((entry) => entry.serviceId === serviceId) }))
@@ -40,24 +42,24 @@ export default function ShortlistSection({ owner }: { owner: string }) {
 
   return <div className="min-w-0">
     <p className="max-w-[65ch] text-sm leading-6 text-foreground/70">
-      Vendors you&apos;re keeping in view. They aren&apos;t in your budget until you open one and choose a package.
-      {!access.canViewVendorIdentity && " Your free search unlocked one vendor per service; Plus opens them all."}
+      {t.shortlist.intro}
+      {!access.canViewVendorIdentity && t.shortlist.freeIntro}
     </p>
     {removed > 0 && <p role="status" className="mt-4 rounded-lg border border-(--tertiary) p-3 text-xs">
-      {removed === 1 ? "A shortlisted vendor is" : `${removed} shortlisted vendors are`} no longer available, so {removed === 1 ? "it was" : "they were"} removed.
-      <button type="button" className="ml-2 underline" onClick={dismissShortlistNotice}>Dismiss</button>
+      {t.shortlist.removed(removed)}
+      <button type="button" className="ml-2 underline" onClick={dismissShortlistNotice}>{t.common.dismiss}</button>
     </p>}
     {failed && <div role="alert" className="mt-4 flex flex-wrap items-center gap-3 text-sm">
-      <p>Your shortlist couldn&apos;t be loaded.</p>
+      <p>{t.shortlist.loadFailed}</p>
       <MainButton size="small" variant="secondary" disabled={loading}
-        onClick={() => void loadShortlistDetails(owner, shortlist.map((entry) => entry.vendorId), true)}>Try again</MainButton>
+        onClick={() => void loadShortlistDetails(owner, shortlist.map((entry) => entry.vendorId), true)}>{t.results.tryAgain}</MainButton>
     </div>}
     {shortlist.length === 0 ? <div className="mt-5 flex items-start gap-3 rounded-xl border border-dashed border-(--tertiary) p-5 text-sm leading-6">
       <BsBookmark aria-hidden="true" className="mt-1 shrink-0 text-(--positive-tertiary)" />
-      <p>Nothing shortlisted yet. Tap the bookmark on any vendor in your matches to keep it here while you decide.</p>
+      <p>{t.shortlist.empty}</p>
     </div> : waiting ? <p role="status" className="mt-5 flex items-center gap-3 text-sm text-(--positive-tertiary)">
       <span aria-hidden="true" className="size-5 animate-spin rounded-full border-2 border-(--tertiary) border-t-(--positive-tertiary) motion-reduce:animate-[spin_3s_linear_infinite]" />
-      Loading your shortlist…
+      {t.shortlist.loading}
     </p>
       : <div className="mt-6 space-y-8">
         {groups.map(({ serviceId, entries }) => {
@@ -68,7 +70,7 @@ export default function ShortlistSection({ owner }: { owner: string }) {
             </h3>
             <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
               {matches.map((match) => <VendorContainer key={match.vendor.id} match={match} serviceName={nameOf(serviceId)}
-                priceLabel="Packages from" onSelect={openShortlistVendor} />)}
+                priceLabel={t.vendor.packagesFrom} onSelect={openShortlistVendor} />)}
             </div>
           </section>;
         })}

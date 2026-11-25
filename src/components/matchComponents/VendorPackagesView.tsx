@@ -1,4 +1,5 @@
 "use client";
+import { serviceName as displayServiceName, useT } from "@/i18n";
 
 import MainButton from "@/components/commonComponents/MainButton";
 import { usePreferenceStore } from "@/store/preferenceStore";
@@ -28,7 +29,7 @@ const currency = new Intl.NumberFormat("en-MY", {
 export default function VendorPackagesView({
   match,
   onBack,
-  backLabel = "Back to matches",
+  backLabel,
   fromShortlist = false,
 }: {
   match: VendorAndPackagesMatchDTOType;
@@ -48,6 +49,8 @@ export default function VendorPackagesView({
   const packages = [...match.packages].sort((a, b) => a.price - b.price);
   const isCatering = vendor.serviceId === SERVICE_ID.CATERING;
   const reduceMotion = useReducedMotion();
+  const t = useT();
+  const shownServiceName = displayServiceName(t, vendor.serviceId, serviceName);
   const socialLinks = [
     { label: "Instagram", url: vendor.instagram?.trim(), icon: FaInstagram },
     { label: "TikTok", url: vendor.tiktok?.trim(), icon: FaTiktok },
@@ -64,7 +67,7 @@ export default function VendorPackagesView({
         className="w-fit"
       >
         <FaArrowLeft aria-hidden="true" />
-        {backLabel}
+        {backLabel ?? t.vendor.backToMatches}
       </MainButton>
 
       <header className="overflow-hidden rounded-xl border border-(--tertiary) bg-white">
@@ -82,9 +85,9 @@ export default function VendorPackagesView({
               <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-normal">
                 <span className="flex items-center gap-2">
                   <FaStar aria-hidden="true" className="text-amber-500" />
-                  {vendor.rating == null ? "Not rated yet" : `${Number(vendor.rating).toFixed(1)} / 5`}
+                  {vendor.rating == null ? t.vendor.notRated : t.vendor.rating(Number(vendor.rating).toFixed(1))}
                 </span>
-                <span>{packages.length} {fromShortlist ? "" : "matched "}{packages.length === 1 ? "package" : "packages"}</span>
+                <span>{t.vendor.packageCount(packages.length, !fromShortlist)}</span>
               </div>
             </div>
           </div>
@@ -92,14 +95,14 @@ export default function VendorPackagesView({
             <p className="whitespace-pre-wrap break-words text-sm font-normal leading-relaxed">{vendor.detail}</p>
           )}
           {socialLinks.length > 0 && (
-            <nav aria-label={`${vendor.vendorName} social media`} className="flex flex-wrap gap-2">
+            <nav aria-label={t.vendor.socialAria(vendor.vendorName)} className="flex flex-wrap gap-2">
               {socialLinks.map(({ label, url, icon: Icon }) => (
                 <MainButton variant="secondary" size="small"
                   key={label}
                   href={url!}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={`${vendor.vendorName} on ${label} (opens in a new tab)`}
+                  aria-label={t.vendor.socialLinkAria(vendor.vendorName, label)}
                   className="font-normal"
                 >
                   <Icon aria-hidden="true" />
@@ -120,17 +123,17 @@ export default function VendorPackagesView({
       <div>
         <div className="mb-5 flex flex-wrap items-end justify-between gap-2">
           <div>
-            <h2 className="libre-font text-lg">{fromShortlist ? "Packages" : "Matched packages"}</h2>
-            <p className="mt-2 text-sm font-normal">{fromShortlist ? "Every package this vendor offers." : "Compare the packages returned for your preferences."} Shortlisting keeps a vendor in view; only the package you choose counts towards your budget.</p>
-            {!inPlan && <p className="mt-2 text-xs font-normal text-foreground/60">{serviceName} isn&apos;t in your wedding plan yet. Add it in your plan to include these packages in your budget.</p>}
+            <h2 className="libre-font text-lg">{fromShortlist ? t.vendor.packages : t.vendor.matchedPackages}</h2>
+            <p className="mt-2 text-sm font-normal">{fromShortlist ? t.vendor.allPackagesHint : t.vendor.matchedPackagesHint} {t.vendor.shortlistHint}</p>
+            {!inPlan && <p className="mt-2 text-xs font-normal text-foreground/60">{t.vendor.notInPlan(shownServiceName)}</p>}
           </div>
-          {packages.length > 1 && <p className="text-xs font-normal text-(--positive-tertiary)">Price: low to high</p>}
+          {packages.length > 1 && <p className="text-xs font-normal text-(--positive-tertiary)">{t.vendor.lowToHigh}</p>}
         </div>
 
         {packages.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-(--tertiary) bg-white px-5 py-10 text-center">
             <FaBoxOpen aria-hidden="true" className="text-2xl text-(--positive-secondary)" />
-            <p className="text-sm font-normal">{fromShortlist ? "This vendor has no packages available right now." : "No matched packages available for this vendor."}</p>
+            <p className="text-sm font-normal">{fromShortlist ? t.vendor.noPackages : t.vendor.noMatchedPackages}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 items-stretch gap-5 md:grid-cols-2">
@@ -146,7 +149,7 @@ export default function VendorPackagesView({
                 className={`flex min-w-0 flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition-colors duration-300 motion-reduce:transition-none ${chosen ? "border-(--positive-tertiary)" : "border-(--tertiary)"}`}>
                 <div className="flex flex-1 flex-col gap-4 p-5 sm:p-6">
                   <div className="flex min-h-6 flex-wrap items-center justify-between gap-2">
-                    <span className="text-xs font-normal text-(--positive-tertiary)">Package {index + 1}</span>
+                    <span className="text-xs font-normal text-(--positive-tertiary)">{t.vendor.packageNumber(index + 1)}</span>
                     <AnimatePresence mode="popLayout" initial={false}>
                       {chosen ? (
                         <motion.span key="chosen" aria-hidden="true" className="grid size-6 place-items-center rounded-full bg-(--positive-tertiary) text-white"
@@ -158,13 +161,13 @@ export default function VendorPackagesView({
                       ) : index === 0 && packages.length > 1 && (
                         <motion.span key="lowest" className="rounded-full bg-(--secondary) px-3 py-1 text-xs font-medium text-(--positive-tertiary)"
                           initial={reduceMotion ? false : { opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                          exit={reduceMotion ? undefined : { opacity: 0, transition: { duration: 0.1 } }}>Lowest price</motion.span>
+                          exit={reduceMotion ? undefined : { opacity: 0, transition: { duration: 0.1 } }}>{t.vendor.lowestPrice}</motion.span>
                       )}
                     </AnimatePresence>
                   </div>
                   <h3 className="break-words text-lg font-semibold">{pkg.packageName}</h3>
                   <p className="whitespace-pre-wrap break-words text-sm font-normal leading-relaxed">
-                    {pkg.details || "No description provided for this package."}
+                    {pkg.details || t.vendor.noDescription}
                   </p>
                   <PackageAttachments attachments={pkg.attachments} packageName={pkg.packageName} />
                 </div>
@@ -172,7 +175,7 @@ export default function VendorPackagesView({
                   {inPlan && <label className="mb-4 flex cursor-pointer items-center gap-2 text-sm">
                     <input type="radio" name={`package-${vendor.serviceId}`} className="accent-(--positive-tertiary)"
                       checked={selectedPackage?.packageId === pkg.id}
-                      aria-label={`${selectedPackage?.packageId === pkg.id ? "Remove" : "Choose"} ${pkg.packageName} from ${vendor.vendorName} ${selectedPackage?.packageId === pkg.id ? "from" : "for"} my budget`}
+                      aria-label={t.vendor.choosePackageAria(pkg.packageName, vendor.vendorName, selectedPackage?.packageId === pkg.id)}
                       onClick={() => {
                         if (selectedPackage?.packageId === pkg.id) removeSelectedPackage(vendor.serviceId);
                       }}
@@ -183,14 +186,14 @@ export default function VendorPackagesView({
                       <motion.span key={chosen ? "in" : "choose"} className={chosen ? "font-semibold text-(--positive-tertiary)" : undefined}
                         initial={reduceMotion ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                         exit={reduceMotion ? undefined : { opacity: 0, y: -6 }} transition={{ duration: 0.18 }}>
-                        {chosen ? "In my budget" : "Choose for my budget"}
+                        {chosen ? t.vendor.inMyBudget : t.vendor.chooseForBudget}
                       </motion.span>
                     </AnimatePresence>
                   </label>}
-                  <p className="text-xs font-normal">{isCatering ? "Price per guest" : "Package price"}</p>
+                  <p className="text-xs font-normal">{isCatering ? t.vendor.pricePerGuest : t.vendor.packagePrice}</p>
                   <p className="mt-1 flex flex-wrap items-baseline gap-2 text-2xl font-semibold text-(--positive-tertiary)">
                     {currency.format(pkg.price)}
-                    {isCatering && <span className="text-sm font-normal">/ pax</span>}
+                    {isCatering && <span className="text-sm font-normal">{t.vendor.perPax}</span>}
                   </p>
                 </div>
               </motion.article>

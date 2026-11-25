@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/i18n";
 import MainButton from "@/components/commonComponents/MainButton";
 import { FaLock } from "react-icons/fa";
 import { paymentRoute } from "@/config/routes";
@@ -30,7 +31,8 @@ export default function AllMatchSection({
 }) {
   const visibleMatches = matches;
   const reduceMotion = useReducedMotion();
-  const filters = [{ id: null, serviceName: "All services" }, ...servicesList];
+  const t = useT();
+  const filters = [{ id: null, serviceName: t.results.allServices }, ...servicesList];
 
   return (
     <section
@@ -38,12 +40,12 @@ export default function AllMatchSection({
       className="min-w-0 rounded-lg border border-(--secondary) bg-white p-4 sm:p-6"
     >
       <h2 id="all-match-heading" className="libre-font text-lg">
-        All Vendors
+        {t.results.allVendors}
       </h2>
       <div
         className="my-5 flex flex-wrap gap-2"
         role="group"
-        aria-label="Filter matches by service"
+        aria-label={t.results.filterAria}
       >
         {filters.map((service) => (
           <MainButton
@@ -62,7 +64,7 @@ export default function AllMatchSection({
         // Placeholder cards shaped like vendor cards while the chosen filter's page loads.
         <div
           role="status"
-          aria-label="Loading vendors"
+          aria-label={t.results.loadingVendors}
           className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4"
         >
           {Array.from({ length: 4 }, (_, index) => (
@@ -124,7 +126,7 @@ export default function AllMatchSection({
                   serviceName={
                     servicesList.find(
                       (service) => service.id === match.vendor.serviceId,
-                    )?.serviceName ?? "Service"
+                    )?.serviceName ?? t.serviceFallback(match.vendor.serviceId)
                   }
                   topPick={topMatches.some(
                     (topMatch) => topMatch.vendor.id === match.vendor.id,
@@ -151,16 +153,13 @@ export default function AllMatchSection({
                     className="text-xl text-(--positive-tertiary)"
                   />
                   <p className="libre-font text-2xl text-(--positive-tertiary)">
-                    +{lockedCount} more
+                    {t.results.moreCount(lockedCount)}
                   </p>
                   <p className="text-sm font-normal text-foreground/70">
-                    {lockedCount === 1
-                      ? "Another vendor matches"
-                      : `${lockedCount} more vendors match`}{" "}
-                    your preferences. Plus shows them all, with full details.
+                    {t.results.moreText(lockedCount)}
                   </p>
                   <MainButton href={paymentRoute()} size="small">
-                    Get Plus
+                    {t.common.getPlus}
                   </MainButton>
                 </div>
               </motion.div>
@@ -169,8 +168,7 @@ export default function AllMatchSection({
         </motion.div>
       ) : (
         <p className="py-6 text-sm font-normal">
-          No other vendors match this selection. Your best matches are shown
-          above.
+          {t.results.noOtherMatches}
         </p>
       )}
     </section>

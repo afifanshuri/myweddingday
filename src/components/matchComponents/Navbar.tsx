@@ -7,6 +7,7 @@ import MainButton from "@/components/commonComponents/MainButton";
 import { useAccountAccess } from "@/components/commonComponents/AccountAccessProvider";
 import { useFreeSearchUsed } from "@/store/searchUsage";
 import { ROUTES, paymentRoute } from "@/config/routes";
+import { useT } from "@/i18n";
 
 const subscribe = () => () => {};
 
@@ -41,6 +42,7 @@ function Popover({ open, onClose, box, labelledBy, children }: { open: boolean; 
  */
 export function Navbar() {
   const { access, checking } = useAccountAccess();
+  const t = useT();
   const freeSearchUsed = useFreeSearchUsed(access, checking);
   const mounted = useSyncExternalStore(subscribe, () => true, () => false);
   const selections = usePreferenceStore((state) => state.selectedPackages);
@@ -57,34 +59,34 @@ export function Navbar() {
         {freeSearchUsed
           ? <MainButton variant="secondary" size="small" aria-haspopup="dialog" aria-expanded={open === "plus"} onClick={() => setOpen(open === "plus" ? null : "plus")}>
             <VscListFlat aria-hidden="true" />
-            <span>Edit preferences</span>
+            <span>{t.results.editPreferences}</span>
           </MainButton>
           : <MainButton variant="secondary" size="small" href={ROUTES.weddingPlan}>
             <VscListFlat aria-hidden="true" />
-            <span>Edit preferences</span>
+            <span>{t.results.editPreferences}</span>
           </MainButton>}
         <Popover open={open === "plus"} onClose={close} box={editBox} labelledBy="edit-preferences-prompt">
-          <p id="edit-preferences-prompt" className="font-semibold">You&apos;ve used your free search</p>
-          <p className="mt-1 leading-6 text-foreground/70">Get Plus to change your preferences and search again, with every match shown in full.</p>
+          <p id="edit-preferences-prompt" className="font-semibold">{t.results.usedFreeSearchTitle}</p>
+          <p className="mt-1 leading-6 text-foreground/70">{t.results.usedFreeSearchText}</p>
           <div className="mt-4 flex justify-end gap-2">
-            <MainButton variant="ghost" size="small" onClick={close}>Not now</MainButton>
-            <MainButton size="small" href={paymentRoute()}>Get Plus</MainButton>
+            <MainButton variant="ghost" size="small" onClick={close}>{t.common.notNow}</MainButton>
+            <MainButton size="small" href={paymentRoute()}>{t.common.getPlus}</MainButton>
           </div>
         </Popover>
       </div>
       {canReset && <div ref={resetBox} className="relative">
         <MainButton variant="secondary" size="small" aria-haspopup="dialog" aria-expanded={open === "reset"} onClick={() => setOpen(open === "reset" ? null : "reset")}>
           <VscDebugRestart aria-hidden="true" />
-          <span>Reset</span>
+          <span>{t.results.reset}</span>
         </MainButton>
         <Popover open={open === "reset"} onClose={close} box={resetBox} labelledBy="reset-prompt">
-          <p id="reset-prompt" className="font-semibold">Clear your budget?</p>
+          <p id="reset-prompt" className="font-semibold">{t.results.resetTitle}</p>
           <p className="mt-1 leading-6 text-foreground/70">
-            {selections.length === 1 ? "Remove your chosen package" : `Remove all ${selections.length} chosen packages`} from your budget. Your services and budgets stay as they are.
+            {t.results.resetText(selections.length)}
           </p>
           <div className="mt-4 flex justify-end gap-2">
-            <MainButton variant="ghost" size="small" onClick={close}>Cancel</MainButton>
-            <MainButton variant="danger" size="small" onClick={() => { clearSelectedPackages(); close(); }}>Remove all</MainButton>
+            <MainButton variant="ghost" size="small" onClick={close}>{t.common.cancel}</MainButton>
+            <MainButton variant="danger" size="small" onClick={() => { clearSelectedPackages(); close(); }}>{t.results.removeAll}</MainButton>
           </div>
         </Popover>
       </div>}

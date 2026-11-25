@@ -1,3 +1,6 @@
+"use client";
+import { useT } from "@/i18n";
+
 import { ServiceType } from "@/types/dataTypes";
 import { VendorMatchResult } from "@/types/dtoTypes";
 import VendorContainer from "./VendorContainer";
@@ -12,13 +15,14 @@ export default function TopMatchSection({
   servicesList: Pick<ServiceType, "id" | "serviceName">[];
   onSelect: (vendorId: number) => void;
 }) {
+  const t = useT();
   return (
     <section
       aria-labelledby="top-match-heading"
       className="min-w-0 rounded-lg border border-(--secondary) bg-white p-4 sm:p-6"
     >
       <h2 id="top-match-heading" className="libre-font text-lg">
-        Best Picks Based on Your Preferences
+        {t.results.bestPicks}
       </h2>
       {/* Padding keeps a chosen card's glow from being clipped by the scrolling row. */}
       <div className="-mx-2 mt-3 flex gap-4 overflow-x-auto px-2 pb-3 pt-2">
@@ -48,7 +52,7 @@ export default function TopMatchSection({
               ) : (
                 <div className="flex-1 rounded-lg border border-dashed border-(--tertiary) p-4">
                   <p className="text-sm font-normal">
-                    No matching vendors for this service.
+                    {t.results.noMatchForService}
                   </p>
                 </div>
               )}

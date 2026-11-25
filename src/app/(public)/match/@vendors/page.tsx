@@ -17,6 +17,7 @@ import { ROUTES, paymentRoute } from "@/config/routes";
 import { SEARCH } from "@/config/plans";
 import { useHistoryParam } from "@/hooks/useHistoryParam";
 import { useFreeSearchUsed } from "@/store/searchUsage";
+import { useT } from "@/i18n";
 
 // How long a loaded results page is shown without checking the server again.
 const PAGE_CACHE_FRESH_MS = 2 * 60 * 1000;
@@ -38,6 +39,7 @@ export default function VendorSection() {
   const seenRetry = useRef(0);
   const [busy, setBusy] = useState(true);
   const freeSearchUsed = useFreeSearchUsed(access, checking);
+  const t = useT();
   const selectedServices = usePreferenceStore((state) => state.weddingDetails.services);
   const selectedLocations = usePreferenceStore((state) => state.weddingDetails.locations);
   const preferences = usePreferenceStore((state) => state.preferencesList);
@@ -194,26 +196,26 @@ export default function VendorSection() {
             onBack={() => { setDetail(null); closeVendor(); }} /> : <MatchLoading />
         ) : busy && !data ? <MatchLoading /> : error ? (
         <div className="flex flex-col items-start gap-3">
-          <p role="alert">{error.message}</p>
+          <p role="alert">{t.results.errors[error.message] ?? error.message}</p>
           {error.upgrade || freeSearchUsed
-            ? <MainButton size="small" href={paymentRoute()}>{freeSearchUsed ? "Get Plus to search again" : "Get Plus"}</MainButton>
-            : <MainButton size="small" href={ROUTES.weddingPlan}>Plan again</MainButton>}
-          {!error.expired && !error.upgrade && <MainButton size="small" variant="secondary" onClick={() => { setError(null); setRetry((value) => value + 1); }}>Try again</MainButton>}
+            ? <MainButton size="small" href={paymentRoute()}>{freeSearchUsed ? t.results.getPlusToSearch : t.common.getPlus}</MainButton>
+            : <MainButton size="small" href={ROUTES.weddingPlan}>{t.results.planAgain}</MainButton>}
+          {!error.expired && !error.upgrade && <MainButton size="small" variant="secondary" onClick={() => { setError(null); setRetry((value) => value + 1); }}>{t.results.tryAgain}</MainButton>}
         </div>
-      ) : selectedServices.length === 0 ? <p>Select your services in the wedding plan to see vendor matches.</p>
+      ) : selectedServices.length === 0 ? <p>{t.results.noServices}</p>
         : data ? <>
           {!access.canViewVendorIdentity && <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-(--tertiary) bg-white p-4 text-sm">
-            <p>Your free search shows your top picks as previews, and one vendor per service in full: open it, shortlist it or add its package to your budget. Plus unlocks every match.</p>
-            <MainButton href={paymentRoute()} size="small">Get Plus</MainButton>
+            <p>{t.results.freeBanner}</p>
+            <MainButton href={paymentRoute()} size="small">{t.common.getPlus}</MainButton>
           </div>}
           <TopMatchSection matches={topMatches} servicesList={topServices} onSelect={selectVendor} />
           {(data.total > 0 || data.lockedCount > 0 || serviceFilter !== null) && <AllMatchSection matches={otherMatches} lockedCount={data.lockedCount} topMatches={topMatches} servicesList={servicesList} onSelect={selectVendor} activeServiceId={serviceFilter} loading={result.filter !== serviceFilter} onServiceChange={(id) => { setServiceFilter(id); setPage(1); }} />}
-          {data.pageCount > 1 && <nav aria-label="Vendor results pages" className="flex items-center justify-center gap-4">
-            <MainButton size="small" variant="secondary" disabled={busy || data.page <= 1} onClick={() => setPage(data.page - 1)}>Previous</MainButton>
-            <span aria-live="polite">Page {data.page} of {data.pageCount}</span>
-            <MainButton size="small" variant="secondary" disabled={busy || data.page >= data.pageCount} onClick={() => setPage(data.page + 1)}>Next</MainButton>
+          {data.pageCount > 1 && <nav aria-label={t.results.pagesAria} className="flex items-center justify-center gap-4">
+            <MainButton size="small" variant="secondary" disabled={busy || data.page <= 1} onClick={() => setPage(data.page - 1)}>{t.results.previous}</MainButton>
+            <span aria-live="polite">{t.results.pageOf(data.page, data.pageCount)}</span>
+            <MainButton size="small" variant="secondary" disabled={busy || data.page >= data.pageCount} onClick={() => setPage(data.page + 1)}>{t.results.next}</MainButton>
           </nav>}
-        </> : <p>Plan your wedding to find vendors.</p>}
+        </> : <p>{t.results.planToFind}</p>}
     </div>
   );
 }
