@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useSyncExternalStore, type ReactNode } from "react";
-import { useBudget } from "@/hooks/useBudget";
+import { FiAlertCircle, FiArrowRight, FiCalendar, FiCloudOff, FiEdit2, FiLock, FiSearch, FiX } from "react-icons/fi";
+import { BsBookmark } from "react-icons/bs";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useBudget } from "@/hooks/useBudget";
 import { useAccountAccess } from "./AccountAccessProvider";
 import { AnimatedMoney, BudgetBar, money } from "./BudgetMotion";
 import { serviceIcon } from "./serviceIcons";
@@ -22,34 +24,31 @@ const DAY = 24 * 60 * 60 * 1000;
 // The current minute, so time-based text updates without reading the clock during render (0 before hydration).
 const subscribeMinute = (notify: () => void) => { const timer = setInterval(notify, 30000); return () => clearInterval(timer); };
 const currentMinute = () => Math.floor(Date.now() / 60000) * 60000;
-
-const localDate = (value: string) => new Date(`${value}T00:00:00`);
 const startOfDay = (time: number) => { const date = new Date(time); date.setHours(0, 0, 0, 0); return date.getTime(); };
-const list = (items: string[]) => items.length <= 1 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`;
 
-function dateSentence(date: string | null, now: number) {
-  if (!date) return "Your wedding date isn't set yet.";
-  const day = localDate(date);
-  const written = day.toLocaleDateString("en-MY", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  if (!now) return `${written}.`;
-  const days = Math.round((day.getTime() - startOfDay(now)) / DAY);
-  if (days > 1) return `${written}, in ${days.toLocaleString("en-MY")} days.`;
-  if (days === 1) return `${written}, tomorrow.`;
-  if (days === 0) return `${written}, today.`;
-  return `${written}.`;
+function countdown(date: string, now: number) {
+  if (!now) return null;
+  const days = Math.round((new Date(`${date}T00:00:00`).getTime() - startOfDay(now)) / DAY);
+  return days > 1 ? `${days.toLocaleString("en-MY")} days` : days === 1 ? "Tomorrow" : days === 0 ? "Today" : null;
 }
 
-const cardLink = "inline-flex min-h-11 items-center justify-center rounded-full px-6 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--positive)";
+const button = "inline-flex min-h-10 items-center justify-center gap-2 rounded-full px-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--positive-tertiary)";
+const primary = `${button} bg-(--positive-tertiary) text-white hover:bg-(--positive-tertiary)/90`;
+const secondary = `${button} border border-(--tertiary) bg-white text-(--positive-tertiary) hover:bg-(--secondary)`;
+const disabled = `${button} cursor-not-allowed border border-(--tertiary) text-foreground/40`;
 
-/** The plum "invitation" that opens the dashboard: the couple, the date and where, framed like a printed card. */
-function WeddingCard({ children }: { children: ReactNode }) {
-  return <section aria-labelledby="wedding-names" className="rounded-[2rem] bg-(--positive-tertiary) p-2 text-(--secondary) sm:p-2.5">
-    <div className="rounded-[1.6rem] border border-(--positive)/35 px-6 py-10 sm:px-12 sm:py-14">{children}</div>
+function Card({ title, icon, children, aside }: { title: string; icon: ReactNode; children: ReactNode; aside?: ReactNode }) {
+  return <section aria-label={title} className="rounded-2xl border border-(--tertiary) bg-white p-5">
+    <div className="mb-4 flex items-center justify-between gap-3">
+      <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-foreground/55">{icon}{title}</h2>
+      {aside}
+    </div>
+    {children}
   </section>;
 }
 
-/** The signed-in user's saved plan: the wedding, their chosen vendors and the budget. */
-export default function DashboardPlan({ locations, services }: { locations: Named[]; services: Named[] }) {
+/** The signed-in user's saved plan: the wedding, the latest results, the budget and the chosen vendors. */
+export default function DashboardPlan({ services }: { services: Named[] }) {
   const { access, checking } = useAccountAccess();
   // Any signed-in account has a budget (free accounts for the vendors their free search unlocked); Plus sees every match.
   const unlocked = !checking && !!access.userId;
@@ -60,7 +59,7 @@ export default function DashboardPlan({ locations, services }: { locations: Name
   const search = usePreferenceStore((state) => state.manualSearch);
   const shortlist = usePreferenceStore((state) => state.shortlist);
   const hasPlan = usePreferenceStore((state) => planHasContent(state));
-  const { saving, failed } = usePlanStatus();
+  const { failed } = usePlanStatus();
   const now = useSyncExternalStore(subscribeMinute, currentMinute, () => 0);
   const reduceMotion = useReducedMotion();
 
@@ -68,115 +67,130 @@ export default function DashboardPlan({ locations, services }: { locations: Name
   const { selections, plannedSen, selectedSen, remainingSen, removedCount, dismissRemoved } = useBudget();
 
   if (!hasPlan) {
-    return <WeddingCard>
-      <h1 id="wedding-names" className="libre-font max-w-[16ch] text-4xl leading-[1.1] text-white text-balance sm:text-6xl">Your wedding starts here</h1>
-      <p className="mt-6 max-w-[52ch] text-base leading-7">Tell us the date, where and how many guests, then the services you need. We&apos;ll find vendors that fit, and keep your plan in your account.</p>
-      <Link href={ROUTES.weddingPlan} className={`${cardLink} mt-8 bg-(--positive) text-(--positive-tertiary) hover:bg-white`}>Start your plan</Link>
-    </WeddingCard>;
+    return <section className="rounded-2xl border border-(--tertiary) bg-white px-6 py-12 text-center">
+      <h1 className="libre-font text-2xl text-(--positive-tertiary)">Your wedding starts here</h1>
+      <p className="mx-auto mt-2 max-w-[40ch] text-sm text-foreground/60">Date, guests and services. We&apos;ll find vendors that fit.</p>
+      <Link href={ROUTES.weddingPlan} className={`${primary} mt-6`}>Start your plan <FiArrowRight aria-hidden="true" /></Link>
+    </section>;
   }
 
   const serviceName = (id: number) => services.find((service) => service.id === id)?.name ?? details.serviceNames[id] ?? `Service ${id}`;
-  const places = details.locations.flatMap((id) => locations.find((location) => location.id === id)?.name ?? []);
-  const where = [places.length ? `In ${list(places)}` : "", details.pax > 0 ? `${places.length ? "for" : "For"} ${details.pax.toLocaleString("en-MY")} guests` : ""]
-    .filter(Boolean).join(", ");
   const resultsUntil = search?.createdAt ? search.createdAt + SEARCH.lifetimeMs : null;
   const resultsReady = !!resultsUntil && now > 0 && resultsUntil > now;
   const chosen = selections.length;
-  const saveState = failed ? "Not saved yet. Retrying." : saving ? "Saving…" : "Saved to your account";
+  const daysLeft = details.date ? countdown(details.date, now) : null;
+  const savedUntil = (time: number) => new Date(time).toLocaleString("en-MY", { weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit" });
 
-  return <div className="space-y-10 sm:space-y-14">
-    <WeddingCard>
-      <p className="text-sm text-(--positive)">The wedding of</p>
-      <h1 id="wedding-names" className="libre-font mt-3 max-w-[18ch] text-4xl leading-[1.08] text-white text-balance sm:text-6xl">
-        {details.coupleName.trim() || "the two of you"}
-      </h1>
-      <p className="mt-6 text-lg leading-7">{dateSentence(details.date, now)}</p>
-      {where && <p className="mt-1 text-base leading-7 text-(--positive)">{where}.</p>}
-      <div className="mt-8 flex flex-wrap gap-3">
-        {resultsReady
-          ? <Link href={ROUTES.match} className={`${cardLink} bg-(--positive) text-(--positive-tertiary) hover:bg-white`}>View your matches</Link>
-          : freeSearchUsed
-            ? <Link href={paymentRoute(ROUTES.dashboard)} className={`${cardLink} bg-(--positive) text-(--positive-tertiary) hover:bg-white`}>Get Plus to search again</Link>
-            : <Link href={ROUTES.weddingPlan} className={`${cardLink} bg-(--positive) text-(--positive-tertiary) hover:bg-white`}>{search ? "Search again" : "Find vendors"}</Link>}
+  return <div className="space-y-5">
+    <header className="flex flex-wrap items-end justify-between gap-4 pb-2">
+      <div className="min-w-0">
+        <h1 className="libre-font truncate text-2xl text-(--positive-tertiary) sm:text-3xl">{details.coupleName.trim() || "Your wedding"}</h1>
+        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-foreground/60">
+          <FiCalendar aria-hidden="true" className="size-4" />
+          {details.date
+            ? <>{new Date(`${details.date}T00:00:00`).toLocaleDateString("en-MY", { day: "numeric", month: "long", year: "numeric" })}
+              {daysLeft && <span className="rounded-full bg-(--secondary) px-2 py-0.5 text-xs font-medium text-(--positive-tertiary)">{daysLeft}</span>}</>
+            : "Date not set"}
+        </p>
+      </div>
+      <div className="flex items-center gap-2">
+        {/* Saving happens quietly; only a failed save is worth showing. */}
+        <span role="status" className="text-xs text-red-700">
+          {failed && <span className="inline-flex items-center gap-1.5"><FiCloudOff aria-hidden="true" className="size-4" /> Not saved yet. Retrying.</span>}
+        </span>
         {freeSearchUsed
-          ? <span aria-disabled="true" title="Get Plus to change your plan and search again"
-            className={`${cardLink} cursor-not-allowed border border-(--positive)/30 text-white/50`}>Edit plan</span>
-          : <Link href={ROUTES.weddingPlan} className={`${cardLink} border border-(--positive)/60 text-white hover:bg-white/10`}>Edit plan</Link>}
+          ? <span aria-disabled="true" title="Get Plus to change your preferences" className={disabled}><FiLock aria-hidden="true" /> Edit Wedding Preferences</span>
+          : <Link href={ROUTES.weddingPlan} className={secondary}><FiEdit2 aria-hidden="true" /> Edit Wedding Preferences</Link>}
       </div>
-      <div className="mt-10 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-t border-(--positive)/30 pt-5 text-sm">
-        <p>{!search ? "You haven't searched for vendors yet."
-          : resultsReady ? `Your matches are ready until ${new Date(resultsUntil!).toLocaleString("en-MY", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}.`
-          : "Your last matches have expired. Your plan is kept, so you can search again."}</p>
-        <p role="status" className={`text-xs ${failed ? "text-white" : "text-(--positive)"}`}>{saveState}</p>
-      </div>
-    </WeddingCard>
+    </header>
 
-    <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-14">
-      <section aria-labelledby="dashboard-vendors">
-        <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-(--tertiary) pb-4">
-          <h2 id="dashboard-vendors" className="libre-font text-2xl text-(--positive-tertiary)">Your vendors</h2>
-          {details.services.length > 0 && <p className="text-sm text-foreground/60">{unlocked ? `${chosen} of ${details.services.length} chosen` : `${details.services.length} services`}</p>}
-        </div>
-        {removedCount > 0 && <p role="status" className="mt-4 rounded-xl border border-(--tertiary) px-4 py-3 text-sm leading-6">
-          {removedCount === 1 ? "A package you chose is" : `${removedCount} packages you chose are`} no longer available, so {removedCount === 1 ? "it was" : "they were"} removed from your budget.
-          <button type="button" className="ml-2 underline" onClick={dismissRemoved}>Dismiss</button>
-        </p>}
-        {!plus && details.services.length > 0 && <p className="mt-4 rounded-xl bg-(--secondary) px-4 py-3 text-sm leading-6">
-          Your free search shows one vendor per service in full, and you can choose their packages. Plus unlocks every match. <Link href={paymentRoute(ROUTES.dashboard)} className="font-medium text-(--positive-tertiary) underline underline-offset-4">Get Plus</Link>
-        </p>}
-        {details.services.length === 0
-          ? <p className="py-6 text-sm leading-6 text-foreground/65">You haven&apos;t chosen any services yet. <Link href={ROUTES.weddingPlan} className="font-medium text-(--positive-tertiary) underline underline-offset-4">Choose services</Link></p>
-          : <ul className="divide-y divide-(--secondary)">
-            {details.services.map((id) => {
-              const pkg = selections.find((item) => item.serviceId === id);
-              const listed = shortlist.filter((entry) => entry.serviceId === id).length;
-              const Icon = serviceIcon(id);
-              return <li key={id} className="grid grid-cols-[2.75rem_minmax(0,1fr)_auto] items-center gap-4 py-4">
-                <span aria-hidden="true" className={`grid size-11 place-items-center rounded-full ${pkg ? "bg-(--positive-tertiary) text-(--positive)" : "bg-(--secondary) text-(--positive-tertiary)"}`}>
-                  <Icon className="size-5" />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-(--positive-tertiary)">{serviceName(id)}</p>
-                  <AnimatePresence mode="popLayout" initial={false}>
-                    <motion.p key={pkg?.packageId ?? "none"} className={`truncate text-sm ${pkg ? "" : "text-foreground/50"}`}
-                      initial={reduceMotion ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                      exit={reduceMotion ? undefined : { opacity: 0, y: -6 }} transition={{ duration: 0.25 }}>
-                      {pkg ? `${pkg.vendorName}, ${pkg.packageName}` : listed ? <>Not chosen yet, <button type="button" onClick={openShortlistPanel}
-                        className="font-medium text-(--positive-tertiary) underline underline-offset-4">{listed} shortlisted</button></> : "Not chosen yet"}
-                    </motion.p>
-                  </AnimatePresence>
-                </div>
-                <p className="libre-font text-right text-base text-(--positive-tertiary)">
-                  {pkg ? (pkg.costSen === null ? <span className="font-sans text-xs text-foreground/60">Needs guest count</span> : money(pkg.costSen))
-                    : unlocked && resultsReady ? <Link href={ROUTES.match} className="font-sans text-sm font-medium underline underline-offset-4">Choose</Link> : null}
-                </p>
-              </li>;
-            })}
-          </ul>}
-      </section>
-
-      <aside aria-labelledby="dashboard-budget" className="lg:sticky lg:top-8 lg:self-start">
-        <h2 id="dashboard-budget" className="libre-font border-b border-(--tertiary) pb-4 text-2xl text-(--positive-tertiary)">Budget</h2>
-        {plannedSen === null
-          ? <p className="mt-4 text-sm leading-6 text-foreground/65">Set a budget for each service and your guest count to see totals.{!freeSearchUsed && <> <Link href={ROUTES.weddingPlan} className="font-medium text-(--positive-tertiary) underline underline-offset-4">Edit plan</Link></>}</p>
-          : unlocked && selectedSen !== null ? <div className="mt-5">
-            <p className="libre-font text-4xl text-(--positive-tertiary)"><AnimatedMoney sen={selectedSen} /></p>
-            <p className="mt-1 text-sm text-foreground/65">chosen so far, of {money(plannedSen)} planned</p>
-            <BudgetBar plannedSen={plannedSen} selectedSen={selectedSen} className="mt-5" />
-            {remainingSen !== null && <p className={`mt-3 text-sm font-medium ${remainingSen < 0 ? "text-red-700" : "text-(--positive-tertiary)"}`}>
-              <AnimatedMoney sen={Math.abs(remainingSen)} /> {remainingSen < 0 ? "over budget" : "left to spend"}
-            </p>}
-          </div> : <div className="mt-5">
-            <p className="libre-font text-4xl text-(--positive-tertiary)">{money(plannedSen)}</p>
-            <p className="mt-1 text-sm text-foreground/65">planned across {details.services.length} {details.services.length === 1 ? "service" : "services"}</p>
+    <div className="grid gap-5 sm:grid-cols-2">
+      <Card title="Results" icon={<FiSearch aria-hidden="true" className="size-3.5" />}>
+        {resultsReady
+          ? <div className="flex flex-col gap-4">
+            <div>
+              <p className="libre-font text-xl text-(--positive-tertiary)">Your matches are ready</p>
+              <p className="mt-1 text-sm leading-6 text-foreground/60">We&apos;ve saved your latest results. You can come back to them until {savedUntil(resultsUntil!)}.</p>
+            </div>
+            <Link href={ROUTES.match} className={`${primary} self-start`}>View matches <FiArrowRight aria-hidden="true" /></Link>
+          </div>
+          : <div className="flex flex-col gap-4">
+            <div>
+              <p className="libre-font text-xl text-(--positive-tertiary)">{search ? "Your results have expired" : "No search yet"}</p>
+              <p className="mt-1 text-sm leading-6 text-foreground/60">{search
+                ? freeSearchUsed ? "Get Plus to search again and see every match in full." : "Search again to see vendors that fit your plan today."
+                : "Tell us what you need and we'll find vendors that fit."}</p>
+            </div>
+            {freeSearchUsed
+              ? <Link href={paymentRoute(ROUTES.dashboard)} className={`${primary} self-start`}><FiLock aria-hidden="true" /> Get Plus</Link>
+              : <Link href={ROUTES.weddingPlan} className={`${primary} self-start`}>{search ? "Search again" : "Find vendors"} <FiArrowRight aria-hidden="true" /></Link>}
           </div>}
-        <div className="mt-8 border-t border-(--tertiary) pt-5 text-sm leading-6">
-          {access.role === "admin" ? <p>Admin account. Every vendor detail is visible.</p>
-            : access.isPaid ? <p>Plus pass{access.paidUntil ? ` until ${new Date(access.paidUntil).toLocaleDateString("en-MY", { day: "numeric", month: "long", year: "numeric" })}` : ""}.</p>
-            : <p>Free account. Plus shows every vendor&apos;s details and lets you choose packages for a year. <Link href={paymentRoute(ROUTES.dashboard)} className="font-medium text-(--positive-tertiary) underline underline-offset-4">Get Plus</Link></p>}
-          <p className="mt-3 text-xs text-foreground/50">Totals are estimates from the packages you chose, not bookings.</p>
-        </div>
-      </aside>
+        {!plus && details.services.length > 0 && <Link href={paymentRoute(ROUTES.dashboard)}
+          className="mt-4 flex items-center gap-2 border-t border-(--secondary) pt-3 text-xs text-foreground/60 hover:text-(--positive-tertiary)">
+          <FiLock aria-hidden="true" className="size-3.5" /> Free: 1 vendor per service. <span className="font-medium underline underline-offset-4">Unlock all</span>
+        </Link>}
+      </Card>
+
+      <Card title="Budget" icon={<span aria-hidden="true" className="text-[0.7rem] font-bold">RM</span>}>
+        {plannedSen === null
+          ? <p className="text-sm text-foreground/60">Add budgets and guests to see totals.</p>
+          : unlocked && selectedSen !== null ? <>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+              <p className="libre-font text-2xl text-(--positive-tertiary)"><AnimatedMoney sen={selectedSen} /></p>
+              <p className="text-xs text-foreground/55">of {money(plannedSen)}</p>
+            </div>
+            <BudgetBar plannedSen={plannedSen} selectedSen={selectedSen} className="mt-3" />
+            {remainingSen !== null && <p className={`mt-2 text-xs font-medium ${remainingSen < 0 ? "text-red-700" : "text-foreground/60"}`}>
+              <AnimatedMoney sen={Math.abs(remainingSen)} /> {remainingSen < 0 ? "over" : "left"}
+            </p>}
+          </> : <p className="libre-font text-2xl text-(--positive-tertiary)">{money(plannedSen)}</p>}
+      </Card>
     </div>
+
+    <Card title="Vendors" icon={<BsBookmark aria-hidden="true" className="size-3.5" />}
+      aside={details.services.length > 0 && <span className="text-xs font-medium text-foreground/55">{chosen}/{details.services.length}</span>}>
+      {removedCount > 0 && <p role="status" className="mb-3 flex items-center gap-2 rounded-xl bg-(--secondary) px-3 py-2 text-xs">
+        <FiAlertCircle aria-hidden="true" className="size-4 shrink-0" />
+        <span className="flex-1">{removedCount === 1 ? "1 package" : `${removedCount} packages`} no longer available, removed.</span>
+        <button type="button" aria-label="Dismiss" onClick={dismissRemoved} className="grid size-7 place-items-center rounded-full hover:bg-white"><FiX aria-hidden="true" /></button>
+      </p>}
+      {details.services.length === 0
+        ? <Link href={ROUTES.weddingPlan} className="text-sm font-medium text-(--positive-tertiary) underline underline-offset-4">Choose services</Link>
+        : <ul className="-mx-2">
+          {details.services.map((id) => {
+            const pkg = selections.find((item) => item.serviceId === id);
+            const listed = shortlist.filter((entry) => entry.serviceId === id).length;
+            const Icon = serviceIcon(id);
+            const row = <>
+              <span aria-hidden="true" className={`grid size-9 shrink-0 place-items-center rounded-full ${pkg ? "bg-(--positive-tertiary) text-(--positive)" : "bg-(--secondary) text-foreground/40"}`}>
+                <Icon className="size-4" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className={`block text-sm font-medium ${pkg ? "text-(--positive-tertiary)" : "text-foreground/50"}`}>{serviceName(id)}</span>
+                <AnimatePresence mode="popLayout" initial={false}>
+                  <motion.span key={pkg?.packageId ?? "none"} className="block truncate text-xs text-foreground/55"
+                    initial={reduceMotion ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+                    exit={reduceMotion ? undefined : { opacity: 0, y: -4 }} transition={{ duration: 0.2 }}>
+                    {pkg ? `${pkg.vendorName} · ${pkg.packageName}` : "—"}
+                  </motion.span>
+                </AnimatePresence>
+              </span>
+            </>;
+            return <li key={id} className="flex items-center gap-3 rounded-xl px-2 py-2.5">
+              {pkg && resultsReady
+                ? <Link href={`${ROUTES.match}?vendor=${pkg.vendorId}`} className="flex min-w-0 flex-1 items-center gap-3 hover:opacity-80">{row}</Link>
+                : <span className="flex min-w-0 flex-1 items-center gap-3">{row}</span>}
+              <span className="shrink-0 text-right text-sm">
+                {pkg ? (pkg.costSen === null ? <span className="text-xs text-foreground/50" title="Add a guest count to price this package">—</span>
+                  : <span className="font-medium text-(--positive-tertiary)">{money(pkg.costSen)}</span>)
+                  : listed ? <button type="button" onClick={openShortlistPanel} title="Open shortlist"
+                    className="inline-flex items-center gap-1 rounded-full bg-(--secondary) px-2.5 py-1 text-xs font-medium text-(--positive-tertiary) hover:bg-(--tertiary)">
+                    <BsBookmark aria-hidden="true" className="size-3" />{listed}<span className="sr-only"> shortlisted</span></button>
+                    : unlocked && resultsReady ? <Link href={ROUTES.match} className="text-xs font-medium text-(--positive-tertiary) underline underline-offset-4">Choose</Link> : null}
+              </span>
+            </li>;
+          })}
+        </ul>}
+    </Card>
   </div>;
 }

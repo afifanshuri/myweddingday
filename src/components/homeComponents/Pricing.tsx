@@ -21,7 +21,6 @@ const pricingPlans = [
     description: `One payment for ${PLANS.plus.durationYears} year of wedding planning. No automatic renewal.`,
     featured: true,
     benefits: [
-      "Unlimited searches",
       "Edit your preferences and search again anytime",
       "Every match, up to 10 per service, with full details",
       `${PLANS.plus.aiSearchesPerWeek} AI-powered searches per week (coming soon)`,

@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Image from "next/image";
 import { FiGrid, FiSettings } from "react-icons/fi";
 import { BsBookmark } from "react-icons/bs";
 import { useAccountAccess } from "./AccountAccessProvider";
@@ -21,7 +22,10 @@ export default function AccountNavigation({ children, tone = "default" }: { chil
   const customer = access.role !== "admin";
 
   return <><nav aria-label="Account navigation" className={`flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-(--positive-tertiary) ${tone === "header" ? "bg-(--positive)" : "border-b border-(--tertiary) bg-(--background)"}`}>
-    <div><span className="libre-font text-lg">myweddingday.</span><SearchAllowance key={access.userId} /></div>
+    <div className="flex items-center gap-2">
+      <Image src="/brand/my-wedding-day-mark-knot.png" alt="" width={40} height={40} priority className="size-10 shrink-0" />
+      <div><span className="libre-font text-lg">myweddingday.</span><SearchAllowance key={access.userId} /></div>
+    </div>
     <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
       {children}
       {customer && <MainButton href={ROUTES.dashboard} variant="ghost" size="small">

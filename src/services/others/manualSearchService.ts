@@ -177,6 +177,13 @@ export async function runManualSearch(access: AccountAccess, searchId: string, p
     if (limit !== null) {
       const [used] = await tx.select({ userId: freeSearches.userId }).from(freeSearches).where(eq(freeSearches.userId, userId));
       if (used) throw new RequestError(FREE_SEARCH_USED, 403);
+    } else if (access.role !== "admin") {
+      // Plus fair use: counted from the saved searches, which last at least a day (SEARCH.lifetimeMs).
+      const [{ recent }] = await tx.select({ recent: sql<number>`count(*)::integer` }).from(manualSearchSnapshots)
+        .where(and(eq(manualSearchSnapshots.userId, userId), sql`${manualSearchSnapshots.createdAt} > now() - interval '24 hours'`));
+      if (recent >= PLANS.plus.searchesPerDay) {
+        throw new RequestError(`You've reached the limit of ${PLANS.plus.searchesPerDay} searches in 24 hours. Please try again later.`, 429, 3600);
+      }
     }
     const matches = capped(compactMatches(await findVendorsByPreferences(preferences, tx, false)));
     const createdAt = new Date();

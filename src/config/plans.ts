@@ -12,6 +12,8 @@ export const PLANS = {
     priceMYR: 20,
     durationYears: 1,
     aiSearchesPerWeek: 5,
+    // Fair use: searches in any 24 hours, so one account can't copy the whole catalogue. Admins are exempt.
+    searchesPerDay: 30,
   },
   aiSearchEnabled: false,
   timeZone: "Asia/Kuala_Lumpur",

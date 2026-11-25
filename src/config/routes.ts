@@ -17,7 +17,6 @@ export const PAGE_ACCESS: Record<string, AccessRequirement> = {
   [ROUTES.forgotPassword]: "guestOnly", [ROUTES.resetPassword]: "signedIn",
 };
 export const serviceCriteriaRoute = (id: number) => `${ROUTES.weddingPlan}/${id}`;
-export const vendorMatchRoute = (id: number) => `${ROUTES.match}/${id}`;
 export const adminVendorRoute = (id: number) => `/admin/vendors/${id}`;
 // firstTimeLogin is a navigation preference, never an authorization decision.
 export const getDefaultRoute = (access: AccountAccess, firstTimeLogin: unknown = false) =>
@@ -27,7 +26,6 @@ export const getDefaultRoute = (access: AccountAccess, firstTimeLogin: unknown =
 export function getRouteRequirement(pathname: string): AccessRequirement | null {
   if (Object.hasOwn(PAGE_ACCESS, pathname)) return PAGE_ACCESS[pathname];
   if (/^\/weddingplan\/[1-6]$/.test(pathname)) return "signedIn";
-  if (/^\/match\/[1-9]\d*$/.test(pathname)) return "paid";
   if (/^\/admin\/vendors\/[1-9]\d*$/.test(pathname)) return "admin";
   return null;
 }

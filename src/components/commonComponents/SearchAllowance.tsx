@@ -40,7 +40,8 @@ export default function SearchAllowance() {
   }, [access.userId, checking, revision]);
 
   if (checking || !access.userId) return null;
-  if (access.role === "admin" || access.isPaid) return <p className="text-xs text-foreground/60">Unlimited searches</p>;
+  if (access.role === "admin") return <p className="text-xs text-foreground/60">Unlimited searches</p>;
+  if (access.isPaid) return <p className="text-xs text-foreground/60">Plus Plan</p>;
   return <p role="status" className="text-xs text-foreground/60">
     {error ? "Search allowance unavailable. It will be checked when you search."
       : !usage ? "Checking search allowance…"

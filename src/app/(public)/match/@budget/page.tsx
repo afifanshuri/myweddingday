@@ -8,7 +8,6 @@ import { usePreferenceStore } from "@/store/preferenceStore";
 import { SERVICE_ID } from "@/config/serviceCriteria";
 import { useSelectedServices } from "@/hooks/useSelectedServices";
 import { BsTrash } from "react-icons/bs";
-import { VscDebugRestart } from "react-icons/vsc";
 import { FiArrowUpRight, FiChevronDown } from "react-icons/fi";
 import { openVendorPage } from "@/store/vendorView";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -32,39 +31,13 @@ export default function BudgetSection() {
   // Loading, totals and the "no longer available" count are shared with the dashboard (useBudget).
   const { signedIn: unlocked, selections, plannedSen, selectedSen, remainingSen, removedCount, dismissRemoved } = useBudget();
   const removePackage = usePreferenceStore((state) => state.removeSelectedPackage);
-  const clearSelectedPackages = usePreferenceStore((state) => state.clearSelectedPackages);
-  const [confirmingReset, setConfirmingReset] = useState(false);
   const services = useSelectedServices();
   const reduceMotion = useReducedMotion();
 
   return (
     <aside aria-labelledby="budget-heading" className="p-4 sm:p-8 xl:pl-0">
       <div className="rounded-xl border border-(--tertiary) bg-white p-5">
-        <div className="flex items-start justify-between gap-2">
-          <h2 id="budget-heading" className="libre-font text-xl text-(--positive-tertiary)">Your wedding budget</h2>
-          {mounted && unlocked && selections.length > 0 && !confirmingReset && (
-            <MainButton variant="ghost" size="small" className="shrink-0 text-xs" onClick={() => setConfirmingReset(true)}>
-              <VscDebugRestart aria-hidden="true" />
-              Reset
-            </MainButton>
-          )}
-        </div>
-        {/* Clears every chosen package after a confirmation; the plan itself (services, budgets, criteria) is kept. */}
-        <AnimatePresence initial={false}>
-          {confirmingReset && selections.length > 0 && (
-            <motion.div key="reset" role="alert" className="overflow-hidden"
-              initial={reduceMotion ? false : { height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
-              exit={reduceMotion ? undefined : { height: 0, opacity: 0 }} transition={{ duration: 0.2 }}>
-              <div className="mt-3 rounded-lg border border-(--tertiary) bg-(--background) p-3 text-xs leading-5">
-                <p>Remove all {selections.length} chosen {selections.length === 1 ? "package" : "packages"} from your budget? Your services and budgets stay as they are.</p>
-                <div className="mt-3 flex justify-end gap-2">
-                  <MainButton variant="ghost" size="small" onClick={() => setConfirmingReset(false)}>Cancel</MainButton>
-                  <MainButton variant="danger" size="small" onClick={() => { clearSelectedPackages(); setConfirmingReset(false); }}>Remove all</MainButton>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <h2 id="budget-heading" className="libre-font text-xl text-(--positive-tertiary)">Your wedding budget</h2>
         {!mounted ? <LoadingScreen label="Loading your saved selections…" backdrop={false} /> : (
           <>
             <p className="mt-2 text-xs text-foreground/60">{unlocked ? `${selections.length} of ${details.services.length} services selected` : "Sign in to build your budget."}</p>
