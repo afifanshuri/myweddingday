@@ -22,7 +22,7 @@ const pricingPlans = [
     featured: true,
     benefits: [
       "Edit your preferences and search again anytime",
-      "Every match, up to 10 per service, with full details",
+      "Every matching vendor, with full details",
       `${PLANS.plus.aiSearchesPerWeek} AI-powered searches per week (coming soon)`,
       "AI-assisted matches tailored to your budget and preferences (coming soon)",
       "Unlock vendor names, contacts and package details",

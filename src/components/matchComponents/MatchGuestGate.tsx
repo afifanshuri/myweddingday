@@ -12,7 +12,7 @@ const POINTS = [
   { icon: BsSearchHeart, title: "Vendors that fit your budget", text: "Tell us your services, budget and must-haves. Your first search is free, with one vendor per service in full." },
   { icon: BsCloudCheck, title: "Your plan, saved", text: "Pick up where you left off, on any device." },
   { icon: BsBookmark, title: "A shortlist", text: `Keep up to ${WEDDING_PLAN.maxShortlist} vendors in view while you decide.` },
-  { icon: BsUnlock, title: `Plus, RM${PLANS.plus.priceMYR} for a year`, text: "Search again whenever your plans change, and see every match, up to 10 per service, with names, contacts and packages." },
+  { icon: BsUnlock, title: `Plus, RM${PLANS.plus.priceMYR} for a year`, text: "Search again whenever your plans change, and see every matching vendor, with names, contacts and packages." },
 ];
 const cardLink = "inline-flex min-h-11 items-center justify-center rounded-full px-6 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--positive)";
 

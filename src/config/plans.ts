@@ -22,8 +22,9 @@ export const PLANS = {
 export const SEARCH = {
   lifetimeMs: 24 * 60 * 60 * 1000,
   pageSize: 10,
-  // Vendors kept per service in each search: its best matches (see capMatches).
-  maxPerService: 10,
+  // A search keeps every matching vendor, paged 10 at a time. This is only a safety ceiling per service (see
+  // capMatches) so one very broad search stays fast; copying is limited by the daily and per-minute search limits.
+  maxPerService: 100,
   // Per-account limits. Action names are stored in search_request_limits.action (max 16 chars).
   requestsPerMinute: {
     create: 10,
