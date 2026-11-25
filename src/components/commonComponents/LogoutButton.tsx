@@ -6,15 +6,17 @@ import { APIDeleteAuthSession } from "@/services/api/auth";
 import { FiLogOut } from "react-icons/fi";
 import { ROUTES } from "@/config/routes";
 import { clearLocalPlan, flushPlan } from "@/store/planSync";
+import { useT } from "@/i18n";
 
 export default function LogoutButton() {
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(false);
+  const t = useT();
 
   async function logout() {
     if (busy) return;
     setBusy(true);
-    setError("");
+    setError(false);
     try {
       // Save any unsaved plan changes first; the account keeps the plan, so this browser's copy is then removed.
       await flushPlan().catch(() => undefined);
@@ -24,16 +26,16 @@ export default function LogoutButton() {
       // A full navigation also discards cached admin views.
       window.location.replace(ROUTES.home);
     } catch {
-      setError("Unable to log out. Please try again.");
+      setError(true);
       setBusy(false);
     }
   }
 
   return <div className="relative ml-auto shrink-0">
     <MainButton variant="ghost" size="icon" disabled={busy} onClick={logout}
-      aria-label={busy ? "Logging out" : "Log out"} title="Log out" aria-busy={busy}>
+      aria-label={busy ? t.nav.loggingOut : t.nav.logOut} title={t.nav.logOut} aria-busy={busy}>
       <FiLogOut aria-hidden="true" className="size-5" />
     </MainButton>
-    {error && <p role="alert" className="absolute right-0 top-full z-10 mt-2 w-56 rounded-lg border border-(--tertiary) bg-white p-3 text-xs text-red-700">{error}</p>}
+    {error && <p role="alert" className="absolute right-0 top-full z-10 mt-2 w-56 rounded-lg border border-(--tertiary) bg-white p-3 text-xs text-red-700">{t.nav.logOutFailed}</p>}
   </div>;
 }

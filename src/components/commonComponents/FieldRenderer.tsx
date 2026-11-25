@@ -6,6 +6,7 @@ import CustomInput from "@/components/commonComponents/CustomInput";
 import { BsCheckCircle } from "react-icons/bs";
 import { useId, type ReactNode } from "react";
 import "@/css/field-renderer.css";
+import { criteriaLabel, optionLabel, useT } from "@/i18n";
 
 interface FieldRendererProps {
   field: CriteriaField;
@@ -26,13 +27,15 @@ export default function FieldRenderer({
   onRequiredChange,
 }: FieldRendererProps) {
   const inputId = useId();
+  const t = useT();
+  const label = criteriaLabel(t, field);
   const showRequired = Boolean(onRequiredChange && hasCriteriaValue(value));
   const renderField = (control: ReactNode) => (
     <div className="flex flex-col gap-2">
       {field.type === "multi-select" ? (
-        <p id={`${inputId}-label`} className="font-medium">{field.label}</p>
+        <p id={`${inputId}-label`} className="font-medium">{label}</p>
       ) : (
-        <label htmlFor={inputId} className="font-medium">{field.label}</label>
+        <label htmlFor={inputId} className="font-medium">{label}</label>
       )}
       <div
         className="criteria-field-row"
@@ -46,11 +49,11 @@ export default function FieldRenderer({
                 type="checkbox"
                 checked={required}
                 disabled={!showRequired}
-                aria-label={`${field.label}: Must have`}
+                aria-label={t.planner.mustHaveAria(label)}
                 onChange={(e) => onRequiredChange(field.key, e.target.checked)}
                 className="h-4 w-4 shrink-0 accent-(--positive-tertiary)"
               />
-              Must have
+              {t.planner.mustHave}
             </label>
           </div>
         )}
@@ -95,7 +98,7 @@ export default function FieldRenderer({
         return renderField(
           <select
             id={inputId}
-            aria-label={field.label}
+            aria-label={label}
             value={typeof value === "boolean" ? String(value) : ""}
             className="border border-(--secondary) rounded-lg w-full p-2"
             onChange={(e) =>
@@ -105,9 +108,9 @@ export default function FieldRenderer({
               )
             }
           >
-            <option value="">No preference</option>
-            <option value="true">Yes</option>
-            <option value="false">No</option>
+            <option value="">{t.planner.noPreference}</option>
+            <option value="true">{t.common.yes}</option>
+            <option value="false">{t.common.no}</option>
           </select>
         );
       }
@@ -122,7 +125,7 @@ export default function FieldRenderer({
           <span aria-hidden="true" className="flex size-4 shrink-0 items-center justify-center rounded border border-(--positive-secondary)">
             {value === true && <BsCheckCircle className="size-3" />}
           </span>
-          <p>{field.label}</p>
+          <p>{label}</p>
         </MainButton>
       );
 
@@ -134,10 +137,10 @@ export default function FieldRenderer({
           className="border border-(--secondary) rounded-lg w-full p-2"
           onChange={(e) => onChange(field.key, e.target.value)}
         >
-          <option value="">-- Pilih --</option>
+          <option value="">{t.planner.choose}</option>
           {field.options?.map((opt) => (
             <option key={opt} value={opt}>
-              {opt}
+              {optionLabel(t, opt)}
             </option>
           ))}
         </select>
@@ -168,7 +171,7 @@ export default function FieldRenderer({
                 aria-hidden="true"
                 className={`transition ${selected.includes(opt) ? "flex" : "hidden"}`}
               />
-              {opt}
+              {optionLabel(t, opt)}
             </MainButton>
           ))}
         </div>

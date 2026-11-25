@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/i18n";
+
 export type SearchMode = "manual" | "ai";
 
 export default function SearchModeSelector({
@@ -9,16 +11,17 @@ export default function SearchModeSelector({
   value: SearchMode;
   onChange: (mode: SearchMode) => void;
 }) {
+  const t = useT();
   return (
     <fieldset>
-      <legend className="libre-font text-2xl">How would you like to search?</legend>
+      <legend className="libre-font text-2xl">{t.planner.mode.legend}</legend>
       <p className="mt-2 text-sm font-normal text-foreground/60">
-        Your wedding details stay with you when you switch modes.
+        {t.planner.mode.hint}
       </p>
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
         {([
-          { mode: "manual", title: "Manual search", description: "Choose your preferences step by step." },
-          { mode: "ai", title: "AI search", description: "Describe your wedding in your own words." },
+          { mode: "manual", title: t.planner.mode.manual, description: t.planner.mode.manualHint },
+          { mode: "ai", title: t.planner.mode.ai, description: t.planner.mode.aiHint },
         ] as const).map(({ mode, title, description }) => (
           <label key={mode} className="cursor-pointer">
             <input
@@ -34,7 +37,7 @@ export default function SearchModeSelector({
                 <span className="font-semibold">{title}</span>
                 {mode === "ai" && (
                   <span className="rounded-full bg-(--positive)/30 px-2 py-1 text-xs text-(--positive-tertiary)">
-                    Try AI
+                    {t.planner.mode.tryAi}
                   </span>
                 )}
               </span>

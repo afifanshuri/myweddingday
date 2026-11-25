@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePreferenceStore } from "@/store/preferenceStore";
 import { useServiceStore } from "@/store/serviceStore";
+import { serviceName, useT } from "@/i18n";
 
 export function useSelectedServices() {
   const ids = usePreferenceStore((state) => state.weddingDetails.services);
@@ -11,6 +12,7 @@ export function useSelectedServices() {
   const catalogue = useServiceStore((state) => state.service);
   const isLoaded = useServiceStore((state) => state.isLoaded);
   const initServices = useServiceStore((state) => state.initServices);
+  const t = useT();
 
   useEffect(() => {
     if (catalogue.length) syncNames(catalogue);
@@ -23,6 +25,7 @@ export function useSelectedServices() {
 
   return ids.map((id) => ({
     id,
-    serviceName: catalogue.find((service) => service.id === id)?.serviceName ?? names[id] ?? `Service ${id}`,
+    // In the chosen language (database names are English).
+    serviceName: serviceName(t, id, catalogue.find((service) => service.id === id)?.serviceName ?? names[id]),
   }));
 }

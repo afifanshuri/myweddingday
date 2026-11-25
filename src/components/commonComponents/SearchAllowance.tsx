@@ -8,11 +8,13 @@ import { PLANS } from "@/config/plans";
 import { paymentRoute } from "@/config/routes";
 import { useSearchUsage } from "@/store/searchUsage";
 import type { SearchUsage } from "@/types/search";
+import { useT } from "@/i18n";
 
 export default function SearchAllowance() {
   const { access, checking, revision } = useAccountAccess();
   const [usage, setUsage] = useState<SearchUsage | null>(null);
   const [error, setError] = useState(false);
+  const t = useT();
   useEffect(() => {
     if (checking || !access.userId) return;
     const controller = new AbortController();
@@ -40,12 +42,12 @@ export default function SearchAllowance() {
   }, [access.userId, checking, revision]);
 
   if (checking || !access.userId) return null;
-  if (access.role === "admin") return <p className="text-xs text-foreground/60">Unlimited searches</p>;
-  if (access.isPaid) return <p className="text-xs text-foreground/60">Plus Plan</p>;
+  if (access.role === "admin") return <p className="text-xs text-foreground/60">{t.allowance.unlimited}</p>;
+  if (access.isPaid) return <p className="text-xs text-foreground/60">{t.allowance.plusPlan}</p>;
   return <p role="status" className="text-xs text-foreground/60">
-    {error ? "Search allowance unavailable. It will be checked when you search."
-      : !usage ? "Checking search allowance…"
-        : usage.remaining ? `${PLANS.free.manualSearches} free search available`
-          : <>Free search used · <Link href={paymentRoute()} className="font-medium text-(--positive-tertiary) underline underline-offset-2">Get Plus</Link> to search again</>}
+    {error ? t.allowance.unavailable
+      : !usage ? t.allowance.checking
+        : usage.remaining ? t.allowance.freeAvailable(PLANS.free.manualSearches)
+          : <>{t.allowance.freeUsed} · <Link href={paymentRoute()} className="font-medium text-(--positive-tertiary) underline underline-offset-2">{t.common.getPlus}</Link> {t.allowance.toSearchAgain}</>}
   </p>;
 }

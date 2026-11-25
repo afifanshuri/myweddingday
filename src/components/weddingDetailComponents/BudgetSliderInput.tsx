@@ -5,6 +5,7 @@ import CustomInput from "@/components/commonComponents/CustomInput";
 import { SERVICE_ID } from "@/config/serviceCriteria";
 import type { ServiceType } from "@/types/dataTypes";
 import "@/css/budget-input.css";
+import { serviceName, useT } from "@/i18n";
 
 export default function BudgetSliderInput({
   service,
@@ -20,6 +21,8 @@ export default function BudgetSliderInput({
   onChange: (budget: number) => void;
 }) {
   const isCatering = service.id === SERVICE_ID.CATERING;
+  const t = useT();
+  const name = serviceName(t, service.id, service.serviceName);
   const [sliderMax, setSliderMax] = useState(() =>
     Math.max(isCatering ? 200 : 20000, Number.isFinite(budget) ? budget : 0),
   );
@@ -27,7 +30,7 @@ export default function BudgetSliderInput({
   const sliderValue = Number.isFinite(budget) ? Math.max(1, budget) : 1;
   const progress = ((sliderValue - 1) / (max - 1)) * 100;
   const formattedBudget = budget
-    ? budget.toLocaleString("en-MY", { maximumFractionDigits: 20 })
+    ? budget.toLocaleString(t.intl, { maximumFractionDigits: 20 })
     : "—";
 
   function changeBudget(value: number) {
@@ -44,10 +47,10 @@ export default function BudgetSliderInput({
             htmlFor={`ai-budget-${service.id}`}
             className="budget-input-label"
           >
-            {service.serviceName}
+            {name}
           </label>
           <p className="budget-input-subtitle">
-            {isCatering ? "Budget per guest" : "Total budget"}
+            {isCatering ? t.planner.budget.perGuest : t.planner.budget.total}
           </p>
         </div>
         <div
@@ -82,8 +85,8 @@ export default function BudgetSliderInput({
         max={max}
         step="any"
         value={sliderValue}
-        aria-label={`${service.serviceName} budget slider`}
-        aria-valuetext={`RM${budget || 1}${isCatering ? " per guest" : ""}`}
+        aria-label={t.planner.budget.sliderAria(name)}
+        aria-valuetext={`RM${budget || 1}${isCatering ? t.planner.budget.perGuestSuffix : ""}`}
         className="budget-input-slider"
         style={{ "--budget-progress": `${progress}%` } as CSSProperties}
         onChange={(event) =>
@@ -92,7 +95,7 @@ export default function BudgetSliderInput({
       />
       <div aria-hidden="true" className="budget-input-range-labels">
         <span>RM1</span>
-        <span>RM{max.toLocaleString("en-MY")}</span>
+        <span>RM{max.toLocaleString(t.intl)}</span>
       </div>
     </div>
   );

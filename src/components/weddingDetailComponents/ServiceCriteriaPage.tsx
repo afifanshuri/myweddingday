@@ -9,6 +9,7 @@ import AIBudgetInput from "@/components/weddingDetailComponents/BudgetSliderInpu
 import ServiceTitleSection from "@/components/weddingDetailComponents/ServiceTitleSection";
 import DirectionButtons from "@/components/weddingDetailComponents/DirectionButtons";
 import FieldRenderer from "@/components/commonComponents/FieldRenderer";
+import { useT } from "@/i18n";
 import { useSelectedServices } from "@/hooks/useSelectedServices";
 import {
   clearHiddenCriteria,
@@ -24,9 +25,10 @@ export default function ServicePage({ serviceId: currentServiceId }: { serviceId
   );
 
   const preferencesList = usePreferenceStore((state) => state.preferencesList);
+  const t = useT();
   const services = useSelectedServices();
   const currentService = services.find((service) => service.id === currentServiceId)
-    ?? { id: currentServiceId, serviceName: `Service ${currentServiceId}` };
+    ?? { id: currentServiceId, serviceName: t.serviceFallback(currentServiceId) };
   const requiredFields =
     preferencesList.find((p) => p.serviceId === currentServiceId)
       ?.requiredFields ?? [];
@@ -47,12 +49,12 @@ export default function ServicePage({ serviceId: currentServiceId }: { serviceId
   const criteriaGroups = [
     {
       id: "basic",
-      title: "Basic Criteria",
+      title: t.planner.basicCriteria,
       fields: visibleFields.filter((field) => field.group === "basic"),
     },
     {
       id: "optional",
-      title: "Optional Criteria",
+      title: t.planner.optionalCriteria,
       fields: visibleFields.filter((field) => field.group !== "basic"),
     },
   ];
@@ -91,8 +93,7 @@ export default function ServicePage({ serviceId: currentServiceId }: { serviceId
 
       <div className="flex flex-col gap-6">
         <p className="text-sm">
-          Leave fields blank if you have no preference. Select a value, then
-          tick “Must have” if every result must match it.
+          {t.planner.criteriaHint}
         </p>
         {criteriaGroups
           .filter((group) => group.fields.length > 0)
@@ -139,17 +140,17 @@ export default function ServicePage({ serviceId: currentServiceId }: { serviceId
         {/* Clears this service's budget, criteria and must-haves only, after a confirmation. */}
         <div className="border-t border-(--tertiary) pt-6">
           {confirmingReset ? <div className="flex flex-wrap items-center justify-end gap-3 text-sm">
-            <p role="alert" className="mr-auto">Clear all {currentService.serviceName} preferences? Your budget, criteria and must-haves for this service will be removed.</p>
-            <MainButton variant="secondary" size="small" onClick={() => setConfirmingReset(false)}>Cancel</MainButton>
+            <p role="alert" className="mr-auto">{t.planner.resetConfirm(currentService.serviceName)}</p>
+            <MainButton variant="secondary" size="small" onClick={() => setConfirmingReset(false)}>{t.common.cancel}</MainButton>
             <MainButton variant="danger-solid" size="small" onClick={() => {
               updatePreferenceDetails(currentServiceId, { budget: 0, description: "", criteria: {}, requiredFields: [] });
               setConfirmingReset(false);
               setResets((count) => count + 1);
-            }}>Clear {currentService.serviceName}</MainButton>
+            }}>{t.planner.clearService(currentService.serviceName)}</MainButton>
           </div> : <DirectionButtons>
             <MainButton variant="danger-solid" onClick={() => setConfirmingReset(true)}>
               <VscDebugRestart aria-hidden="true" />
-              Reset this service
+              {t.planner.resetService}
             </MainButton>
           </DirectionButtons>}
         </div>

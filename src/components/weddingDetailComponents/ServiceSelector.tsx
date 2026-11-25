@@ -6,6 +6,7 @@ import { ServiceType } from "@/types/dataTypes";
 import { BsCheck } from "react-icons/bs";
 import { SERVICE_ID } from "@/config/serviceCriteria";
 import { useId } from "react";
+import { serviceName, useT } from "@/i18n";
 import {
   GiAmpleDress,
   GiFamilyHouse,
@@ -27,6 +28,7 @@ export const ServiceSelector = ({
   onFieldChange: () => void;
 }) => {
   const descriptionId = useId();
+  const t = useT();
   const errorId = useId();
   const existingServicesFromStore = usePreferenceStore(
     (state) => state.weddingDetails.services,
@@ -69,21 +71,16 @@ export const ServiceSelector = ({
       aria-describedby={`${descriptionId}${errors?.services ? ` ${errorId}` : ""}`}
       className="min-w-0"
     >
-      <legend className="libre-font text-xl">2. Choose Your Services</legend>
+      <legend className="libre-font text-xl">{t.planner.servicesHeading}</legend>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <p
           id={descriptionId}
           className="text-sm font-normal text-foreground/60"
         >
-          Select everything you need for your day. You can choose more than one.
+          {t.planner.servicesHint}
         </p>
         <span className="rounded-full bg-(--secondary) px-3 py-1 text-xs text-(--positive-tertiary)">
-          {
-            servicesList.filter((service) =>
-              existingServicesFromStore.includes(service.id),
-            ).length
-          }{" "}
-          selected
+          {t.planner.selectedCount(servicesList.filter((service) => existingServicesFromStore.includes(service.id)).length)}
         </span>
       </div>
       <div
@@ -97,7 +94,7 @@ export const ServiceSelector = ({
             <MainButton variant="custom" size="none"
               type="button"
               aria-pressed={isSelected}
-              aria-label={s.serviceName}
+              aria-label={serviceName(t, s.id, s.serviceName)}
               key={s.id}
               className={`group flex h-full cursor-pointer flex-col items-start justify-start gap-4 rounded-2xl border p-4 text-left transition duration-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-(--positive-tertiary) motion-reduce:transition-none sm:p-5 ${isSelected ? "border-(--positive-secondary) bg-(--positive)/20 ring-1 ring-(--positive-secondary)" : "border-(--tertiary) bg-white hover:border-(--positive-secondary) hover:bg-(--secondary)/50 hover:shadow-sm"}`}
               onClick={() => {
@@ -122,7 +119,7 @@ export const ServiceSelector = ({
               </span>
               <span className="flex flex-col gap-1.5">
                 <span className="text-base font-semibold text-(--positive-tertiary)">
-                  {s.serviceName}
+                  {serviceName(t, s.id, s.serviceName)}
                 </span>
               </span>
             </MainButton>

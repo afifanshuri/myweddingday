@@ -17,6 +17,7 @@ import { useServiceStore } from "@/store/serviceStore";
 import SearchModeSelector, { type SearchMode } from "./SearchModeSelector";
 import AISearchPanel from "./AISearchPanel";
 import { ROUTES, serviceCriteriaRoute } from "@/config/routes";
+import { useT } from "@/i18n";
 
 export default function WeddingDetailsPage({
   latestLocations,
@@ -28,6 +29,7 @@ export default function WeddingDetailsPage({
   const router = useRouter();
   const [errors, setErrors] = useState<WeddingFormErrors>({});
   const [searchMode, setSearchMode] = useState<SearchMode>("manual");
+  const t = useT();
 
   const addAllServices = useServiceStore((state) => state.addAllService);
   const syncServiceNames = usePreferenceStore((state) => state.syncServiceNames);
@@ -44,7 +46,7 @@ export default function WeddingDetailsPage({
   );
 
   const validateFields = (details: WeddingDetailType) => {
-    const nextErrors: WeddingFormErrors = validateWeddingDetails(details);
+    const nextErrors: WeddingFormErrors = validateWeddingDetails(details, t.planner.errors);
     setErrors(nextErrors);
     return nextErrors;
   };
@@ -71,20 +73,20 @@ export default function WeddingDetailsPage({
     <div className="mb-10 space-y-14">
       <SearchModeSelector value={searchMode} onChange={setSearchMode} />
 
-      <p className="opacity-50 font-light mb-4">Let&apos;s get started!</p>
+      <p className="opacity-50 font-light mb-4">{t.planner.start}</p>
       <div className="rounded-2xl border border-(--tertiary) bg-white p-5 sm:p-8">
         <p className="mb-4 libre-font xl:text-[20px]">
-          1. Tell Us About Your Wedding
+          {t.planner.detailsHeading}
         </p>
         <div className="flex flex-col gap-8">
           <div className="w-full">
-            <label htmlFor="wedding-couple">Couple&apos;s Names</label>
+            <label htmlFor="wedding-couple">{t.planner.coupleNames}</label>
             <CustomInput
               id="wedding-couple"
               value={weddingDetailsFromStore.coupleName}
               type="text"
               maxLength={WEDDING_PLAN.coupleNameMax}
-              placeholder="e.g. Amira & Syafiq"
+              placeholder={t.planner.couplePlaceholder}
               className="w-full"
               onChange={(e) => {
                 updateWeddingDetails({ coupleName: e.target.value });
@@ -103,7 +105,7 @@ export default function WeddingDetailsPage({
           </div>
           <div className="flex flex-row gap-4">
             <div className="w-full">
-              <label htmlFor="wedding-date">Wedding Date</label>
+              <label htmlFor="wedding-date">{t.planner.weddingDate}</label>
               <CustomInput
                 id="wedding-date"
                 value={weddingDetailsFromStore.date ?? ""}
@@ -123,7 +125,7 @@ export default function WeddingDetailsPage({
               </p>
             </div>
             <div className="w-full">
-              <label htmlFor="wedding-guests">Estimated Guests</label>
+              <label htmlFor="wedding-guests">{t.planner.guests}</label>
               <CustomInput
                 id="wedding-guests"
                 value={weddingDetailsFromStore.pax ?? 0}
@@ -145,7 +147,7 @@ export default function WeddingDetailsPage({
           </div>
 
           <div>
-            <p>Vendor Locations</p>
+            <p>{t.planner.locations}</p>
             <div className="flex flex-wrap gap-2 text-xs">
               {latestLocations.map((l) => {
                 return (
@@ -203,11 +205,11 @@ export default function WeddingDetailsPage({
       </div>
       <div className="flex justify-end gap-2">
         <MainButton variant="secondary" onClick={() => onGoBack()}>
-          Back
+          {t.common.back}
         </MainButton>
         {searchMode === "manual" && (
           <MainButton onClick={onSubmit}>
-            Continue with manual search
+            {t.planner.continueManual}
           </MainButton>
         )}
       </div>

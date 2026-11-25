@@ -1,5 +1,6 @@
 "use client";
 import { usePreferenceStore } from "@/store/preferenceStore";
+import { useT } from "@/i18n";
 
 const ProgressBar = ({
   className = "",
@@ -11,6 +12,7 @@ const ProgressBar = ({
   const selectedServices = usePreferenceStore(
     (state) => state.weddingDetails.services,
   );
+  const t = useT();
   const totalSelectedServices = selectedServices.length;
   const currentIndex = selectedServices.findIndex((i) => i === currentPath);
   const index = currentIndex >= 0 ? currentIndex + 1 : 0;
@@ -19,7 +21,7 @@ const ProgressBar = ({
   return (
     <div className={className}>
       <div id="progressBarText">
-        Step {index} of {totalSelectedServices}
+        {t.planner.step(index, totalSelectedServices)}
       </div>
       <div
         id="progressBar"

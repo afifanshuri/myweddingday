@@ -8,6 +8,7 @@ import { ROUTES, paymentRoute, serviceCriteriaRoute } from "@/config/routes";
 import { useAccountAccess } from "../commonComponents/AccountAccessProvider";
 import { useFreeSearchUsed } from "@/store/searchUsage";
 import { useRef, type ReactNode } from "react";
+import { useT } from "@/i18n";
 
 /** `children` (e.g. a page's Reset button) sits just before Back. */
 export default function DirectionButtons({ children }: { children?: ReactNode }) {
@@ -15,6 +16,7 @@ export default function DirectionButtons({ children }: { children?: ReactNode })
   const { access, checking } = useAccountAccess();
   const freeSearchUsed = useFreeSearchUsed(access, checking);
   const submitted = useRef(false);
+  const t = useT();
   const currentPath = usePathname();
   const serviceChoiceList = usePreferenceStore(
     (state) => state.weddingDetails.services,
@@ -50,12 +52,12 @@ export default function DirectionButtons({ children }: { children?: ReactNode })
     && serviceChoiceList.findIndex((e) => e === currentServicePlanPage) >= serviceChoiceList.length - 1;
   return (
     <div className="flex flex-row flex-wrap items-center gap-4 justify-end">
-      {lastStep && freeSearchUsed && <p className="text-sm text-foreground/70">You&apos;ve used your free search.</p>}
+      {lastStep && freeSearchUsed && <p className="text-sm text-foreground/70">{t.planner.usedFreeSearch}</p>}
       {children}
-      <MainButton variant="secondary" onClick={() => changePage("back")}>Back</MainButton>
+      <MainButton variant="secondary" onClick={() => changePage("back")}>{t.common.back}</MainButton>
       {lastStep && freeSearchUsed
-        ? <MainButton href={paymentRoute(ROUTES.match)}>Get Plus to search again</MainButton>
-        : <MainButton onClick={() => changePage("next")}>Continue</MainButton>}
+        ? <MainButton href={paymentRoute(ROUTES.match)}>{t.planner.getPlusToSearch}</MainButton>
+        : <MainButton onClick={() => changePage("next")}>{t.common.continue}</MainButton>}
     </div>
   );
 }
