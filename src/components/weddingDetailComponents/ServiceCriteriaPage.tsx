@@ -137,21 +137,22 @@ export default function ServicePage({ serviceId: currentServiceId }: { serviceId
             </section>
           ))}
         {/* Clears this service's budget, criteria and must-haves only, after a confirmation. */}
-        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-(--tertiary) pt-6 text-sm">
-          {confirmingReset ? <>
+        <div className="border-t border-(--tertiary) pt-6">
+          {confirmingReset ? <div className="flex flex-wrap items-center justify-end gap-3 text-sm">
             <p role="alert" className="mr-auto">Clear all {currentService.serviceName} preferences? Your budget, criteria and must-haves for this service will be removed.</p>
             <MainButton variant="secondary" size="small" onClick={() => setConfirmingReset(false)}>Cancel</MainButton>
-            <MainButton variant="danger" size="small" onClick={() => {
+            <MainButton variant="danger-solid" size="small" onClick={() => {
               updatePreferenceDetails(currentServiceId, { budget: 0, description: "", criteria: {}, requiredFields: [] });
               setConfirmingReset(false);
               setResets((count) => count + 1);
             }}>Clear {currentService.serviceName}</MainButton>
-          </> : <MainButton variant="ghost" size="small" onClick={() => setConfirmingReset(true)}>
-            <VscDebugRestart aria-hidden="true" />
-            Reset this service
-          </MainButton>}
+          </div> : <DirectionButtons>
+            <MainButton variant="danger-solid" onClick={() => setConfirmingReset(true)}>
+              <VscDebugRestart aria-hidden="true" />
+              Reset this service
+            </MainButton>
+          </DirectionButtons>}
         </div>
-        <DirectionButtons />
       </div>
     </div>
   );

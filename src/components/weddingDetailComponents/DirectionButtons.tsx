@@ -7,9 +7,10 @@ import { useRouter } from "next/navigation";
 import { ROUTES, paymentRoute, serviceCriteriaRoute } from "@/config/routes";
 import { useAccountAccess } from "../commonComponents/AccountAccessProvider";
 import { useFreeSearchUsed } from "@/store/searchUsage";
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 
-export default function DirectionButtons() {
+/** `children` (e.g. a page's Reset button) sits just before Back. */
+export default function DirectionButtons({ children }: { children?: ReactNode }) {
   const router = useRouter();
   const { access, checking } = useAccountAccess();
   const freeSearchUsed = useFreeSearchUsed(access, checking);
@@ -50,6 +51,7 @@ export default function DirectionButtons() {
   return (
     <div className="flex flex-row flex-wrap items-center gap-4 justify-end">
       {lastStep && freeSearchUsed && <p className="text-sm text-foreground/70">You&apos;ve used your free search.</p>}
+      {children}
       <MainButton variant="secondary" onClick={() => changePage("back")}>Back</MainButton>
       {lastStep && freeSearchUsed
         ? <MainButton href={paymentRoute(ROUTES.match)}>Get Plus to search again</MainButton>

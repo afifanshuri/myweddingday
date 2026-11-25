@@ -102,6 +102,18 @@
     background: #fef2f2;
   }
 
+  /* Filled red with white text: for a destructive action that sits among other main buttons. */
+  .main-button--danger-solid {
+    border: 1px solid #b91c1c;
+    background: #b91c1c;
+    color: #fff;
+  }
+
+  .main-button--danger-solid:hover:not(:disabled) {
+    background: #991b1b;
+    border-color: #991b1b;
+  }
+
   .main-button--link {
     border: 0;
     background: transparent;

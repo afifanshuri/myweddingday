@@ -10,6 +10,7 @@ type ButtonAppearance = {
     | "secondary"
     | "ghost"
     | "danger"
+    | "danger-solid"
     | "link"
     | "choice"
     | "custom";
