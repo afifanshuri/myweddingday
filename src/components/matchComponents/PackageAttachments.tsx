@@ -14,7 +14,7 @@ export default function PackageAttachments({ attachments, packageName }: { attac
     <ul className="mt-2 flex flex-wrap gap-2" aria-label={t.vendor.attachmentsAria(packageName)}>
       {available.map((file, index) => <li key={index}>
         <a href={file.url!} target="_blank" rel="noopener noreferrer"
-          className="flex max-w-56 items-center gap-2 rounded-lg border border-(--tertiary) bg-white p-1.5 pr-3 text-xs hover:bg-(--secondary)"
+          className="flex max-w-56 items-center gap-2 rounded-lg border border-(--tertiary) bg-white p-1.5 pr-3 text-xs text-foreground hover:bg-(--secondary)"
           aria-label={t.vendor.openFileAria(file.name, file.kind === "pdf")}>
           {file.kind === "image"
             // Signed Storage links don't need Next.js image optimization.
