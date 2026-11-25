@@ -34,6 +34,8 @@ const en = {
     logOut: "Log out",
     loggingOut: "Logging out",
     logOutFailed: "Unable to log out. Please try again.",
+    openMenu: "Open menu",
+    closeMenu: "Close menu",
   },
   allowance: {
     unlimited: "Unlimited searches",

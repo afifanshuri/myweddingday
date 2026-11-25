@@ -32,6 +32,8 @@ const ms: Messages = {
     logOut: "Log keluar",
     loggingOut: "Sedang log keluar",
     logOutFailed: "Tidak dapat log keluar. Sila cuba lagi.",
+    openMenu: "Buka menu",
+    closeMenu: "Tutup menu",
   },
   allowance: {
     unlimited: "Carian tanpa had",
