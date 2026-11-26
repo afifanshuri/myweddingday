@@ -161,9 +161,9 @@ export default function HowItWorks() {
     <section
       id="how-it-works"
       aria-labelledby="how-it-works-heading"
-      className="bg-(--background) px-3 py-20 sm:px-4 sm:py-24 min-h-[100vh]"
+      className="scroll-mt-24 bg-(--background) px-5 py-16 sm:px-8 sm:py-24 lg:flex lg:min-h-screen lg:items-center lg:px-12"
     >
-      <div className="mx-auto grid items-center gap-10 lg:grid-cols-[minmax(0,2fr)_minmax(0,6fr)] px-18">
+      <div className="mx-auto grid w-full max-w-7xl items-center gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,6fr)] lg:gap-12">
         <div className="min-w-0 text-left">
           <p className="mb-4 text-xs font-semibold tracking-widest text-(--positive-tertiary) uppercase">
             {t.landing.how.eyebrow}
@@ -183,9 +183,12 @@ export default function HowItWorks() {
           playsInline
           autoPlay
           loop
-          className="block h-auto w-full min-w-0 rounded-lg border border-(--tertiary)"
+          preload="metadata"
+          poster="/video/myweddingday-walkthrough-poster.jpg"
+          aria-label="Walkthrough: tell us about your wedding, set budgets and must-haves, see your matched vendors, and build your budget"
+          className="-mx-5 block aspect-video h-auto w-[calc(100%+2.5rem)] max-w-none min-w-0 border-y border-(--tertiary) shadow-sm sm:mx-0 sm:w-full sm:rounded-2xl sm:border"
         >
-          <source src="/video/export-1791535597398.mp4" type="video/mp4" />
+          <source src="/video/myweddingday-walkthrough.webm" type="video/webm" />
         </video>
       </div>
     </section>
