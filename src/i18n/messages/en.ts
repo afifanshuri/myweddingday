@@ -378,6 +378,7 @@ const en = {
     attachmentsAria: (pkg: string) => `Attachments for ${pkg}`,
     openFileAria: (name: string, pdf: boolean) => `Open ${name} (${pdf ? "PDF" : "image"}, opens in a new tab)`,
     image: "Image",
+    filesToggle: (count: number, open: boolean) => `${open ? "Hide" : "Show"} ${count} ${count === 1 ? "file" : "files"}`,
     serviceIn: (service: string, places: string) => places ? `${service} in ${places}` : service,
     ratingAria: (value: string) => `Rated ${value} out of 5`,
     call: (number: string) => `Call ${number}`,

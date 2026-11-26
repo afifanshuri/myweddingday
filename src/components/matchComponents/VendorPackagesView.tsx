@@ -1,7 +1,7 @@
 "use client";
 import { formatPrice } from "@/config/money";
 
-import { useEffect, useRef, useState } from "react";
+import { createElement, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { FiArrowLeft, FiCheck, FiPhone, FiStar } from "react-icons/fi";
@@ -18,6 +18,7 @@ import { SERVICE_ID } from "@/config/serviceCriteria";
 import PackageAttachments from "./PackageAttachments";
 import ShortlistButton from "./ShortlistButton";
 import PhotoViewer from "./PhotoViewer";
+import { serviceIcon } from "@/components/commonComponents/serviceIcons";
 
 /** Malaysian numbers grouped for reading: 012-3456 7890 (11 digits) or 012-345 6789 (10). Anything else as entered. */
 const readablePhone = (value: string) => {
@@ -100,10 +101,10 @@ export default function VendorPackagesView({ match, onBack, backLabel, fromShort
   // The server only sends full details (this view) for vendors this account may see: any for Plus, unlocked ones for free.
   if (checking || !access.userId) return null;
   const rating = vendor.rating == null ? null : Number(vendor.rating).toFixed(1);
-  // Tiles by how many photos there are: 1 wide, 2 side by side, a large one with 2 or 4 beside it.
+  // Tiles by how many photos there are: 1 as a wide cover, 2 as a large one and a narrow one, then a large one with 2 or 4 beside it.
   const tileCount = photos.length >= 5 ? 5 : photos.length >= 3 ? 3 : photos.length;
   const shownPhotos = photos.slice(0, tileCount);
-  const mosaic = ({ 1: "", 2: "sm:grid-cols-2 sm:grid-rows-[18rem]", 3: "sm:grid-cols-[2fr_1fr] sm:grid-rows-[9.5rem_9.5rem]",
+  const mosaic = ({ 1: "", 2: "sm:grid-cols-[2fr_1fr] sm:grid-rows-[18rem]", 3: "sm:grid-cols-[2fr_1fr] sm:grid-rows-[9.5rem_9.5rem]",
     5: "sm:grid-cols-[2fr_1fr_1fr] sm:grid-rows-[9.5rem_9.5rem]" } as Record<number, string>)[tileCount] ?? "";
   const extraPhotos = photos.length - shownPhotos.length;
 
@@ -118,13 +119,18 @@ export default function VendorPackagesView({ match, onBack, backLabel, fromShort
     {/* The vendor, as one card: photos on top, then who they are and how to reach them. */}
     <div className="overflow-hidden rounded-3xl border border-(--tertiary) bg-white">
     {/* Photos first: couples choose on looks. On phones only the first shows, with a count of the rest. */}
+    {/* No photos yet: a soft band with the service's icon and the vendor's initial, so the card doesn't start with bare text. */}
+    {shownPhotos.length === 0 && <div aria-hidden="true" className="flex h-28 items-center justify-center gap-4 bg-(--secondary) text-(--positive-tertiary) sm:h-36">
+      {createElement(serviceIcon(vendor.serviceId), { className: "size-8 opacity-70 sm:size-10" })}
+      <span className="libre-font text-5xl text-(--fourth) sm:text-6xl">{vendor.vendorName.replace(/^\[[^\]]*\]\s*/, "").trim().charAt(0).toUpperCase()}</span>
+    </div>}
     {shownPhotos.length > 0 && <div className={`grid gap-1.5 ${mosaic}`}>
       {shownPhotos.map((url, index) => {
         const last = index === shownPhotos.length - 1;
         return <button key={url} type="button" onClick={() => setViewing(index)}
           aria-label={index === 0 ? t.vendor.openPhotos(vendor.vendorName, photos.length) : t.vendor.photoOf(index + 1, photos.length)}
           className={`group relative bg-(--secondary) focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-white ${index === 0
-            ? `h-56 ${tileCount === 1 ? "sm:h-80" : `sm:h-auto ${tileCount > 2 ? "sm:row-span-2" : ""}`}`
+            ? `h-56 ${tileCount === 1 ? "sm:h-72" : `sm:h-auto ${tileCount > 2 ? "sm:row-span-2" : ""}`}`
             : "max-sm:hidden"}`}>
           <Image src={url} alt="" fill unoptimized sizes={index === 0 ? "(min-width: 640px) 50vw, 100vw" : "25vw"}
             className="object-cover transition-opacity group-hover:opacity-90" onError={() => setFailed((list) => [...list, url])} />
@@ -193,19 +199,16 @@ export default function VendorPackagesView({ match, onBack, backLabel, fromShort
                   </p>
                 </div>
                 <PackageDetails text={pkg.details || t.vendor.noDescription} chosen={chosen} />
-                <PackageAttachments attachments={pkg.attachments} packageName={pkg.packageName} />
-                {inPlan && <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                  {chosen && <p className="text-sm text-white/85">{t.vendor.inYourBudget}</p>}
-                  <button type="button" aria-pressed={chosen}
+                <PackageAttachments attachments={pkg.attachments} packageName={pkg.packageName} chosen={chosen}
+                  action={inPlan && <button type="button" aria-pressed={chosen}
                     aria-label={t.vendor.choosePackageAria(pkg.packageName, vendor.vendorName, chosen)}
                     onClick={() => chosen ? removeSelectedPackage(vendor.serviceId) : selectPackage({ serviceId: vendor.serviceId, serviceName,
                       vendorId: vendor.id, vendorName: vendor.vendorName, packageId: pkg.id, packageName: pkg.packageName, unitPrice: Number(pkg.price) })}
-                    className={`${pill} ml-auto border ${chosen
+                    className={`${pill} border ${chosen
                       ? "border-white/40 text-white hover:bg-white/10 focus-visible:outline-white"
                       : "border-(--positive-secondary) bg-white text-(--positive-tertiary) hover:bg-(--secondary)"}`}>
                     {chosen ? t.vendor.removeFromBudget : t.vendor.chooseForBudget}
-                  </button>
-                </div>}
+                  </button>} />
               </div>
             </motion.li>;
           })}

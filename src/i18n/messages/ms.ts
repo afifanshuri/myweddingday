@@ -419,6 +419,7 @@ const ms: Messages = {
     attachmentsAria: (pkg) => `Lampiran untuk ${pkg}`,
     openFileAria: (name, pdf) => `Buka ${name} (${pdf ? "PDF" : "gambar"}, dibuka dalam tab baharu)`,
     image: "Gambar",
+    filesToggle: (count, open) => `${open ? "Sembunyi" : "Tunjuk"} ${count} fail`,
     serviceIn: (service, places) => places ? `${service} di ${places}` : service,
     ratingAria: (value) => `Dinilai ${value} daripada 5`,
     call: (number) => `Hubungi ${number}`,
