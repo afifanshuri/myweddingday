@@ -57,7 +57,7 @@ export async function APIReviewAdminVendor(id: number, status: "approved" | "rej
 }
 
 export async function APIRequestVendorFixes(id: number, note: string) {
-  return read<{ submission: VendorSubmission; url: string; message: VendorMessage }>(await fetch(`/api/admin/vendors/${id}/request-fixes`, {
+  return read<{ review: VendorReview; submission: VendorSubmission; url: string; message: VendorMessage }>(await fetch(`/api/admin/vendors/${id}/request-fixes`, {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ note }) }), "Unable to request changes");
 }
 

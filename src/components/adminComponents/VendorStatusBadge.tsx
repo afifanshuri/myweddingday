@@ -6,6 +6,10 @@ const STYLES: Record<VendorStatus, string> = {
   rejected: "border-red-200 bg-red-50 text-red-700",
 };
 
-export default function VendorStatusBadge({ status }: { status: VendorStatus }) {
-  return <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-normal ${STYLES[status]}`}>{VENDOR_STATUS_LABELS[status]}</span>;
+/** The status as a small tag; a rejected listing can carry its reason ("Rejected: photos are missing"). */
+export default function VendorStatusBadge({ status, reason }: { status: VendorStatus; reason?: string | null }) {
+  const withReason = status === "rejected" && reason?.trim();
+  return <span className={`inline-flex max-w-full rounded-full border px-2.5 py-0.5 text-xs font-normal ${withReason ? "whitespace-pre-line break-words rounded-xl" : ""} ${STYLES[status]}`}>
+    {VENDOR_STATUS_LABELS[status]}{withReason ? `: ${reason!.trim()}` : ""}
+  </span>;
 }

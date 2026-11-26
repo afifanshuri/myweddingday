@@ -53,27 +53,34 @@ export async function cancelSubmissionLink(id: number) {
 }
 
 /**
- * "Please fix": reopens a pending listing's submission with the admin's note and a new link (the old one stops working,
- * since only a hash is stored). Returns the link and a message to send the vendor.
+ * "Please fix": reopens a listing's submission with the admin's note and a new link (the old one stops working, since
+ * only a hash is stored). Works for listings waiting for review and, after review, for approved or rejected ones: those
+ * go back to pending, so customers don't see the listing while the vendor changes it (couples who chose or shortlisted
+ * it see it as currently unavailable) until an admin approves it again. Returns the link and a message to send.
  */
 export async function requestSubmissionFixes(vendorId: number, note: string, origin: string) {
   const token = newToken();
   const result = await db.transaction(async (tx) => {
-    const [vendor] = await tx.select({ status: vendorsTable.status, vendorName: vendorsTable.vendorName }).from(vendorsTable)
-      .where(eq(vendorsTable.id, vendorId)).for("update");
+    const [vendor] = await tx.select({ status: vendorsTable.status, vendorName: vendorsTable.vendorName, reviewNote: vendorsTable.reviewNote,
+      reviewedAt: vendorsTable.reviewedAt }).from(vendorsTable).where(eq(vendorsTable.id, vendorId)).for("update");
     if (!vendor) throw new RequestError("Vendor not found", 404);
-    if (vendor.status !== "pending") throw new RequestError("Only listings waiting for review can be sent back for fixes", 409);
+    // After review the link is closed; it can be reopened too.
     const [link] = await tx.select().from(vendorSubmissionLinks)
-      .where(and(eq(vendorSubmissionLinks.vendorId, vendorId), inArray(vendorSubmissionLinks.state, ["submitted", "reopened"])))
+      .where(and(eq(vendorSubmissionLinks.vendorId, vendorId), inArray(vendorSubmissionLinks.state, ["submitted", "reopened", "closed"])))
       .orderBy(desc(vendorSubmissionLinks.id)).limit(1).for("update");
     if (!link) throw new RequestError("This listing didn't come from a submission link", 409);
     const [updated] = await tx.update(vendorSubmissionLinks)
       .set({ tokenHash: hashToken(token), state: "reopened", fixNote: note, expiresAt: expiry() })
       .where(eq(vendorSubmissionLinks.id, link.id)).returning();
-    return { link: updated, vendorName: vendor.vendorName };
+    // An approved or rejected listing goes back to review while the vendor changes it.
+    if (vendor.status !== "pending") await tx.update(vendorsTable).set({ status: "pending", reviewNote: null }).where(eq(vendorsTable.id, vendorId));
+    const review = { status: "pending" as const, note: vendor.status === "pending" ? vendor.reviewNote : null,
+      reviewedAt: vendor.reviewedAt ? vendor.reviewedAt.toISOString() : null };
+    return { link: updated, vendorName: vendor.vendorName, review };
   });
   const url = linkUrl(origin, token);
   return {
+    review: result.review,
     submission: { id: result.link.id, state: result.link.state, label: result.link.label, vendorEmail: result.link.vendorEmail,
       fixNote: result.link.fixNote, expiresAt: result.link.expiresAt, submittedAt: result.link.submittedAt },
     url,

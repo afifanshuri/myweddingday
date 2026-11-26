@@ -53,19 +53,20 @@ export default function VendorReviewPanel({ vendorId, review, submission, onChan
   const requestFixes = () => run(async () => {
     const result = await APIRequestVendorFixes(vendorId, note);
     onSubmissionChange(result.submission);
+    onChange(result.review);
     setToSend({ title: "Send the vendor what to change", url: result.url, message: result.message });
   });
 
-  const canAskForFixes = review.status === "pending" && submission !== null && (submission.state === "submitted" || submission.state === "reopened");
+  // Any listing that came from a vendor's link: waiting for review, or already approved or rejected (it goes back to review).
+  const canAskForFixes = submission !== null && (submission.state === "submitted" || submission.state === "reopened" || submission.state === "closed");
   const openDialog = (kind: "reject" | "fix") => { setError(null); setNote(kind === "fix" && submission?.state === "reopened" ? submission.fixNote ?? "" : ""); setDialog(kind); };
 
   return <section aria-labelledby="review-heading" className="mb-6 rounded-3xl border border-(--tertiary) bg-white p-5 shadow-sm sm:p-7">
     <div className="flex flex-wrap items-start justify-between gap-4">
       <div className="min-w-0">
-        <h2 id="review-heading" className="libre-font flex flex-wrap items-center gap-3 text-xl">Listing status <VendorStatusBadge status={review.status} /></h2>
-        <p className="mt-2 text-sm text-foreground/65">{EXPLAIN[review.status]}</p>
+        <h2 id="review-heading" className="libre-font flex flex-wrap items-center gap-3 text-xl">Listing status <VendorStatusBadge status={review.status} reason={review.note} /></h2>
+        {review.status !== "rejected" && <p className="mt-2 text-sm text-foreground/65">{EXPLAIN[review.status]}</p>}
         {review.reviewedAt && <p className="mt-1 text-xs text-foreground/50">Last reviewed {when(review.reviewedAt)} (Malaysia time)</p>}
-        {review.status === "rejected" && review.note && <p className="mt-3 whitespace-pre-line rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800"><span className="font-medium">Reason:</span> {review.note}</p>}
         {submission && <div className="mt-3 text-xs text-foreground/60">
           <p>Submitted by the vendor from a link{submission.submittedAt ? ` on ${when(submission.submittedAt)}` : ""}{submission.vendorEmail ? ` · ${submission.vendorEmail}` : ""}.</p>
           {submission.state === "reopened" && <p className="mt-2 whitespace-pre-line rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
@@ -103,6 +104,10 @@ export default function VendorReviewPanel({ vendorId, review, submission, onChan
     </CustomDialog>
     <CustomDialog open={dialog === "fix"} onClose={() => setDialog(null)} onConfirm={() => { if (note.trim()) requestFixes(); else setError("Write what the vendor should change."); }}
       busy={busy} title="Ask the vendor for changes">
+      {review.status === "approved" && <p className="mb-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+        This listing is live. It goes back to review and is hidden from customers until you approve it again. Couples who chose or
+        shortlisted it see it as currently unavailable in the meantime.
+      </p>}
       <p className="text-sm">You&apos;ll get a new link to send the vendor. It opens their listing as they submitted it, with your note at the top. The listing stays hidden until you approve it.{submission?.state === "reopened" ? " The link you sent before stops working." : ""}</p>
       <label className="mt-4 flex flex-col gap-1 text-sm">What should they change?
         <textarea value={note} maxLength={SUBMISSION_LINK.fixNoteMax} rows={5} onChange={(event) => setNote(event.target.value)}
