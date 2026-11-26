@@ -15,6 +15,7 @@ import { PackageType } from "@/types/dataTypes";
 import { useAdminStore } from "@/store/adminStore";
 import FieldRenderer from "../commonComponents/FieldRenderer";
 import FileUploadField from "./FileUploadField";
+import { useT } from "@/i18n";
 import { MAX_PACKAGE_ATTACHMENTS, UPLOAD_KINDS } from "@/config/uploads";
 import {
   clearHiddenCriteria,
@@ -41,6 +42,8 @@ export default function PackageDetailSection({
   const updatePackageAttachments = useAdminStore((state) => state.updatePackageAttachments);
   const vendorServiceId = useAdminStore((state) => state.vendor.serviceId);
   const [currentTag, setCurrentTag] = useState<string>("");
+  const t = useT();
+  const f = t.vendorForm;
 
   const fields = SERVICE_CRITERIA[vendorServiceId] ?? [];
 
@@ -52,14 +55,14 @@ export default function PackageDetailSection({
     <div className="overflow-hidden rounded-2xl border border-(--tertiary)">
       <div className="flex items-center justify-between gap-3 bg-(--secondary)/70 px-4 py-3">
         <p className="min-w-0 break-words text-sm text-(--positive-tertiary)">
-          {pkg.name !== "" ? pkg.name : "Package " + (index + 1)}
+          {pkg.name !== "" ? pkg.name : f.packageFallback(index + 1)}
         </p>
         <div className="flex shrink-0 items-center gap-1">
           <MainButton
             variant="danger"
             size="icon"
             type="button"
-            aria-label={`Delete package ${index + 1}`}
+            aria-label={f.deletePackage(index + 1)}
             onClick={() => {
               onDeletePackage(pkg.id);
             }}
@@ -70,7 +73,7 @@ export default function PackageDetailSection({
             variant="ghost"
             size="icon"
             type="button"
-            aria-label={`Expand package ${index + 1}`}
+            aria-label={f.expandPackage(index + 1)}
             aria-expanded={false}
             className={displayPackageForm ? "hidden" : ""}
             onClick={() => {
@@ -83,7 +86,7 @@ export default function PackageDetailSection({
             variant="ghost"
             size="icon"
             type="button"
-            aria-label={`Collapse package ${index + 1}`}
+            aria-label={f.collapsePackage(index + 1)}
             aria-expanded={true}
             className={displayPackageForm ? "" : "hidden"}
             onClick={() => {
@@ -102,7 +105,7 @@ export default function PackageDetailSection({
             htmlFor={`package-name-${pkg.id}`}
             className="mb-2 block text-sm"
           >
-            Package Name
+            {f.packageName}
           </label>
           <CustomInput
             id={`package-name-${pkg.id}`}
@@ -123,7 +126,7 @@ export default function PackageDetailSection({
             htmlFor={`package-price-${pkg.id}`}
             className="mb-2 block text-sm"
           >
-            Package Price
+            {f.packagePrice}
           </label>
           <div className="flex items-center gap-3">
             <span className="text-sm text-(--positive-tertiary)">RM</span>
@@ -147,7 +150,7 @@ export default function PackageDetailSection({
             htmlFor={`package-description-${pkg.id}`}
             className="mb-2 block text-sm"
           >
-            Package Description
+            {f.packageDescription}
           </label>
           <CustomTextarea
             id={`package-description-${pkg.id}`}
@@ -167,7 +170,7 @@ export default function PackageDetailSection({
         {fields.length > 0 && (
           <div className="flex flex-col gap-4 rounded-xl border border-(--secondary) bg-(--background) p-4 text-sm">
             <p className="text-xs font-semibold tracking-wide text-(--positive-tertiary) uppercase">
-              Service Filters
+              {f.serviceFilters}
             </p>
             {fields
               .filter((field) =>
@@ -193,10 +196,10 @@ export default function PackageDetailSection({
 
         <div className="flex flex-col flex-wrap gap-2">
           <label htmlFor={`package-tags-${pkg.id}`} className="text-sm">
-            Tags
+            {f.tags}
           </label>
           <p className="text-xs font-normal text-foreground/60">
-            Type a tag and press Enter to add it.
+            {f.tagsHint}
           </p>
           <div className="flex flex-wrap gap-2 text-xs">
             {pkg.tags.map((t, index) => (
@@ -210,7 +213,7 @@ export default function PackageDetailSection({
                   variant="ghost"
                   size="icon"
                   type="button"
-                  aria-label={`Remove tag ${t}`}
+                  aria-label={f.removeTag(t)}
                   className="ml-2 flex size-6 cursor-pointer items-center justify-center rounded-full hover:bg-(--tertiary)"
                   onClick={() => {
                     const newTags = pkg.tags.filter((_, i) => i !== index);
@@ -226,7 +229,7 @@ export default function PackageDetailSection({
           <CustomInput
             id={`package-tags-${pkg.id}`}
             type="text"
-            placeholder="e.g. Modern, outdoor, malay traditional..."
+            placeholder={f.tagsPlaceholder}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 updatePackageToStore(pkg.id, {
@@ -240,8 +243,8 @@ export default function PackageDetailSection({
           ></CustomInput>
         </div>
         <FileUploadField
-          label="Attachments (optional)"
-          help={`Price lists, service details, menus, anything couples should see: up to ${MAX_PACKAGE_ATTACHMENTS} JPG, PNG, WebP or PDF files, ${UPLOAD_KINDS.packageFile.maxBytes / 1024 / 1024} MB each. Only couples with a Plus pass can open them.`}
+          label={f.attachmentsLabel}
+          help={f.attachmentsHelp(MAX_PACKAGE_ATTACHMENTS, UPLOAD_KINDS.packageFile.maxBytes / 1024 / 1024)}
           kind="packageFile" max={MAX_PACKAGE_ATTACHMENTS} items={pkg.attachments} endpoint={uploadEndpoint}
           onChange={(update) => updatePackageAttachments(pkg.id, update)} />
       </div>

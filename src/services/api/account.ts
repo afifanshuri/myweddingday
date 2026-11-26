@@ -18,7 +18,7 @@ export async function APIResolveLoginDestination() {
 }
 /** `locked`: chosen packages this account can't see now (kept in the plan, not shown). */
 export async function APIGetSelectedPackages(ids: string, signal?: AbortSignal) {
-  return read<{ packages: SelectedPackage[]; locked: number[] }>(await fetch("/api/account/selections", { method: "POST", cache: "no-store", signal,
+  return read<{ packages: SelectedPackage[]; locked: number[]; unavailable: number[] }>(await fetch("/api/account/selections", { method: "POST", cache: "no-store", signal,
     headers: { "Content-Type": "application/json" }, body: ids }));
 }
 export async function APIGetUsersAll(page: number, signal?: AbortSignal) {
@@ -29,6 +29,6 @@ export async function APIUpdateUserAccess(userId: string, update: AccessUpdate) 
     headers: { "Content-Type": "application/json" }, body: JSON.stringify(update) }));
 }
 export async function APIGetShortlist(ids: number[], signal?: AbortSignal) {
-  return read<{ vendors: VendorMatchResult[]; missing: number[] }>(await fetch("/api/account/shortlist", { method: "POST", cache: "no-store", signal,
+  return read<{ vendors: VendorMatchResult[]; missing: number[]; unavailable: number[] }>(await fetch("/api/account/shortlist", { method: "POST", cache: "no-store", signal,
     headers: { "Content-Type": "application/json" }, body: JSON.stringify(ids) }));
 }

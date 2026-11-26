@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/i18n";
 import MainButton from "@/components/commonComponents/MainButton";
 
 
@@ -19,6 +20,7 @@ export default function CustomDialog({
   children,
   busy = false,
 }: CustomDialogProps) {
+  const t = useT();
   if (!open) return null;
 
   return (
@@ -44,7 +46,7 @@ export default function CustomDialog({
             disabled={busy}
             onClick={onClose}
           >
-            Cancel
+            {t.common.cancel}
           </MainButton>
 
           <MainButton
@@ -55,7 +57,7 @@ export default function CustomDialog({
               else onClose();
             }}
           >
-            {busy ? "Saving..." : "Confirm"}
+            {busy ? t.common.saving : t.common.confirm}
           </MainButton>
         </div>
       </div>

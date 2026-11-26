@@ -14,22 +14,24 @@ type ShortlistDetails = {
   vendors: Map<number, Entry>;
   loading: boolean;
   failed: boolean;
-  /** Vendors dropped because they're no longer available, for a notice. */
+  /** Vendors dropped because they no longer exist, for a notice. */
   removed: number;
+  /** Shortlisted vendors that exist but aren't approved right now: kept on the shortlist and shown as unavailable. */
+  unavailable: Set<number>;
 };
 
-export const useShortlistDetails = create<ShortlistDetails>(() => ({ owner: null, vendors: new Map(), loading: false, failed: false, removed: 0 }));
+export const useShortlistDetails = create<ShortlistDetails>(() => ({ owner: null, vendors: new Map(), loading: false, failed: false, removed: 0, unavailable: new Set() }));
 
 let inflight: { owner: string; key: string } | null = null;
 
 /**
  * Loads details for the given shortlisted vendors into the shared map: only those not loaded yet, or older than
  * SHORTLIST_FRESH_MS (refreshed in the background while the old details stay on screen). `force` reloads all.
- * Vendors the server no longer returns are removed from the shortlist.
+ * Vendors that no longer exist are removed from the shortlist; vendors not approved right now are kept and marked unavailable.
  */
 export async function loadShortlistDetails(owner: string, vendorIds: number[], force = false) {
   const store = useShortlistDetails;
-  if (store.getState().owner !== owner) store.setState({ owner, vendors: new Map(), failed: false, removed: 0 });
+  if (store.getState().owner !== owner) store.setState({ owner, vendors: new Map(), failed: false, removed: 0, unavailable: new Set() });
   const now = Date.now();
   const { vendors } = store.getState();
   const needed = vendorIds.filter((id) => force || !vendors.has(id) || now - vendors.get(id)!.at > SHORTLIST_FRESH_MS);
@@ -45,7 +47,10 @@ export async function loadShortlistDetails(owner: string, vendorIds: number[], f
     const at = Date.now();
     result.vendors.forEach((match) => next.set(match.vendor.id, { match, at }));
     result.missing.forEach((id) => next.delete(id));
-    store.setState((state) => ({ vendors: next, failed: false, removed: state.removed + result.missing.length }));
+    const unavailable = new Set(store.getState().unavailable);
+    result.vendors.forEach((match) => unavailable.delete(match.vendor.id));
+    result.unavailable.forEach((id) => { next.delete(id); unavailable.add(id); });
+    store.setState((state) => ({ vendors: next, failed: false, removed: state.removed + result.missing.length, unavailable }));
     if (result.missing.length) usePreferenceStore.getState().removeFromShortlist(result.missing);
   } catch {
     if (store.getState().owner === owner) store.setState({ failed: true });

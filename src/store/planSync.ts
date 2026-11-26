@@ -11,14 +11,11 @@ import { WEDDING_PLAN, planHasContent, type SavedPlan, type SavedPlanResponse } 
  *   old tab saved in between); the newer saved plan is then loaded instead and the user is told.
  * - A plan belonging to another account is cleared from the browser before anything is shown, and sign-out clears it too.
  */
-type PlanStatus = { userId: string | null; status: "idle" | "loading" | "ready" | "error"; saving: boolean; failed: boolean; notice: string | null };
+/** Which notice to show (its text is in the dictionaries, `planSync`, so it follows the chosen language). */
+export type PlanNotice = "restored" | "conflict" | "updated";
+type PlanStatus = { userId: string | null; status: "idle" | "loading" | "ready" | "error"; saving: boolean; failed: boolean; notice: PlanNotice | null };
 export const usePlanStatus = create<PlanStatus>(() => ({ userId: null, status: "idle", saving: false, failed: false, notice: null }));
 
-const NOTICES = {
-  restored: "We restored the plan saved in your account.",
-  conflict: "Your plan was changed on another device, so we loaded the latest version.",
-  updated: "Your plan was updated with changes from another device.",
-} as const;
 
 /** JSON with object keys sorted, so plans can be compared after a database round trip (jsonb reorders keys). */
 function stable(value: unknown): string {
@@ -116,7 +113,7 @@ function createEngine(userId: string): Engine {
       } else if (remote.plan) {
         const hadContent = planHasContent(localPlan);
         apply(remote);
-        const notice = !hadContent ? null : !mine ? NOTICES.restored : sync.dirty ? NOTICES.conflict : initial ? null : NOTICES.updated;
+        const notice: PlanNotice | null = !hadContent ? null : !mine ? "restored" : sync.dirty ? "conflict" : initial ? null : "updated";
         if (notice) status({ notice });
       } else {
         // Nothing saved in the account yet: this browser's plan (if any) becomes the saved one.
@@ -153,7 +150,7 @@ function createEngine(userId: string): Engine {
         if (stopped) return;
         if (error instanceof PlanConflict) {
           apply(error.current);
-          status({ notice: NOTICES.conflict, failed: false });
+          status({ notice: "conflict", failed: false });
         } else {
           status({ failed: true });
           clearTimeout(retryTimer);

@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { packagesTable, vendorsTable } from "@/db/schema";
 import { WEDDING_PLAN } from "@/config/weddingPlan";
@@ -25,7 +25,7 @@ export function validateShortlistIds(value: unknown): number[] {
 export async function readShortlist(access: AccountAccess, vendorIds: number[]) {
   if (!access.userId) throw new RequestError("Sign in to see your shortlist", 401);
   await throttleSearch(access.userId, "shortlist");
-  if (!vendorIds.length) return { vendors: [] as VendorMatchResult[], missing: [] as number[] };
+  if (!vendorIds.length) return { vendors: [] as VendorMatchResult[], missing: [] as number[], unavailable: [] as number[] };
   const free = access.canViewVendorIdentity ? null : await unlockedVendorIds(access.userId, vendorIds);
   const unlocked = (vendorId: number) => !free || free.has(vendorId);
   const rows = await db.select({ vendor: vendorsTable, package: packagesTable }).from(vendorsTable)
@@ -48,5 +48,10 @@ export async function readShortlist(access: AccountAccess, vendorIds: number[]) 
     } as VendorAndPackagesMatchDTOType, full);
   });
   const present = new Set(found.map(({ vendor }) => vendor.id));
-  return { vendors, missing: vendorIds.filter((id) => !present.has(id)) };
+  // Vendors that still exist but aren't approved right now (rejected or back in review) stay on the shortlist as
+  // currently unavailable; only vendors that no longer exist (or have no packages left) are missing.
+  const absent = vendorIds.filter((id) => !present.has(id));
+  const notApproved = absent.length ? new Set((await db.select({ id: vendorsTable.id }).from(vendorsTable)
+    .where(and(inArray(vendorsTable.id, absent), ne(vendorsTable.status, "approved")))).map((row) => row.id)) : new Set<number>();
+  return { vendors, missing: absent.filter((id) => !notApproved.has(id)), unavailable: absent.filter((id) => notApproved.has(id)) };
 }

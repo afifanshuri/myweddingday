@@ -5,6 +5,7 @@ import { BsFileEarmarkPdf } from "react-icons/bs";
 import MainButton from "@/components/commonComponents/MainButton";
 import { UPLOAD_KINDS, UPLOAD_TYPES, formatBytes, type UploadKind } from "@/config/uploads";
 import { contentTypeOf, uploadFile, type UploadItem } from "@/services/api/uploads";
+import { useT, type Messages } from "@/i18n";
 
 type Props = {
   label: string;
@@ -24,6 +25,8 @@ type Props = {
  */
 export default function FileUploadField({ label, help, kind, max, items, onChange, endpoint }: Props) {
   const id = useId();
+  const t = useT();
+  const u = t.vendorForm.upload;
   const [error, setError] = useState<string | null>(null);
   const uploads = useRef(new Map<string, AbortController>());
   const rules = UPLOAD_KINDS[kind];
@@ -48,17 +51,17 @@ export default function FileUploadField({ label, help, kind, max, items, onChang
 
   function add(files: File[]) {
     if (items.length + files.length > max) {
-      setError(`You can add at most ${max} ${max === 1 ? "file" : "files"} here. Remove one to add another.`);
+      setError(u.tooMany(max));
       return;
     }
     const wrongType = files.find((file) => { const type = contentTypeOf(file); return !type || !rules.types.includes(type); });
     if (wrongType) {
-      setError(`"${wrongType.name}" isn't a ${kind === "vendorImage" ? "JPG, PNG or WebP photo" : "JPG, PNG, WebP or PDF file"}.`);
+      setError(u.wrongType(wrongType.name, kind === "vendorImage"));
       return;
     }
     const tooBig = files.find((file) => !file.size || file.size > rules.maxBytes);
     if (tooBig) {
-      setError(`"${tooBig.name}" is ${tooBig.size ? "larger than" : "empty, the limit is"} ${rules.maxBytes / 1024 / 1024} MB.`);
+      setError(tooBig.size ? u.tooBig(tooBig.name, rules.maxBytes / 1024 / 1024) : u.empty(tooBig.name));
       return;
     }
     setError(null);
@@ -107,30 +110,30 @@ export default function FileUploadField({ label, help, kind, max, items, onChang
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-medium" title={item.name}>{item.name}</p>
               <p className="text-xs text-foreground/60" aria-live="polite">
-                {item.status === "uploading" ? `Uploading… ${Math.round(item.progress * 100)}%`
-                  : item.status === "error" ? <span className="text-red-700">{item.error ?? "Upload failed"}</span>
-                    : <>{formatBytes(item.size)}{item.path ? " · saved" : " · uploaded"}</>}
+                {item.status === "uploading" ? u.uploading(Math.round(item.progress * 100))
+                  : item.status === "error" ? <span className="text-red-700">{item.error ? t.errors[item.error] ?? item.error : u.failed}</span>
+                    : <>{formatBytes(item.size)} · {item.path ? u.saved : u.uploaded}</>}
               </p>
               {item.status === "uploading" && <div className="mt-1 h-1 overflow-hidden rounded-full bg-(--secondary)">
                 <div className="h-full bg-(--positive-tertiary) transition-[width] motion-reduce:transition-none" style={{ width: `${Math.round(item.progress * 100)}%` }} />
               </div>}
             </div>
             <div className="flex shrink-0 flex-col gap-1">
-              {item.status === "error" && item.file && <MainButton size="small" variant="secondary" className="text-xs" onClick={() => retry(item)}>Retry</MainButton>}
-              <MainButton size="small" variant="ghost" className="text-xs" aria-label={`Remove ${item.name}`} onClick={() => remove(item)}>Remove</MainButton>
+              {item.status === "error" && item.file && <MainButton size="small" variant="secondary" className="text-xs" onClick={() => retry(item)}>{u.retry}</MainButton>}
+              <MainButton size="small" variant="ghost" className="text-xs" aria-label={u.removeAria(item.name)} onClick={() => remove(item)}>{u.remove}</MainButton>
             </div>
           </li>;
         })}
       </ul>}
-      <p className="mt-2 text-xs text-foreground/50">{items.length} of {max}</p>
+      <p className="mt-2 text-xs text-foreground/50">{u.count(items.length, max)}</p>
     </div>
   );
 }
 
 /** Why the form can't be saved yet because of its files, or null when every file is ready. */
-export function uploadsBlockingSave(items: UploadItem[]) {
+export function uploadsBlockingSave(items: UploadItem[], messages: Messages["vendorForm"]["upload"]) {
   const uploading = items.filter((item) => item.status === "uploading").length;
-  if (uploading) return `Waiting for ${uploading} ${uploading === 1 ? "file" : "files"} to finish uploading.`;
-  if (items.some((item) => item.status === "error")) return "Some files didn't upload. Retry or remove them before saving.";
+  if (uploading) return messages.waiting(uploading);
+  if (items.some((item) => item.status === "error")) return messages.someFailed;
   return null;
 }

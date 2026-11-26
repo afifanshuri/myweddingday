@@ -23,8 +23,10 @@ export default function ShortlistSection({ owner }: { owner: string }) {
   const planServices = usePreferenceStore((state) => state.weddingDetails.services);
   const planNames = usePreferenceStore((state) => state.weddingDetails.serviceNames);
   const catalogue = useServiceStore((state) => state.service);
-  const { owner: loadedFor, vendors, loading, failed, removed } = useShortlistDetails();
+  const { owner: loadedFor, vendors, loading, failed, removed, unavailable: unavailableIds } = useShortlistDetails();
   const known = loadedFor === owner ? vendors : null;
+  const unavailable = loadedFor === owner ? unavailableIds : new Set<number>();
+  const removeFromShortlist = usePreferenceStore((state) => state.removeFromShortlist);
   // The vendor open inside the panel (in memory; browser Back returns to the list).
   const openId = useShortlistPanel((state) => state.vendorId);
   const t = useT();
@@ -39,7 +41,8 @@ export default function ShortlistSection({ owner }: { owner: string }) {
   const groups = [...new Set([...planServices, ...shortlist.map((entry) => entry.serviceId)])]
     .map((serviceId) => ({ serviceId, entries: shortlist.filter((entry) => entry.serviceId === serviceId) }))
     .filter((group) => group.entries.length);
-  const waiting = !known?.size && shortlist.length > 0 && !failed;
+  // Still loading: nothing on the shortlist has come back yet (as a vendor or as unavailable).
+  const waiting = shortlist.length > 0 && !failed && !shortlist.some((entry) => known?.has(entry.vendorId) || unavailable.has(entry.vendorId));
 
   return <div className="min-w-0">
     <p className="max-w-[65ch] text-sm leading-6 text-foreground/70">
@@ -65,20 +68,30 @@ export default function ShortlistSection({ owner }: { owner: string }) {
       : <div className="mt-6 space-y-8">
         {groups.map(({ serviceId, entries }) => {
           const matches = entries.flatMap((entry) => known?.get(entry.vendorId)?.match ?? []);
+          // Vendors that aren't available right now stay on the shortlist as a quiet card the user can remove.
+          const cards = [
+            ...matches.map((match) => <VendorContainer key={match.vendor.id} match={match} serviceName={nameOf(serviceId)}
+              priceLabel={t.vendor.packagesFrom} onSelect={openShortlistVendor} />),
+            ...entries.filter((entry) => unavailable.has(entry.vendorId)).map((entry) => <article key={`off-${entry.vendorId}`}
+              aria-label={t.shortlist.unavailableTitle}
+              className="flex h-full min-h-56 flex-col justify-between gap-4 rounded-lg border border-dashed border-(--tertiary) bg-(--background) p-4 text-sm">
+              <div>
+                <p className="font-medium text-amber-800">{t.shortlist.unavailableTitle}</p>
+                <p className="mt-2 leading-6 text-foreground/65">{t.shortlist.unavailableText}</p>
+              </div>
+              <MainButton size="small" variant="secondary" className="self-start" onClick={() => removeFromShortlist([entry.vendorId])}>
+                {t.shortlist.removeUnavailable}
+              </MainButton>
+            </article>),
+          ];
           return <section key={serviceId} aria-labelledby={`shortlist-service-${serviceId}`}>
             <h3 id={`shortlist-service-${serviceId}`} className="text-sm font-semibold text-(--positive-tertiary)">
               {nameOf(serviceId)} <span className="font-normal text-foreground/60">({entries.length})</span>
             </h3>
             {/* More than two vendors for a service slide sideways instead of stacking up. */}
-            {matches.length > 2
-              ? <ScrollCarousel label={t.shortlist.carouselLabel(nameOf(serviceId))} slideWidth="min(85%, 15rem)" className="mt-3">
-                {matches.map((match) => <VendorContainer key={match.vendor.id} match={match} serviceName={nameOf(serviceId)}
-                  priceLabel={t.vendor.packagesFrom} onSelect={openShortlistVendor} />)}
-              </ScrollCarousel>
-              : <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {matches.map((match) => <VendorContainer key={match.vendor.id} match={match} serviceName={nameOf(serviceId)}
-                  priceLabel={t.vendor.packagesFrom} onSelect={openShortlistVendor} />)}
-              </div>}
+            {cards.length > 2
+              ? <ScrollCarousel label={t.shortlist.carouselLabel(nameOf(serviceId))} slideWidth="min(85%, 15rem)" className="mt-3">{cards}</ScrollCarousel>
+              : <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">{cards}</div>}
           </section>;
         })}
       </div>}

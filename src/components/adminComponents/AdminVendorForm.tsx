@@ -15,6 +15,8 @@ import { APIReadVendorSubmission, APISubmitVendorListing } from "@/services/api/
 import VendorReviewPanel from "./VendorReviewPanel";
 import "@/css/admin.css";
 import FileUploadField, { uploadsBlockingSave } from "@/components/adminComponents/FileUploadField";
+import LanguageSwitch from "@/components/commonComponents/LanguageSwitch";
+import { useT } from "@/i18n";
 import { fileRef, savedItem, type UploadItem } from "@/services/api/uploads";
 import { MAX_VENDOR_IMAGES } from "@/config/vendorImages";
 import { UPLOAD_KINDS } from "@/config/uploads";
@@ -67,6 +69,8 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
   const updateVendorDataToStore = useAdminStore((state) => state.updateVendor);
   const resetDraft = useAdminStore((state) => state.resetDraft);
   const loadDraft = useAdminStore((state) => state.loadDraft);
+  const t = useT();
+  const f = t.vendorForm;
   const loadKey = `${vendorId ?? submitToken}:${reloadKey}`;
   // Edits send package ids; new listings don't.
   const editsSaved = isEdit || !!link?.editsSaved;
@@ -154,45 +158,45 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
 
     const name = vendorFromStore.vendorName ?? "";
     if (name.toString().trim() === "" || name === "<Vendor Name>") {
-      newErrors.vendorName = "Vendor name is required";
+      newErrors.vendorName = f.errors.vendorName;
     }
 
     if (!vendorFromStore.serviceId || vendorFromStore.serviceId === 0) {
-      newErrors.serviceId = "Service type is required";
+      newErrors.serviceId = f.errors.serviceId;
     }
 
     if (
       !vendorFromStore.locationId ||
       vendorFromStore.locationId.length === 0
     ) {
-      newErrors.locationId = "At least one location is required";
+      newErrors.locationId = f.errors.locationId;
     }
 
     const contact = vendorFromStore.contact ?? "";
     if (contact.toString().trim() === "") {
-      newErrors.contact = "Contact is required";
+      newErrors.contact = f.errors.contact;
     }
 
     const detail = vendorFromStore.detail ?? "";
     if (detail.toString().trim() === "") {
-      newErrors.detail = "Description is required";
+      newErrors.detail = f.errors.detail;
     }
 
     if (!packageListFromStore || packageListFromStore.length === 0) {
-      newErrors.packages = [{ name: "At least one package is required" }];
+      newErrors.packages = [{ name: f.errors.packages }];
     } else {
       newErrors.packages = [];
       packageListFromStore.forEach((pkg) => {
         const pkgErr: { name?: string; price?: string; details?: string } = {};
         if (!pkg.name || pkg.name.toString().trim() === "") {
-          pkgErr.name = "Package name is required";
+          pkgErr.name = f.errors.packageName;
         }
         if (!Number.isFinite(pkg.price) || pkg.price <= 0) {
-          pkgErr.price = "Package price must be a positive number";
+          pkgErr.price = f.errors.packagePrice;
         }
         const det = pkg.details ?? "";
         if (det.toString().trim() === "") {
-          pkgErr.details = "Package description is required";
+          pkgErr.details = f.errors.packageDetails;
         }
         newErrors.packages!.push(pkgErr);
       });
@@ -213,7 +217,7 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
   function handleSaveClick() {
     if (savingRef.current || saved) return;
     setSaveError(null);
-    const blocked = uploadsBlockingSave([...images, ...packageListFromStore.flatMap((pkg) => pkg.attachments)]);
+    const blocked = uploadsBlockingSave([...images, ...packageListFromStore.flatMap((pkg) => pkg.attachments)], f.upload);
     if (blocked) {
       setSaveError(blocked);
       return;
@@ -281,19 +285,21 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
 
   if (submitted) {
     return <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-4 px-6 text-center">
+      <LanguageSwitch className="self-end" />
       <p className="libre-font text-lg text-(--positive-tertiary)">myweddingday.</p>
-      <h1 className="libre-font text-3xl text-(--positive-tertiary)">Listing submitted</h1>
-      <p role="status" className="text-sm text-foreground/70">{submitted}</p>
-      <p className="text-xs text-foreground/50">You can close this page.</p>
+      <h1 className="libre-font text-3xl text-(--positive-tertiary)">{f.submittedTitle}</h1>
+      <p role="status" className="text-sm text-foreground/70">{f.submittedText}</p>
+      <p className="text-xs text-foreground/50">{f.canClose}</p>
     </main>;
   }
   if ((isEdit || isSubmit) && loaded?.key !== loadKey) {
-    return <LoadingScreen label={isSubmit ? "Opening your form…" : "Loading vendor…"} />;
+    return <LoadingScreen label={isSubmit ? f.opening : "Loading vendor…"} />;
   }
   if ((isEdit || isSubmit) && loaded?.error) {
     return <main className={`mx-auto max-w-7xl px-4 py-8 sm:px-8 ${isSubmit ? "flex min-h-screen max-w-xl flex-col items-center justify-center gap-3 text-center" : ""}`}>
-      {isSubmit && <h1 className="libre-font text-2xl text-(--positive-tertiary)">This link can&apos;t be used</h1>}
-      <p role="alert">{loaded.error}</p>
+      {isSubmit && <LanguageSwitch className="self-end" />}
+      {isSubmit && <h1 className="libre-font text-2xl text-(--positive-tertiary)">{f.cantUse}</h1>}
+      <p role="alert">{t.errors[loaded.error] ?? loaded.error}</p>
       {!isSubmit && <MainButton className="mt-4" size="small" variant="secondary" href={ROUTES.admin}>Back to vendors</MainButton>}
     </main>;
   }
@@ -302,14 +308,15 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
     <main className={`admin-page mx-auto max-w-7xl px-4 py-8 sm:px-8 sm:py-12`}>
       {!isSubmit && <MainButton href={ROUTES.admin} variant="ghost" size="small" className="mb-4">← All vendors</MainButton>}
       {isSubmit && link ? <header className="mb-8">
-        <p className="mb-3 libre-font text-lg text-(--positive-tertiary)">myweddingday.</p>
-        <h1 className="libre-font text-3xl text-(--positive-tertiary) sm:text-4xl">{link.editsSaved ? "Update your listing" : "Add your listing"}</h1>
-        <p className="mt-3 text-sm font-normal text-foreground/60">{link.editsSaved
-          ? "Your listing is saved as you sent it. Change what we asked for below, then submit it again."
-          : `Tell couples about ${link.label}: your details, photos and packages. We'll review your listing before it goes live.`}
-          {" "}This link works until {new Date(link.expiresAt).toLocaleDateString("en-MY", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kuala_Lumpur" })}.</p>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <p className="libre-font text-lg text-(--positive-tertiary)">myweddingday.</p>
+          <LanguageSwitch />
+        </div>
+        <h1 className="libre-font text-3xl text-(--positive-tertiary) sm:text-4xl">{link.editsSaved ? f.updateTitle : f.addTitle}</h1>
+        <p className="mt-3 text-sm font-normal text-foreground/60">{link.editsSaved ? f.updateIntro : f.addIntro(link.label)}
+          {" "}{f.linkUntil(new Date(link.expiresAt).toLocaleDateString(t.intl, { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kuala_Lumpur" }))}</p>
         {link.fixNote && <div className="mt-5 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-          <p className="font-medium">Please change:</p>
+          <p className="font-medium">{f.pleaseChange}</p>
           <p className="mt-1 whitespace-pre-line">{link.fixNote}</p>
         </div>}
       </header> : <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
@@ -329,12 +336,12 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
           <div className="flex items-center gap-3 border-b border-(--secondary) pb-5">
             <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-(--secondary) text-(--positive-tertiary)">01</span>
             <div>
-              <h2 id="vendor-details-heading" className="libre-font text-xl">Vendor details</h2>
-              <p className="mt-1 text-xs font-normal text-foreground/60">Business information and contact details</p>
+              <h2 id="vendor-details-heading" className="libre-font text-xl">{f.detailsHeading}</h2>
+              <p className="mt-1 text-xs font-normal text-foreground/60">{f.detailsHint}</p>
             </div>
           </div>
           <div>
-            <label htmlFor="vendor-name" className="mb-2 block text-sm">Vendor Name</label>
+            <label htmlFor="vendor-name" className="mb-2 block text-sm">{f.vendorName}</label>
           <CustomInput
             id="vendor-name"
             className="w-full"
@@ -353,7 +360,7 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
             ) : null}
           </div>
           <div>
-            <label htmlFor="serviceDropdown" className="mb-2 block text-sm">Service Type</label>
+            <label htmlFor="serviceDropdown" className="mb-2 block text-sm">{f.serviceType}</label>
             <select
               name="services"
               id="serviceDropdown"
@@ -368,7 +375,7 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
                 });
               }}
             >
-              <option value={0}>Select service</option>
+              <option value={0}>{f.selectService}</option>
               {servicesList.map((s, index) => {
                 return (
                   <option key={index} value={s.id}>
@@ -382,8 +389,8 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
             ) : null}
           </div>
           <div>
-            <p className="mb-2 text-sm">Locations Covered</p>
-            <p className="mb-3 text-xs font-normal text-foreground/60">Select all areas this vendor serves.</p>
+            <p className="mb-2 text-sm">{f.locations}</p>
+            <p className="mb-3 text-xs font-normal text-foreground/60">{f.locationsHint}</p>
             <div className="flex flex-wrap gap-2 text-xs">
               {locationList.map((l) => {
                 return (
@@ -405,7 +412,7 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
             ) : null}
           </div>
           <div>
-            <label htmlFor="vendor-contact" className="mb-2 block text-sm">Contact</label>
+            <label htmlFor="vendor-contact" className="mb-2 block text-sm">{f.contact}</label>
           <CustomInput
             id="vendor-contact"
             className="w-full"
@@ -423,11 +430,11 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
               <p className="text-red-500 text-sm mt-1">{errors.contact}</p>
             ) : null}
           </div>
-          <FileUploadField label="Vendor photos (optional)" kind="vendorImage" max={MAX_VENDOR_IMAGES} items={images} onChange={setImages}
+          <FileUploadField label={f.photosLabel} kind="vendorImage" max={MAX_VENDOR_IMAGES} items={images} onChange={setImages}
             endpoint={uploadEndpoint}
-            help={`Up to ${MAX_VENDOR_IMAGES} JPG, PNG or WebP photos of your work, ${UPLOAD_KINDS.vendorImage.maxBytes / 1024 / 1024} MB each. They appear on result cards for everyone.`} />
+            help={f.photosHelp(MAX_VENDOR_IMAGES, UPLOAD_KINDS.vendorImage.maxBytes / 1024 / 1024)} />
           <div className="flex flex-col gap-4 border-t border-(--secondary) pt-5">
-            <p className="text-sm">Social Media <span className="font-normal text-foreground/50">(Optional)</span></p>
+            <p className="text-sm">{f.social} <span className="font-normal text-foreground/50">{f.optional}</span></p>
             <div className="grid grid-cols-1 gap-4">
               {(
                 [
@@ -467,7 +474,7 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
             </div>
           </div>
           <div>
-            <label htmlFor="vendor-description" className="mb-2 block text-sm">Description</label>
+            <label htmlFor="vendor-description" className="mb-2 block text-sm">{f.description}</label>
           <CustomTextarea
             id="vendor-description"
             className="w-full"
@@ -490,15 +497,15 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
           <div className="flex items-center gap-3 border-b border-(--secondary) pb-5">
             <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-(--secondary) text-(--positive-tertiary)">02</span>
             <div className="min-w-0 flex-1">
-              <h2 id="package-details-heading" className="libre-font text-xl">Package details</h2>
-              <p className="mt-1 text-xs font-normal text-foreground/60">Pricing, inclusions, and package images</p>
+              <h2 id="package-details-heading" className="libre-font text-xl">{f.packagesHeading}</h2>
+              <p className="mt-1 text-xs font-normal text-foreground/60">{f.packagesHint}</p>
             </div>
             <span className="rounded-full bg-(--secondary) px-3 py-1 text-xs">{packageListFromStore.length}</span>
           </div>
           {packageListFromStore.length === 0 && (
             <div className="rounded-2xl bg-(--background) px-5 py-8 text-center">
-              <p className="text-sm text-(--positive-tertiary)">No packages added yet</p>
-              <p className="mt-2 text-xs font-normal text-foreground/60">Add your first package with its price and what&apos;s included.</p>
+              <p className="text-sm text-(--positive-tertiary)">{f.noPackages}</p>
+              <p className="mt-2 text-xs font-normal text-foreground/60">{f.noPackagesHint}</p>
             </div>
           )}
           {packageListFromStore.map((p, index) => {
@@ -539,16 +546,16 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
               addNewPackage();
             }}
           >
-            + Add a package
+            {f.addPackage}
           </MainButton>
         </section>
 
         <div className="flex flex-col gap-4 rounded-2xl border border-(--tertiary) bg-white p-5 sm:flex-row sm:items-center sm:justify-between lg:col-span-2">
-          <p className="text-sm font-normal text-foreground/60">{isSubmit ? "Check your details and packages before submitting." : "Review the vendor details and packages before saving."}</p>
+          <p className="text-sm font-normal text-foreground/60">{isSubmit ? f.checkBeforeSubmit : "Review the vendor details and packages before saving."}</p>
           <div className="flex flex-col gap-3 sm:flex-row">
             {isEdit && <MainButton variant="danger" disabled={isSaving} className="w-full sm:w-auto" onClick={() => { setSaveError(null); setShowDelete(true); }}>Delete vendor</MainButton>}
             <MainButton disabled={isSaving || saved} className="w-full px-7 py-3 text-sm text-(--positive-tertiary) disabled:opacity-50 sm:w-auto" onClick={() => { setNotice(null); handleSaveClick(); }}>
-              {saved ? "Vendor saved" : isSaving ? (isSubmit ? "Submitting…" : "Saving...") : isSubmit ? "Submit listing" : isEdit ? "Save changes" : "Add Vendor"}
+              {saved ? "Vendor saved" : isSaving ? (isSubmit ? f.submitting : "Saving...") : isSubmit ? f.submit : isEdit ? "Save changes" : "Add Vendor"}
             </MainButton>
           </div>
         </div>
@@ -563,21 +570,21 @@ export default function AdminVendorForm({ vendorId, submitToken }: { vendorId?: 
         setErrors({});
         setSaveError(null);
       }}>Add another vendor</MainButton>}
-      {!showConfirm && !showDelete && saveError && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">{saveError}</p>}
+      {!showConfirm && !showDelete && saveError && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">{t.errors[saveError] ?? saveError}</p>}
 
       <CustomDialog
         open={showConfirm}
         onClose={() => setShowConfirm(false)}
         onConfirm={() => saveVendor()}
         busy={isSaving}
-        title={isSubmit ? "Submit listing" : "Confirm Save"}
+        title={isSubmit ? f.submit : "Confirm Save"}
       >
-        <p>{isSubmit ? "Submit your listing for review? You won't be able to change it after submitting unless we ask you for changes." : isEdit ? review?.status === "approved" ? "Save these changes? Customers see them the next time their results load." : "Save these changes?" : "Are you sure you want to save this vendor?"}</p>
-        {saveError && <p role="alert" className="mt-2 text-red-600">{saveError}</p>}
+        <p>{isSubmit ? f.submitConfirm : isEdit ? review?.status === "approved" ? "Save these changes? Customers see them the next time their results load." : "Save these changes?" : "Are you sure you want to save this vendor?"}</p>
+        {saveError && <p role="alert" className="mt-2 text-red-600">{t.errors[saveError] ?? saveError}</p>}
       </CustomDialog>
       <CustomDialog open={showDelete} onClose={() => setShowDelete(false)} onConfirm={() => deleteVendor()} busy={isSaving} title="Delete vendor">
         <p className="break-words">Delete {vendorFromStore.vendorName} and all {packageListFromStore.length} of its packages and photos? This can&apos;t be undone. The vendor disappears from customers&apos; saved results.</p>
-        {saveError && <p role="alert" className="mt-2 text-red-600">{saveError}</p>}
+        {saveError && <p role="alert" className="mt-2 text-red-600">{t.errors[saveError] ?? saveError}</p>}
       </CustomDialog>
     </main>
   );

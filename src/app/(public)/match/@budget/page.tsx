@@ -30,7 +30,7 @@ export default function BudgetSection() {
   });
   const details = usePreferenceStore((state) => state.weddingDetails);
   // Loading, totals and the "no longer available" count are shared with the dashboard (useBudget).
-  const { signedIn: unlocked, selections, plannedSen, selectedSen, remainingSen, removedCount, dismissRemoved } = useBudget();
+  const { signedIn: unlocked, selections, plannedSen, selectedSen, remainingSen, removedCount, dismissRemoved, unavailable } = useBudget();
   const removePackage = usePreferenceStore((state) => state.removeSelectedPackage);
   const services = useSelectedServices();
   const reduceMotion = useReducedMotion();
@@ -86,6 +86,9 @@ export default function BudgetSection() {
                 {[...details.services].sort((a, b) => Number(!selections.some((item) => item.serviceId === a))
                   - Number(!selections.some((item) => item.serviceId === b))).map((serviceId, index) => {
                   const pkg = selections.find((item) => item.serviceId === serviceId);
+                  // A chosen package whose vendor isn't available right now: kept, shown, not counted.
+                  const off = pkg ? undefined : unavailable.find((item) => item.serviceId === serviceId);
+                  const offName = off ? [off.vendorName, off.packageName].filter(Boolean).join(" · ") : "";
                   const Icon = serviceIcon(serviceId);
                   const name = services.find((service) => service.id === serviceId)?.serviceName
                     ?? serviceName(t, serviceId, pkg?.serviceName);
@@ -144,14 +147,22 @@ export default function BudgetSection() {
                         )}
                       </AnimatePresence>
                     </> : (
-                      <div className="grid grid-cols-[2.25rem_minmax(0,1fr)] items-stretch gap-2">
+                      <div className={`grid items-stretch gap-2 ${off ? "grid-cols-[2.25rem_minmax(0,1fr)_auto]" : "grid-cols-[2.25rem_minmax(0,1fr)]"}`}>
                         <span aria-hidden="true" className="relative rounded-lg bg-stone-100 text-stone-400 transition-colors duration-300">
                           <Icon className="absolute inset-0 h-full w-full p-1.5" />
                         </span>
                         <div className="flex min-h-9 min-w-0 flex-col justify-center gap-0.5">
                           <p className="whitespace-nowrap text-xs font-semibold text-foreground/60">{name}</p>
-                          <p className="break-words text-xs text-foreground/50">{t.budget.noPackage}</p>
+                          {off ? <>
+                            {offName && <p className="break-words text-xs text-foreground/60 line-through decoration-foreground/30">{offName}</p>}
+                            <p className="break-words text-xs font-medium text-amber-800">{t.budget.unavailable}</p>
+                            <p className="break-words text-xs text-foreground/50">{t.budget.unavailableHint}</p>
+                          </> : <p className="break-words text-xs text-foreground/50">{t.budget.noPackage}</p>}
                         </div>
+                        {off && <MainButton variant="ghost" size="icon" className="col-start-3 row-start-1 shrink-0" onClick={() => removePackage(serviceId)}
+                          aria-label={t.budget.removePackageAria(off.packageName || t.budget.unavailable)} title={t.budget.removePackage}>
+                          <BsTrash aria-hidden="true" />
+                        </MainButton>}
                       </div>
                     )}
                   </motion.li>

@@ -66,7 +66,7 @@ export default function DashboardPlan({ services }: { services: Named[] }) {
   const t = useT();
 
   // Loading, totals and the "no longer available" count are shared with the results page's budget panel.
-  const { selections, plannedSen, selectedSen, remainingSen, removedCount, dismissRemoved } = useBudget();
+  const { selections, plannedSen, selectedSen, remainingSen, removedCount, dismissRemoved, unavailable } = useBudget();
 
   if (!hasPlan) {
     return <section className="rounded-2xl border border-(--tertiary) bg-white px-6 py-12 text-center">
@@ -162,6 +162,7 @@ export default function DashboardPlan({ services }: { services: Named[] }) {
         : <ul className="-mx-2">
           {details.services.map((id) => {
             const pkg = selections.find((item) => item.serviceId === id);
+            const off = pkg ? undefined : unavailable.find((item) => item.serviceId === id);
             const listed = shortlist.filter((entry) => entry.serviceId === id).length;
             const Icon = serviceIcon(id);
             const row = <>
@@ -171,10 +172,11 @@ export default function DashboardPlan({ services }: { services: Named[] }) {
               <span className="min-w-0 flex-1">
                 <span className={`block text-sm font-medium ${pkg ? "text-(--positive-tertiary)" : "text-foreground/50"}`}>{serviceName(id)}</span>
                 <AnimatePresence mode="popLayout" initial={false}>
-                  <motion.span key={pkg?.packageId ?? "none"} className="block truncate text-xs text-foreground/55"
+                  <motion.span key={pkg?.packageId ?? (off ? `off-${off.packageId}` : "none")} className="block truncate text-xs text-foreground/55"
                     initial={reduceMotion ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
                     exit={reduceMotion ? undefined : { opacity: 0, y: -4 }} transition={{ duration: 0.2 }}>
-                    {pkg ? `${pkg.vendorName} · ${pkg.packageName}` : "—"}
+                    {pkg ? `${pkg.vendorName} · ${pkg.packageName}`
+                      : off ? <><span className="font-medium text-amber-800">{t.budget.unavailable}</span>{off.vendorName ? ` · ${off.vendorName}` : ""}</> : "—"}
                   </motion.span>
                 </AnimatePresence>
               </span>
