@@ -5,9 +5,11 @@ import MainButton from "@/components/commonComponents/MainButton";
 import AuthCard, { authInputClass } from "./AuthCard";
 import { APIRequestPasswordReset } from "@/services/api/auth";
 import { ROUTES } from "@/config/routes";
+import { useT } from "@/i18n";
 
 export default function ForgotPasswordForm() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const t = useT();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -24,25 +26,25 @@ export default function ForgotPasswordForm() {
   }
 
   return (
-    <AuthCard title="Reset password" intro="Enter your account email and we'll send you a link to choose a new password.">
+    <AuthCard title={t.auth.resetTitle} intro={t.auth.resetIntro}>
       {status === "sent" ? (
         <p role="status" className="text-sm text-stone-700">
-          If an account exists for that email, a reset link is on its way. Open it in this browser to continue.
+          {t.auth.resetSent}
         </p>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-5">
           <label className="block text-sm text-stone-700">
-            Email
+            {t.auth.email}
             <input type="email" name="email" autoComplete="email" required disabled={status === "sending"} className={authInputClass} />
           </label>
-          {status === "error" && <p role="alert" className="text-sm text-stone-600">Unable to send the link right now. Please wait a minute and try again.</p>}
+          {status === "error" && <p role="alert" className="text-sm text-stone-600">{t.auth.sendFailed}</p>}
           <MainButton type="submit" disabled={status === "sending"} className="w-full">
-            {status === "sending" ? "Sending..." : "Send reset link"}
+            {status === "sending" ? t.auth.sending : t.auth.sendLink}
           </MainButton>
         </form>
       )}
       <p className="mt-6 text-center text-sm text-stone-600">
-        <MainButton href={ROUTES.login} variant="link" size="none">Back to sign in</MainButton>
+        <MainButton href={ROUTES.login} variant="link" size="none">{t.auth.backToSignIn}</MainButton>
       </p>
     </AuthCard>
   );

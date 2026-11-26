@@ -10,8 +10,10 @@ import Image from "next/image";
 import { useEffect } from "react";
 import { useServiceStore } from "@/store/serviceStore";
 import { ROUTES } from "@/config/routes";
+import { useT } from "@/i18n";
 
 export default function LandingPage() {
+  const t = useT();
   useEffect(() => {
     useServiceStore.getState().deleteAllService();
   }, []);
@@ -46,18 +48,17 @@ export default function LandingPage() {
         >
           <h1 className="libre-font text-[clamp(1.5rem,7vw,2.25rem)] xl:text-[54px] leading-tight mb-8 font-light tracking-tighter">
             <span className="inline-flex items-center gap-2 whitespace-nowrap">
-              Finding a <RotatingService />
+              {t.landing.heroBefore} <RotatingService />
             </span>
-            <span className="block">just got easier.</span>
+            <span className="block">{t.landing.heroAfter}</span>
           </h1>
           <p className="text-[20px] w-3/4 leading-7 mb-8 opacity-50 font-light tracking-tight">
-            Describe your wedding. Choose freely from over 10,000+ wedding
-            vendors, tailored exactly to your liking
+            {t.landing.heroText}
           </p>
           <div className="flex flex-row gap-2 mb-2 opacity-50 hover:opacity-100 text-black">
-            <MainButton href={ROUTES.login}>Start Planning</MainButton>
+            <MainButton href={ROUTES.login}>{t.landing.startPlanning}</MainButton>
           </div>
-          <p className="opacity-50">6 Categories - Takes about 5 minutes</p>
+          <p className="opacity-50">{t.landing.heroMeta}</p>
         </motion.div>
       </div>
       <StarVendors />

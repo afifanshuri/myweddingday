@@ -1,36 +1,19 @@
+"use client";
+import { useT } from "@/i18n";
+
 import MainButton from "@/components/commonComponents/MainButton";
 import { ROUTES } from "@/config/routes";
 import { PLANS } from "@/config/plans";
 
-const pricingPlans = [
-  {
-    name: "Free",
-    price: "RM0",
-    description: "A simple way to start exploring your options.",
-    featured: false,
-    benefits: [
-      `${PLANS.free.manualSearches} free search`,
-      `Your best ${PLANS.free.unlockedPerService === 1 ? "vendor" : `${PLANS.free.unlockedPerService} vendors`} per service shown in full, plus previews of your top picks`,
-      "Shortlist and build your budget with the vendors you've unlocked",
-      `${PLANS.free.aiTrialSearches} AI-powered trial search (coming soon)`,
-    ],
-  },
-  {
-    name: "Plus ✨",
-    price: `RM${PLANS.plus.priceMYR}`,
-    description: `One payment for ${PLANS.plus.durationYears} year of wedding planning. No automatic renewal.`,
-    featured: true,
-    benefits: [
-      "Edit your preferences and search again anytime",
-      "Every matching vendor, with full details",
-      `${PLANS.plus.aiSearchesPerWeek} AI-powered searches per week (coming soon)`,
-      "AI-assisted matches tailored to your budget and preferences (coming soon)",
-      "Unlock vendor names, contacts and package details",
-    ],
-  },
-];
-
 export default function Pricing() {
+  const t = useT();
+  const p = t.landing.pricing;
+  const pricingPlans = [
+    { id: "free", name: p.freeName, price: "RM0", description: p.freeDescription, featured: false,
+      benefits: p.freeBenefits(PLANS.free.manualSearches, PLANS.free.unlockedPerService, PLANS.free.aiTrialSearches) },
+    { id: "plus", name: p.plusName, price: `RM${PLANS.plus.priceMYR}`, description: p.plusDescription(PLANS.plus.durationYears), featured: true,
+      benefits: p.plusBenefits(PLANS.plus.aiSearchesPerWeek) },
+  ];
   return (
     <section
       id="pricing"
@@ -38,16 +21,16 @@ export default function Pricing() {
       className="home-pricing flex min-h-[100vh] scroll-mt-24 flex-col items-center justify-center gap-4 px-3 py-24 text-center sm:px-4"
     >
       <h2 id="pricing-heading" className="libre-font text-4xl leading-tight sm:text-5xl lg:text-6xl">
-        Pricing
+        {p.title}
       </h2>
       <p className="max-w-lg text-foreground/60">
-        Choose the plan that fits your wedding planning.
+        {p.intro}
       </p>
       <div className="mt-8 grid w-full max-w-4xl grid-cols-1 gap-6 text-left md:grid-cols-2">
         {pricingPlans.map((plan) => (
           <article
-            key={plan.name}
-            aria-labelledby={`pricing-${plan.name.toLowerCase()}`}
+            key={plan.id}
+            aria-labelledby={`pricing-${plan.id}`}
             className={`rounded-3xl border p-7 shadow-sm sm:p-10 ${
               plan.featured
                 ? "border-(--positive-secondary) bg-white/90 ring-1 ring-(--positive-secondary)"
@@ -55,7 +38,7 @@ export default function Pricing() {
             }`}
           >
             <h3
-              id={`pricing-${plan.name.toLowerCase()}`}
+              id={`pricing-${plan.id}`}
               className="libre-font text-2xl text-(--positive-tertiary)"
             >
               {plan.name}
@@ -65,7 +48,7 @@ export default function Pricing() {
                 {plan.price}
               </span>
               <span className="text-sm font-normal text-foreground/60">
-                {plan.featured ? `one-time · ${PLANS.plus.durationYears} year access` : "Free"}
+                {plan.featured ? p.plusPriceNote(PLANS.plus.durationYears) : p.freePriceNote}
               </span>
             </p>
             <p className="mt-4 min-h-12 text-sm font-normal leading-6 text-foreground/65">
@@ -97,7 +80,7 @@ export default function Pricing() {
         ))}
       </div>
       <MainButton href={ROUTES.payment} className="mt-4 px-8 py-3">
-        Get {PLANS.plus.durationYears} year of Plus — RM{PLANS.plus.priceMYR} one-time
+        {p.cta(PLANS.plus.durationYears, PLANS.plus.priceMYR)}
       </MainButton>
     </section>
   );

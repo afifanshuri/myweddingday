@@ -1,3 +1,6 @@
+"use client";
+import { useT } from "@/i18n";
+
 import { BsCalendarEvent, BsCheck2, BsGrid, BsSliders } from "react-icons/bs";
 import MainButton from "@/components/commonComponents/MainButton";
 
@@ -115,6 +118,7 @@ function StepPreview({ step }: { step: number }) {
 }
 
 export default function HowItWorks() {
+  const t = useT();
   return (
     /**<section
       id="how-it-works"
@@ -162,17 +166,16 @@ export default function HowItWorks() {
       <div className="mx-auto grid items-center gap-10 lg:grid-cols-[minmax(0,2fr)_minmax(0,6fr)] px-18">
         <div className="min-w-0 text-left">
           <p className="mb-4 text-xs font-semibold tracking-widest text-(--positive-tertiary) uppercase">
-            From your ideas to your shortlist
+            {t.landing.how.eyebrow}
           </p>
           <h2
             id="how-it-works-heading"
             className="libre-font text-4xl leading-tight text-(--positive-tertiary) sm:text-5xl lg:text-6xl"
           >
-            How it works
+            {t.landing.how.title}
           </h2>
           <p className="mt-5 text-base leading-7 text-foreground/65">
-            Find vendors that fit your wedding, your priorities, and your
-            budget. Start with a few details and take it one step at a time.
+            {t.landing.how.text}
           </p>
         </div>
         <video

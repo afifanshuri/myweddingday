@@ -2,20 +2,14 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-
-const services = [
-  "wedding venue",
-  "catering",
-  "makeup artist",
-  "photographer",
-  "bridal outfit",
-  "pelamin",
-];
+import { useT } from "@/i18n";
 
 export default function RotatingService() {
   const [index, setIndex] = useState(0);
+  const t = useT();
+  const services = t.landing.rotating;
   const reducedMotion = useReducedMotion();
-  const service = reducedMotion ? services[0] : services[index];
+  const service = reducedMotion ? services[0] : services[index % services.length];
   const wordRef = useRef<HTMLSpanElement>(null);
   const [width, setWidth] = useState<number>();
 
@@ -32,7 +26,7 @@ export default function RotatingService() {
   useEffect(() => {
     if (reducedMotion) return;
     const timer = setInterval(
-      () => setIndex((current) => (current + 1) % services.length),
+      () => setIndex((current) => current + 1),
       2500,
     );
     return () => clearInterval(timer);
@@ -40,7 +34,7 @@ export default function RotatingService() {
 
   return (
     <>
-      <span className="sr-only">wedding service</span>
+      <span className="sr-only">{t.landing.heroService}</span>
       <motion.span
         aria-hidden="true"
         className="relative inline-block shrink-0 text-left italic text-(--positive)"
