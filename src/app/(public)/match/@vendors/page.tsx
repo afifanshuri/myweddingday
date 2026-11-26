@@ -188,6 +188,14 @@ export default function VendorSection() {
     registerVendorOpener(selectVendor);
     return () => registerVendorOpener(null);
   }, [selectVendor]);
+  // A different page is on its way: show placeholder cards (as for a filter change), not the old page's vendors.
+  const pageLoading = !!data && busy && data.page !== page;
+  const goToPage = (next: number) => {
+    setPage(next);
+    // The page buttons are at the bottom; bring the top of the list into view so the new page is seen from its start.
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById("all-match-heading")?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  };
   return (
     <div className="flex min-w-0 flex-col gap-6 p-4 sm:p-8" aria-busy={busy} onErrorCapture={onImageError}>
       {checking ? <MatchLoading />
@@ -209,11 +217,11 @@ export default function VendorSection() {
             <MainButton href={paymentRoute()} size="small">{t.common.getPlus}</MainButton>
           </div>}
           <TopMatchSection matches={topMatches} servicesList={topServices} onSelect={selectVendor} />
-          {(data.total > 0 || data.lockedCount > 0 || serviceFilter !== null) && <AllMatchSection matches={otherMatches} lockedCount={data.lockedCount} topMatches={topMatches} servicesList={servicesList} onSelect={selectVendor} activeServiceId={serviceFilter} loading={result.filter !== serviceFilter} onServiceChange={(id) => { setServiceFilter(id); setPage(1); }} />}
+          {(data.total > 0 || data.lockedCount > 0 || serviceFilter !== null) && <AllMatchSection matches={otherMatches} lockedCount={data.lockedCount} topMatches={topMatches} servicesList={servicesList} onSelect={selectVendor} activeServiceId={serviceFilter} loading={result.filter !== serviceFilter || pageLoading} onServiceChange={(id) => { setServiceFilter(id); setPage(1); }} />}
           {data.pageCount > 1 && <nav aria-label={t.results.pagesAria} className="flex items-center justify-center gap-4">
-            <MainButton size="small" variant="secondary" disabled={busy || data.page <= 1} onClick={() => setPage(data.page - 1)}>{t.results.previous}</MainButton>
+            <MainButton size="small" variant="secondary" disabled={busy || data.page <= 1} onClick={() => goToPage(data.page - 1)}>{t.results.previous}</MainButton>
             <span aria-live="polite">{t.results.pageOf(data.page, data.pageCount)}</span>
-            <MainButton size="small" variant="secondary" disabled={busy || data.page >= data.pageCount} onClick={() => setPage(data.page + 1)}>{t.results.next}</MainButton>
+            <MainButton size="small" variant="secondary" disabled={busy || data.page >= data.pageCount} onClick={() => goToPage(data.page + 1)}>{t.results.next}</MainButton>
           </nav>}
         </> : <p>{t.results.planToFind}</p>}
     </div>
