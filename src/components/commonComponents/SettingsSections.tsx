@@ -18,8 +18,8 @@ import { useT } from "@/i18n";
 const longDate = (value: string, locale: string) => new Date(value).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" });
 
 export function SettingsCard({ title, icon, children, tone = "plain" }: { title: string; icon: ReactNode; children: ReactNode; tone?: "plain" | "danger" }) {
-  return <section aria-label={title} className={`rounded-2xl border bg-white p-5 sm:p-6 ${tone === "danger" ? "border-red-200" : "border-(--tertiary)"}`}>
-    <h2 className={`mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider ${tone === "danger" ? "text-red-700" : "text-foreground/55"}`}>{icon}{title}</h2>
+  return <section aria-label={title}>
+    <h2 className={`mb-5 flex items-center gap-2 border-b border-(--secondary) pb-4 text-lg font-semibold ${tone === "danger" ? "text-red-700" : "text-(--positive-tertiary)"}`}>{icon}{title}</h2>
     {children}
   </section>;
 }

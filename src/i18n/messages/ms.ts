@@ -321,6 +321,15 @@ const ms: Messages = {
   settings: {
     loading: "Memuatkan tetapan anda…",
     title: "Tetapan",
+    allSettings: "Semua tetapan",
+    hints: {
+      account: "E-mel anda dan bila anda menyertai",
+      plan: "Pelan anda dan apa yang termasuk",
+      password: "Tukar kata laluan anda",
+      sessions: "Log keluar di sini atau dari semua peranti",
+      data: "Muat turun salinan data anda",
+      delete: "Buang akaun anda secara kekal",
+    },
     account: "Akaun",
     unknown: "Tidak diketahui",
     memberSince: (when) => `Ahli sejak ${when}`,

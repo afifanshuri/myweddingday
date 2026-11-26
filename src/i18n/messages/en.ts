@@ -280,6 +280,15 @@ const en = {
   settings: {
     loading: "Loading your settings…",
     title: "Settings",
+    allSettings: "All settings",
+    hints: {
+      account: "Your email and when you joined",
+      plan: "Your plan and what it includes",
+      password: "Change your password",
+      sessions: "Sign out here or on every device",
+      data: "Download a copy of your data",
+      delete: "Remove your account for good",
+    },
     account: "Account",
     unknown: "Unknown",
     memberSince: (when: string) => `Member since ${when}`,
