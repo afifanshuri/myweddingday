@@ -1,4 +1,5 @@
 "use client";
+import { formatPrice } from "@/config/money";
 import { useT } from "@/i18n";
 
 import MainButton from "@/components/commonComponents/MainButton";
@@ -12,12 +13,6 @@ import { usePreferenceStore } from "@/store/preferenceStore";
 import ShortlistButton from "./ShortlistButton";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
-const currency = new Intl.NumberFormat("en-MY", {
-  style: "currency",
-  currency: "MYR",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-});
 
 export default function VendorContainer({
   match,
@@ -111,7 +106,7 @@ export default function VendorContainer({
           <p className="mt-1 text-base font-semibold text-(--positive-tertiary) sm:text-lg">
             {cheapestPrice === null
               ? t.vendor.priceUnavailable
-              : currency.format(cheapestPrice)}
+              : formatPrice(cheapestPrice)}
             {cheapestPrice !== null &&
               match.vendor.serviceId === SERVICE_ID.CATERING && (
                 <span className="ml-1 text-xs font-normal">{t.vendor.perPax}</span>

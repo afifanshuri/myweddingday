@@ -302,7 +302,13 @@ const en = {
     nextPhoto: "Next photo",
     closePhotos: "Close photos",
   },
+  carousel: {
+    previous: "Previous",
+    next: "Next",
+    slideOf: (index: number, count: number) => `${index} of ${count}`,
+  },
   shortlist: {
+    carouselLabel: (service: string) => `${service} shortlist`,
     title: "Shortlist",
     count: (count: number, max: number) => `${count} of ${max}`,
     close: "Close shortlist",

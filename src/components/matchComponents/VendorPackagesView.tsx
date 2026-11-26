@@ -1,4 +1,5 @@
 "use client";
+import { formatPrice } from "@/config/money";
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
@@ -18,9 +19,6 @@ import PackageAttachments from "./PackageAttachments";
 import ShortlistButton from "./ShortlistButton";
 import PhotoViewer from "./PhotoViewer";
 
-// Whole ringgit without cents (RM 1,800); otherwise always two decimals (RM 25.50).
-const currency = { format: (value: number) => new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR",
-  minimumFractionDigits: Number.isInteger(value) ? 0 : 2, maximumFractionDigits: 2 }).format(value) };
 /** Malaysian numbers grouped for reading: 012-3456 7890 (11 digits) or 012-345 6789 (10). Anything else as entered. */
 const readablePhone = (value: string) => {
   const digits = value.replace(/\D/g, "");
@@ -191,7 +189,7 @@ export default function VendorPackagesView({ match, onBack, backLabel, fromShort
                     {chosen && <FiCheck aria-hidden="true" className="shrink-0 translate-y-0.5" />}{pkg.packageName}
                   </h3>
                   <p className={`libre-font shrink-0 whitespace-nowrap text-xl ${chosen ? "" : "text-(--positive-tertiary)"}`}>
-                    {currency.format(pkg.price)}{isCatering && <span className="ml-1 font-sans text-xs">{t.vendor.perPax}</span>}
+                    {formatPrice(pkg.price)}{isCatering && <span className="ml-1 font-sans text-xs">{t.vendor.perPax}</span>}
                   </p>
                 </div>
                 <PackageDetails text={pkg.details || t.vendor.noDescription} chosen={chosen} />

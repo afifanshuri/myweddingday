@@ -1,4 +1,5 @@
 "use client";
+import ScrollCarousel from "@/components/commonComponents/carousel/ScrollCarousel";
 import { serviceName, useT } from "@/i18n";
 
 import { BsBookmark } from "react-icons/bs";
@@ -68,10 +69,16 @@ export default function ShortlistSection({ owner }: { owner: string }) {
             <h3 id={`shortlist-service-${serviceId}`} className="text-sm font-semibold text-(--positive-tertiary)">
               {nameOf(serviceId)} <span className="font-normal text-foreground/60">({entries.length})</span>
             </h3>
-            <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {matches.map((match) => <VendorContainer key={match.vendor.id} match={match} serviceName={nameOf(serviceId)}
-                priceLabel={t.vendor.packagesFrom} onSelect={openShortlistVendor} />)}
-            </div>
+            {/* More than two vendors for a service slide sideways instead of stacking up. */}
+            {matches.length > 2
+              ? <ScrollCarousel label={t.shortlist.carouselLabel(nameOf(serviceId))} slideWidth="min(85%, 15rem)" className="mt-3">
+                {matches.map((match) => <VendorContainer key={match.vendor.id} match={match} serviceName={nameOf(serviceId)}
+                  priceLabel={t.vendor.packagesFrom} onSelect={openShortlistVendor} />)}
+              </ScrollCarousel>
+              : <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {matches.map((match) => <VendorContainer key={match.vendor.id} match={match} serviceName={nameOf(serviceId)}
+                  priceLabel={t.vendor.packagesFrom} onSelect={openShortlistVendor} />)}
+              </div>}
           </section>;
         })}
       </div>}

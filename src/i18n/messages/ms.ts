@@ -334,7 +334,13 @@ const ms: Messages = {
     nextPhoto: "Gambar seterusnya",
     closePhotos: "Tutup gambar",
   },
+  carousel: {
+    previous: "Sebelumnya",
+    next: "Seterusnya",
+    slideOf: (index, count) => `${index} daripada ${count}`,
+  },
   shortlist: {
+    carouselLabel: (service) => `Senarai pilihan ${service}`,
     title: "Senarai Pilihan",
     count: (count, max) => `${count} daripada ${max}`,
     close: "Tutup senarai pilihan",
