@@ -187,8 +187,8 @@ export default function DashboardPlan({ services }: { services: Named[] }) {
                 {pkg ? (pkg.costSen === null ? <span className="text-xs text-foreground/50" title={t.dashboard.addGuests}>—</span>
                   : <span className="font-medium text-(--positive-tertiary)">{money(pkg.costSen)}</span>)
                   : listed ? <button type="button" onClick={openShortlistPanel} title={t.dashboard.openShortlist}
-                    className="inline-flex items-center gap-1 rounded-full bg-(--secondary) px-2.5 py-1 text-xs font-medium text-(--positive-tertiary) hover:bg-(--tertiary)">
-                    <BsBookmark aria-hidden="true" className="size-3" />{listed}<span className="sr-only">{t.dashboard.shortlisted}</span></button>
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-(--secondary) px-2.5 py-1 text-xs font-medium text-(--positive-tertiary) hover:bg-(--tertiary)">
+                    <BsBookmark aria-hidden="true" className="size-3" />{t.dashboard.shortlistedCount(listed)}</button>
                     : unlocked && resultsReady ? <Link href={ROUTES.match} className="text-xs font-medium text-(--positive-tertiary) underline underline-offset-4">{t.dashboard.choose}</Link> : null}
               </span>
             </li>;

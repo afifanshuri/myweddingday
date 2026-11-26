@@ -223,7 +223,7 @@ const ms: Messages = {
     chooseServices: "Pilih perkhidmatan",
     addGuests: "Tambah bilangan tetamu untuk mengira harga pakej ini",
     openShortlist: "Buka senarai pilihan",
-    shortlisted: " disimpan",
+    shortlistedCount: (count) => `${count} vendor disimpan`,
     choose: "Pilih",
   },
   settings: {

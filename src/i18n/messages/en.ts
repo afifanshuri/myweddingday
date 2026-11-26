@@ -191,7 +191,7 @@ const en = {
     chooseServices: "Choose services",
     addGuests: "Add a guest count to price this package",
     openShortlist: "Open shortlist",
-    shortlisted: " shortlisted",
+    shortlistedCount: (count: number) => `${count} ${count === 1 ? "vendor" : "vendors"} shortlisted`,
     choose: "Choose",
   },
   settings: {
