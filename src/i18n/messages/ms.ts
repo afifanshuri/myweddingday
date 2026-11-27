@@ -150,6 +150,8 @@ const ms: Messages = {
     pageOf: (page, count) => `Halaman ${page} daripada ${count}`,
     bestPicks: "Pilihan Terbaik Mengikut Keutamaan Anda",
     noMatchForService: "Tiada vendor yang sepadan untuk perkhidmatan ini.",
+    noMatchesTitle: "Belum ada vendor yang sepadan",
+    noMatchesText: "Tiada yang sesuai dengan bajet dan keperluan wajib ini buat masa ini. Cuba bajet lebih tinggi, kurangkan keperluan wajib atau tambah lokasi.",
     allVendors: "Semua Vendor",
     allServices: "Semua perkhidmatan",
     filterAria: "Tapis padanan mengikut perkhidmatan",

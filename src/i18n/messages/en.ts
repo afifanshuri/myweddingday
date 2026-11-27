@@ -146,6 +146,8 @@ const en = {
     pageOf: (page: number, count: number) => `Page ${page} of ${count}`,
     bestPicks: "Best Picks Based on Your Preferences",
     noMatchForService: "No matching vendors for this service.",
+    noMatchesTitle: "No vendors match yet",
+    noMatchesText: "Nothing fits these budgets and must-haves right now. Try a higher budget, fewer must-haves or more locations.",
     allVendors: "All Vendors",
     allServices: "All services",
     filterAria: "Filter matches by service",

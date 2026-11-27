@@ -182,7 +182,8 @@ export default function VendorSection() {
   // (before the filtered page arrives from the server).
   const topMatches = data?.topMatches ?? [];
   const otherMatches = (data?.matches ?? []).filter((match) => serviceFilter === null || match.vendor.serviceId === serviceFilter);
-  const topServices = servicesList.filter((service) => topMatches.some((match) => match.vendor.serviceId === service.id));
+  // Every planned service gets a column, so one with no match says so instead of disappearing.
+  const nothingMatches = !!data && topMatches.length === 0 && data.total === 0 && data.lockedCount === 0;
   const selectVendor = useCallback((id: number) => { setError(null); setDetail(null); openVendor(id); }, [openVendor]);
   // Lets the budget panel open a vendor's page here.
   useEffect(() => {
@@ -217,7 +218,14 @@ export default function VendorSection() {
             <p>{t.results.freeBanner}</p>
             <MainButton href={paymentRoute()} size="small">{t.common.getPlus}</MainButton>
           </div>}
-          <TopMatchSection matches={topMatches} servicesList={topServices} onSelect={selectVendor} />
+          {nothingMatches ? <section aria-labelledby="no-matches-heading" className="flex flex-col items-start gap-3 rounded-lg border border-dashed border-(--tertiary) bg-white p-6 sm:p-8">
+            <h2 id="no-matches-heading" className="libre-font text-xl text-(--positive-tertiary)">{t.results.noMatchesTitle}</h2>
+            <p className="max-w-prose text-sm leading-6 text-foreground/70">{t.results.noMatchesText}</p>
+            {freeSearchUsed
+              ? <MainButton size="small" href={paymentRoute()}>{t.results.getPlusToSearch}</MainButton>
+              : <MainButton size="small" href={ROUTES.weddingPlan}>{t.results.editPreferences}</MainButton>}
+          </section>
+          : <TopMatchSection matches={topMatches} servicesList={servicesList} onSelect={selectVendor} />}
           {(data.total > 0 || data.lockedCount > 0 || serviceFilter !== null) && <AllMatchSection matches={otherMatches} lockedCount={data.lockedCount} topMatches={topMatches} servicesList={servicesList} onSelect={selectVendor} activeServiceId={serviceFilter} loading={result.filter !== serviceFilter || pageLoading} onServiceChange={(id) => { setServiceFilter(id); setPage(1); }} />}
           {data.pageCount > 1 && <nav aria-label={t.results.pagesAria} className="flex items-center justify-center gap-4">
             <MainButton size="small" variant="secondary" disabled={busy || data.page <= 1} onClick={() => goToPage(data.page - 1)}>{t.results.previous}</MainButton>
