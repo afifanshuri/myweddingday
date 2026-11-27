@@ -131,7 +131,8 @@ export default function VendorSection() {
   }, [data, revision, closeVendor]);
 
   useEffect(() => {
-    // Plus can open any vendor; a free account only those its free search unlocked (the server checks).
+    // Only vendors this account was shown in its results open (Plus in full; free only those its free search
+    // unlocked). The server checks, so typing another ID in ?vendor= shows "no longer available".
     if (checking || !access.userId || selectedVendorId === null) return;
     // Wait for the search to load, unless there isn't one (expired or never run).
     if (!searchId && busy) return;

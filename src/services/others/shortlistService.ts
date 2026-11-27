@@ -10,6 +10,7 @@ import { throttleSearch } from "./manualSearchService";
 import { projectVendorMatch } from "./vendorResponseService";
 import { getVendorImageUrlsBatch, signAttachments } from "./vendorImageService";
 import { unlockedVendorIds } from "./unlockService";
+import { shownVendorIds } from "./shownVendorService";
 
 export function validateShortlistIds(value: unknown): number[] {
   if (!Array.isArray(value) || value.length > WEDDING_PLAN.maxShortlist) throw new RequestError("Invalid shortlist");
@@ -21,11 +22,16 @@ export function validateShortlistIds(value: unknown): number[] {
  * Only approved vendors are returned; the rest are listed in `missing` so the browser can drop them.
  * Plus sees every vendor in full. A free account sees the vendors its free search unlocked in full, and the rest
  * as locked previews (photos, rating, cheapest price), never names, contacts or packages.
+ * Vendors the account was never shown in its results come back as unavailable, with nothing about them.
  */
-export async function readShortlist(access: AccountAccess, vendorIds: number[]) {
+export async function readShortlist(access: AccountAccess, requestedIds: number[]) {
   if (!access.userId) throw new RequestError("Sign in to see your shortlist", 401);
   await throttleSearch(access.userId, "shortlist");
-  if (!vendorIds.length) return { vendors: [] as VendorMatchResult[], missing: [] as number[], unavailable: [] as number[] };
+  if (!requestedIds.length) return { vendors: [] as VendorMatchResult[], missing: [] as number[], unavailable: [] as number[] };
+  const shown = await shownVendorIds(access, requestedIds);
+  const notShown = requestedIds.filter((id) => !shown.has(id));
+  const vendorIds = requestedIds.filter((id) => shown.has(id));
+  if (!vendorIds.length) return { vendors: [] as VendorMatchResult[], missing: [] as number[], unavailable: notShown };
   const free = access.canViewVendorIdentity ? null : await unlockedVendorIds(access.userId, vendorIds);
   const unlocked = (vendorId: number) => !free || free.has(vendorId);
   const rows = await db.select({ vendor: vendorsTable, package: packagesTable }).from(vendorsTable)
@@ -53,5 +59,5 @@ export async function readShortlist(access: AccountAccess, vendorIds: number[]) 
   const absent = vendorIds.filter((id) => !present.has(id));
   const notApproved = absent.length ? new Set((await db.select({ id: vendorsTable.id }).from(vendorsTable)
     .where(and(inArray(vendorsTable.id, absent), ne(vendorsTable.status, "approved")))).map((row) => row.id)) : new Set<number>();
-  return { vendors, missing: absent.filter((id) => !notApproved.has(id)), unavailable: absent.filter((id) => notApproved.has(id)) };
+  return { vendors, missing: absent.filter((id) => !notApproved.has(id)), unavailable: [...absent.filter((id) => notApproved.has(id)), ...notShown] };
 }

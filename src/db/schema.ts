@@ -147,6 +147,18 @@ export const unlockedVendors = pgTable("unlocked_vendors", {
   index("unlocked_vendors_vendor_idx").on(table.vendorId),
 ]).enableRLS();
 
+// Vendors an account has been shown in its search results (in full or as a locked preview), kept permanently.
+// The shortlist and budget only return vendors listed here (admins excepted), so made-up vendor IDs can't be used
+// to copy the catalogue. Removed with the user or the vendor.
+export const shownVendors = pgTable("shown_vendors", {
+  userId: uuid("user_id").notNull().references(() => authUsers.id, { onDelete: "cascade" }),
+  vendorId: integer("vendor_id").notNull().references(() => vendorsTable.id, { onDelete: "cascade" }),
+  shownAt: timestamp("shown_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  primaryKey({ columns: [table.userId, table.vendorId] }),
+  index("shown_vendors_vendor_idx").on(table.vendorId),
+]).enableRLS();
+
 // Files uploaded straight to Storage but not yet saved into a listing. Saving a listing claims (deletes) its rows;
 // rows older than a day are removed together with their files. `owner` is "admin:<user id>" or "link:<link id>".
 export const pendingUploads = pgTable("pending_uploads", {

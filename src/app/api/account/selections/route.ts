@@ -6,12 +6,14 @@ import { errorResponse, positiveId, readBody, RequestError } from "@/services/ot
 import { requireSameOrigin } from "@/services/others/adminAuthService";
 import { throttleSearch } from "@/services/others/manualSearchService";
 import { unlockedVendorIds } from "@/services/others/unlockService";
+import { shownVendorIds } from "@/services/others/shownVendorService";
 
 // Names and prices for the packages in the user's budget (at most 6 IDs, throttled per account), from approved vendors.
 // Plus sees any of them. A free account sees those from vendors its free search unlocked; the others are listed in
 // `locked` (not missing), so the browser keeps them in the plan without showing them. Packages whose vendor still
 // exists but isn't approved right now (rejected or back in review) are listed in `unavailable`: the browser keeps them
-// and shows them as currently unavailable. Only packages that no longer exist are missing from all three.
+// and shows them as currently unavailable, as are packages from vendors the account was never shown in its results
+// (so made-up IDs reveal nothing). Only packages that no longer exist are missing from all three.
 export async function POST(request: Request) {
   try {
     requireSameOrigin(request);
@@ -32,8 +34,9 @@ export async function POST(request: Request) {
       .from(packagesTable).innerJoin(vendorsTable, eq(packagesTable.vendorId, vendorsTable.id))
       .innerJoin(servicesTable, eq(vendorsTable.serviceId, servicesTable.id)).where(inArray(packagesTable.id, packageIds));
     // Nothing about an unavailable vendor is sent beyond the package ID the browser already has.
-    const unavailable = all.filter((record) => record.status !== "approved").map((record) => record.packageId);
-    const records = all.filter((record) => record.status === "approved");
+    const shown = await shownVendorIds(access, all.map((record) => record.vendorId));
+    const unavailable = all.filter((record) => record.status !== "approved" || !shown.has(record.vendorId)).map((record) => record.packageId);
+    const records = all.filter((record) => record.status === "approved" && shown.has(record.vendorId));
     if (access.canViewVendorIdentity) return privateJson({ packages: records, locked: [], unavailable });
     const unlocked = await unlockedVendorIds(access.userId, records.map((record) => record.vendorId));
     return privateJson({

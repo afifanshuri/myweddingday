@@ -2,7 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { freeSearches, manualSearchSnapshots, searchRequestLimits, unlockedVendors, vendorsTable, packagesTable } from "@/db/schema";
+import { freeSearches, manualSearchSnapshots, searchRequestLimits, unlockedVendors, vendorsTable, packagesTable, shownVendors } from "@/db/schema";
 import { findVendorsByPreferences } from "@/db/queries/vendors";
 import { manualSearchLimit, PLANS, SEARCH } from "@/config/plans";
 import type { AccountAccess } from "@/types/accountAccess";
@@ -188,6 +188,9 @@ export async function runManualSearch(access: AccountAccess, searchId: string, p
     const matches = capped(compactMatches(await findVendorsByPreferences(preferences, tx, false)));
     const createdAt = new Date();
     await tx.insert(manualSearchSnapshots).values({ userId, searchId, fingerprint, matches, createdAt, expiresAt: new Date(createdAt.getTime() + SEARCH.lifetimeMs) });
+    // Everything in the results (full or locked preview) can be shortlisted and budgeted later (shownVendorIds).
+    const shown = [...new Set(matches.map((match) => match.vendorId))];
+    if (shown.length) await tx.insert(shownVendors).values(shown.map((vendorId) => ({ userId, vendorId, shownAt: createdAt }))).onConflictDoNothing();
     if (limit !== null) {
       // The primary key allows one free search per account, even if the lock above were ever bypassed.
       await tx.insert(freeSearches).values({ userId, searchId, usedAt: createdAt });
