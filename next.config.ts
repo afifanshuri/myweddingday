@@ -1,27 +1,30 @@
 import type { NextConfig } from "next";
 
 const dev = process.env.NODE_ENV !== "production";
-// The only other origin the browser talks to: Supabase (sign-in, signed photo/file links, direct uploads).
+// The other origin the browser talks to most: Supabase (sign-in, signed photo/file links, direct uploads).
 const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin : "";
 const supabaseSocket = supabase.replace(/^http/, "ws");
+// Cloudflare Turnstile (CAPTCHA on the sign-in forms): its script, and the frame it runs the check in.
+const turnstile = "https://challenges.cloudflare.com";
 
 /**
- * Content Security Policy: only this site's own scripts, styles and fonts, plus Supabase for data, images and uploads.
+ * Content Security Policy: only this site's own scripts, styles and fonts, plus Supabase for data, images and uploads,
+ * and Cloudflare Turnstile's script and frame for the CAPTCHA.
  * - Scripts allow 'unsafe-inline' because Next.js inlines its page data and bootstrap scripts; external scripts and
  *   eval (outside development) are still blocked. A nonce-based policy would need every page rendered per request.
  * - The site can't be framed (clickjacking), and forms and <base> can only point back to this site.
  */
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline' ${turnstile}${dev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: ${supabase}`,
   "font-src 'self' data:",
-  `connect-src 'self' ${supabase} ${supabaseSocket}${dev ? " ws: http://localhost:*" : ""}`,
+  `connect-src 'self' ${supabase} ${supabaseSocket} ${turnstile}${dev ? " ws: http://localhost:*" : ""}`,
   `media-src 'self' ${supabase}`,
   "worker-src 'self' blob:",
   "object-src 'none'",
-  "frame-src 'none'",
+  `frame-src ${turnstile}`,
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

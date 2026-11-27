@@ -1,5 +1,6 @@
 "use client";
 
+import { isCaptchaError, useCaptcha } from "@/components/authComponents/useCaptcha";
 import Link from "next/link";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { FiAlertTriangle, FiArrowRight, FiDownload, FiKey, FiLogOut, FiMonitor, FiStar, FiUser } from "react-icons/fi";
@@ -121,6 +122,7 @@ export function DeleteAccountSettings() {
   const [error, setError] = useState("");
   const t = useT();
   const admin = access.role === "admin";
+  const captcha = useCaptcha();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -129,12 +131,13 @@ export function DeleteAccountSettings() {
     setBusy(true);
     setError("");
     try {
-      await APIDeleteAccount(String(form.get("password") ?? ""), String(form.get("confirmation") ?? "").trim());
+      await APIDeleteAccount(String(form.get("password") ?? ""), String(form.get("confirmation") ?? "").trim(), await captcha.getToken());
       clearLocalPlan();
       await APIDeleteAuthSession().catch(() => undefined);
       window.location.replace(ROUTES.home);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : t.settings.deleteFailed);
+      captcha.reset();
+      setError(isCaptchaError(caught) ? t.auth.captchaFailed : caught instanceof Error ? caught.message : t.settings.deleteFailed);
       setBusy(false);
     }
   }
@@ -160,6 +163,7 @@ export function DeleteAccountSettings() {
           <input name="confirmation" autoComplete="off" required pattern={DELETE_ACCOUNT_CONFIRMATION} disabled={busy} className={authInputClass} />
         </label>
         {error && <p role="alert" className="text-sm text-red-700">{t.errors[error] ?? error}</p>}
+        {captcha.widget}
         <div className="flex flex-wrap gap-3">
           <MainButton type="submit" variant="danger" size="small" disabled={busy}>{busy ? t.settings.deleting : t.settings.deletePermanently}</MainButton>
           <MainButton variant="ghost" size="small" disabled={busy} onClick={() => { setOpen(false); setError(""); }}>{t.common.cancel}</MainButton>

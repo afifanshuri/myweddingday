@@ -461,6 +461,10 @@ const en = {
     signUpFailed: "Unable to create account. Check your details and try again.",
     signInFailed: "Unable to sign in. Check your email and password.",
     confirmEmail: "Check your email to confirm your account, then sign in.",
+    /** Shown under confirmEmail: an already registered email gets no confirmation email, so point to the way back in. */
+    confirmEmailExisting: "No email after a few minutes? You may already have an account.",
+    resetInstead: "Reset your password",
+    captchaFailed: "The security check didn't finish. Check your connection and try again.",
     connectFailed: "Unable to connect. Please try again.",
     wait: "Please wait...",
     continueSignIn: "Continue sign-in",

@@ -6,9 +6,11 @@ import AuthCard, { authInputClass } from "./AuthCard";
 import { APIRequestPasswordReset } from "@/services/api/auth";
 import { ROUTES } from "@/config/routes";
 import { useT } from "@/i18n";
+import { isCaptchaError, useCaptcha } from "./useCaptcha";
 
 export default function ForgotPasswordForm() {
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error" | "captcha">("idle");
+  const captcha = useCaptcha();
   const t = useT();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -17,11 +19,13 @@ export default function ForgotPasswordForm() {
     const email = String(new FormData(event.currentTarget).get("email") ?? "").trim();
     setStatus("sending");
     try {
-      const { error } = await APIRequestPasswordReset(email);
-      // Rate limits are the only error worth showing; anything else gets the same reply as success.
-      setStatus(error?.status === 429 ? "error" : "sent");
-    } catch {
-      setStatus("error");
+      const { error } = await APIRequestPasswordReset(email, await captcha.getToken());
+      captcha.reset();
+      // Rate limits and a failed security check are the only errors worth showing; anything else gets the same reply as success.
+      setStatus(isCaptchaError(error) ? "captcha" : error?.status === 429 ? "error" : "sent");
+    } catch (error) {
+      captcha.reset();
+      setStatus(isCaptchaError(error) ? "captcha" : "error");
     }
   }
 
@@ -37,7 +41,8 @@ export default function ForgotPasswordForm() {
             {t.auth.email}
             <input type="email" name="email" autoComplete="email" required disabled={status === "sending"} className={authInputClass} />
           </label>
-          {status === "error" && <p role="alert" className="text-sm text-stone-600">{t.auth.sendFailed}</p>}
+          {(status === "error" || status === "captcha") && <p role="alert" className="text-sm text-stone-600">{status === "captcha" ? t.auth.captchaFailed : t.auth.sendFailed}</p>}
+          {captcha.widget}
           <MainButton type="submit" disabled={status === "sending"} className="w-full">
             {status === "sending" ? t.auth.sending : t.auth.sendLink}
           </MainButton>

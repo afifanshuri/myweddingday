@@ -20,3 +20,18 @@ export const loginNotice = (value: unknown): string | null =>
 
 /** What a user types to confirm deleting their account (Settings). */
 export const DELETE_ACCOUNT_CONFIRMATION = "DELETE";
+
+/**
+ * Cloudflare Turnstile (CAPTCHA) on sign-up, sign-in, forgot password, and the password checks in Settings.
+ * The site key is public. The secret key goes only into Supabase (Authentication > Attack Protection), which checks
+ * each token. Without a site key the forms send no token, so CAPTCHA must stay off in Supabase until the key is set.
+ * Local development uses Cloudflare's always-pass test key (.env.development.local).
+ */
+export const CAPTCHA = {
+  siteKey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "",
+  origin: "https://challenges.cloudflare.com",
+  scriptUrl: "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit",
+  // How long a submit waits for the script to load, and for Cloudflare's check (or the visitor ticking the box).
+  loadWaitMs: 8000,
+  solveWaitMs: 60000,
+} as const;

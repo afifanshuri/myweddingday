@@ -16,13 +16,13 @@ export async function POST(request: Request) {
     if (!user?.email) throw new RequestError("Sign in to change your password", 401);
     await throttleSearch(user.id, "password");
     await limitPerHour(`password:${user.id}`, 10);
-    const body = await readJsonObject(request, 1024);
-    const { currentPassword, newPassword } = body;
+    const body = await readJsonObject(request, 8192);
+    const { currentPassword, newPassword, captchaToken } = body;
     if (typeof currentPassword !== "string" || !currentPassword || currentPassword.length > 200) throw new RequestError("Enter your current password");
     if (typeof newPassword !== "string" || newPassword.length < PASSWORD_RULES.minLength || newPassword.length > 200) {
       throw new RequestError(`Choose a new password. ${PASSWORD_RULES.hint}`);
     }
-    await verifyCurrentPassword(user, currentPassword);
+    await verifyCurrentPassword(user, currentPassword, captchaToken);
 
     const { error } = await createClient(await cookies()).auth.updateUser({ password: newPassword });
     if (error) {

@@ -6,12 +6,14 @@ import { authInputClass } from "./AuthCard";
 import { APIChangePassword } from "@/services/api/plan";
 import { PASSWORD_RULES } from "@/config/auth";
 import { useT } from "@/i18n";
+import { isCaptchaError, useCaptcha } from "./useCaptcha";
 
 /** A signed-in user changes their password after confirming the current one. They stay signed in. */
 export default function ChangePasswordForm() {
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   const t = useT();
+  const captcha = useCaptcha();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -24,12 +26,12 @@ export default function ChangePasswordForm() {
     setBusy(true);
     setMessage(null);
     try {
-      await APIChangePassword(current, password);
+      await APIChangePassword(current, password, await captcha.getToken());
       formElement.reset();
       setMessage({ text: t.passwordForm.updated, ok: true });
     } catch (error) {
-      setMessage({ text: error instanceof Error ? error.message : t.passwordForm.connectFailed, ok: false });
-    } finally { setBusy(false); }
+      setMessage({ text: isCaptchaError(error) ? t.auth.captchaFailed : error instanceof Error ? error.message : t.passwordForm.connectFailed, ok: false });
+    } finally { captcha.reset(); setBusy(false); }
   }
 
   return <form onSubmit={handleSubmit} className="max-w-sm space-y-5">
@@ -47,6 +49,7 @@ export default function ChangePasswordForm() {
       <input type="password" name="confirm" autoComplete="new-password" minLength={PASSWORD_RULES.minLength} required disabled={busy} className={authInputClass} />
     </label>
     {message && <p role={message.ok ? "status" : "alert"} className={`text-sm ${message.ok ? "text-(--positive-tertiary)" : "text-red-700"}`}>{t.errors[message.text] ?? message.text}</p>}
+    {captcha.widget}
     <MainButton type="submit" disabled={busy}>{busy ? t.passwordForm.wait : t.passwordForm.update}</MainButton>
     <p className="text-xs text-foreground/60">{t.passwordForm.forgot}</p>
   </form>;

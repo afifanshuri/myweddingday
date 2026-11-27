@@ -19,11 +19,11 @@ export async function POST(request: Request) {
     const user = await getVerifiedAccountUser();
     if (!user) throw new RequestError("Sign in to delete your account", 401);
     await limitPerHour(`account-delete:${user.id}`, 5);
-    const { password, confirmation } = await readJsonObject(request, 1024);
+    const { password, confirmation, captchaToken } = await readJsonObject(request, 8192);
     if (confirmation !== DELETE_ACCOUNT_CONFIRMATION) throw new RequestError(`Type ${DELETE_ACCOUNT_CONFIRMATION} to confirm`);
     const access = await getAccountAccess();
     if (access.role === "admin") throw new RequestError("Admin accounts can only be removed by another admin.", 403);
-    await verifyCurrentPassword(user, password);
+    await verifyCurrentPassword(user, password, captchaToken);
 
     const { error } = await createAdminClient().auth.admin.deleteUser(user.id);
     if (error) throw new RequestError("Unable to delete your account. Please try again.", 500);

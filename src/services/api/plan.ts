@@ -21,17 +21,17 @@ export async function APISavePlan(plan: SavedPlan, baseRevision: number, keepali
   return data;
 }
 
-export async function APIChangePassword(currentPassword: string, newPassword: string) {
+export async function APIChangePassword(currentPassword: string, newPassword: string, captchaToken?: string) {
   const response = await fetch("/api/account/password", { method: "POST", cache: "no-store",
-    headers: { "Content-Type": "application/json" }, body: JSON.stringify({ currentPassword, newPassword }) });
+    headers: { "Content-Type": "application/json" }, body: JSON.stringify({ currentPassword, newPassword, captchaToken }) });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error ?? "Unable to update your password");
 }
 
 /** Permanently deletes the signed-in account (after the server checks the password and the typed confirmation). */
-export async function APIDeleteAccount(password: string, confirmation: string) {
+export async function APIDeleteAccount(password: string, confirmation: string, captchaToken?: string) {
   const response = await fetch("/api/account/delete", { method: "POST", cache: "no-store",
-    headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password, confirmation }) });
+    headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password, confirmation, captchaToken }) });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error ?? "Unable to delete your account");
 }
